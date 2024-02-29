@@ -1,12 +1,9 @@
 %option noyywrap
-
 %{
-  // A lot of this lexer is based off the ANSI C grammar:
-  // https://www.lysator.liu.se/c/ANSI-C-grammar-l.html#MUL-ASSIGN
-  // Avoid error "error: `fileno' was not declared in this scope"
-  extern "C" int fileno(FILE *stream);
+    #include <string.h>
+    #include <stdlib.h>
 
-  #include "parser.tab.hpp"
+    #include "parser.tab.h"
 %}
 
 D	  [0-9]
@@ -24,20 +21,20 @@ IS  (u|U|l|L)*
 "case"			{return(CASE);}
 "char"			{return(CHAR);}
 "const"			{return(CONST);}
-"continue"  {return(CONTINUE);}
+"continue"      {return(CONTINUE);}
 "default"		{return(DEFAULT);}
-"do"			  {return(DO);}
+"do"			{return(DO);}
 "double"		{return(DOUBLE);}
 "else"			{return(ELSE);}
 "enum"			{return(ENUM);}
 "extern"		{return(EXTERN);}
 "float"			{return(FLOAT);}
-"for"			  {return(FOR);}
+"for"			{return(FOR);}
 "goto"			{return(GOTO);}
-"if"			  {return(IF);}
-"int"			  {return(INT);}
+"if"			{return(IF);}
+"int"			{return(INT);}
 "long"			{return(LONG);}
-"register"	{return(REGISTER);}
+"register"	    {return(REGISTER);}
 "return"		{return(RETURN);}
 "short"			{return(SHORT);}
 "signed"		{return(SIGNED);}
@@ -47,37 +44,35 @@ IS  (u|U|l|L)*
 "switch"		{return(SWITCH);}
 "typedef"		{return(TYPEDEF);}
 "union"			{return(UNION);}
-"unsigned"	{return(UNSIGNED);}
+"unsigned"	    {return(UNSIGNED);}
 "void"			{return(VOID);}
-"volatile"	{return(VOLATILE);}
+"volatile"	    {return(VOLATILE);}
 "while"			{return(WHILE);}
 
-// identifier definition
-// number_int, number_float, string values can be accessed by parser
-{L}({L}|{D})*		{yylval.string = new std::string(yytext); return(IDENTIFIER);}
+{L}({L}|{D})* {yylval.string = malloc(sizeof(char) * (yyleng + 1)); strcpy(yylval.string, yytext); return(IDENTIFIER);}
 
-0[xX]{H}+{IS}?		{yylval.number_int = (int)strtol(yytext, NULL, 0); return(INT_CONSTANT);}
-0{D}+{IS}?		    {yylval.number_int = (int)strtol(yytext, NULL, 0); return(INT_CONSTANT);}
-{D}+{IS}?		      {yylval.number_int = (int)strtol(yytext, NULL, 0); return(INT_CONSTANT);}
-L?'(\\.|[^\\'])+'	{yylval.number_int = (int)strtol(yytext, NULL, 0); return(INT_CONSTANT);}
+0[xX]{H}+{IS}?		{yylval.number_int = strtol(yytext, NULL, 0); return(INT_CONSTANT);}
+0{D}+{IS}?		    {yylval.number_int = strtol(yytext, NULL, 0); return(INT_CONSTANT);}
+{D}+{IS}?		    {yylval.number_int = strtol(yytext, NULL, 0); return(INT_CONSTANT);}
+L?'(\\.|[^\\'])+'	{yylval.number_int = strtol(yytext, NULL, 0); return(INT_CONSTANT);}
 
-{D}+{E}{FS}?		        {yylval.number_float = strtod(yytext, NULL); return(FLOAT_CONSTANT);}
+{D}+{E}{FS}?		    {yylval.number_float = strtod(yytext, NULL); return(FLOAT_CONSTANT);}
 {D}*"."{D}+({E})?{FS}?	{yylval.number_float = strtod(yytext, NULL); return(FLOAT_CONSTANT);}
 {D}+"."{D}*({E})?{FS}?	{yylval.number_float = strtod(yytext, NULL); return(FLOAT_CONSTANT);}
 
-//new code to store string value
-L?\"(\\.|[^\\"])*\"	{yylval.string = new std::string(yytext.substr(1, yytext.size() - 2)); return(STRING_LITERAL);}
+
+L?\"(\\.|[^\\"])*\"	{yylval.string = malloc(sizeof(char) * (yyleng - 1)); memcpy(yylval.string, yytext + 1, yyleng - 2); yylval.string[yyleng - 2] = '\0'; return(STRING_LITERAL);}
 
 "..."      {return(ELLIPSIS);}
-">>="			 {return(RIGHT_ASSIGN);}
+">>="	   {return(RIGHT_ASSIGN);}
 "<<="      {return(LEFT_ASSIGN);}
-"+="			 {return(ADD_ASSIGN);}
+"+="	   {return(ADD_ASSIGN);}
 "-="       {return(SUB_ASSIGN);}
 "*="       {return(MUL_ASSIGN);}
-"/="			 {return(DIV_ASSIGN);}
-"%="			 {return(MOD_ASSIGN);}
+"/="	   {return(DIV_ASSIGN);}
+"%="	   {return(MOD_ASSIGN);}
 "&="       {return(AND_ASSIGN);}
-"^="			 {return(XOR_ASSIGN);}
+"^="	   {return(XOR_ASSIGN);}
 "|="       {return(OR_ASSIGN);}
 
 ">>"       {return(RIGHT_OP);}

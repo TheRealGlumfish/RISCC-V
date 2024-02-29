@@ -1,9 +1,5 @@
 // Adapted from: https://www.lysator.liu.se/c/ANSI-C-grammar-y.html
 
-// TODO: you can either continue adding to this grammar file or
-// rename parser_full.y to parser.y once you're happy with
-// how this example works.
-
 %code requires{
     #include "ast.hpp"
 
@@ -30,12 +26,10 @@
 %token CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE CONST VOLATILE VOID
 %token STRUCT UNION ENUM ELLIPSIS
 %token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
-
-// new tokens
 %token SEMI_COLON OPEN_BRACE CLOSE_BRACE COMMA COLON ASSIGN 
 %token OPEN_BRACKET CLOSE_BRACKET OPEN_SQUARE CLOSE_SQUARE
 %token PERIOD AND_LOGIC NOT_LOGIC NOT_OP SUB_OP ADD_OP MUL_OP DIV_OP MOD_OP
-%token LT_OP GT_OP EXP_OP OR_LOGIC TERNARY_OP
+%token LT_OP GT_OP EXP_OP OR_LOGIC TERN_OP
 
 %type <node> translation_unit external_declaration function_definition primary_expression postfix_expression argument_expression_list
 %type <node> unary_expression cast_expression multiplicative_expression additive_expression shift_expression relational_expression
@@ -59,34 +53,265 @@
 %%
 
 ROOT
-    : translation_unit { g_root = $1; }
+  : translation_unit { g_root = $1; }
 
 translation_unit
 	: external_declaration { $$ = $1; }
+	| translation_unit external_declaration
 	;
 
 external_declaration
 	: function_definition { $$ = $1; }
+	| declaration
 	;
 
 function_definition
-	: declaration_specifiers declarator compound_statement {
+	: declaration_specifiers declarator declaration_list compound_statement
+	| declaration_specifiers declarator compound_statement {
 		$$ = new FunctionDefinition($1, $2, $3);
 	}
+	| declarator declaration_list compound_statement
+	| declarator compound_statement
+	;
+
+
+primary_expression
+	: IDENTIFIER
+	| INT_CONSTANT {
+		$$ = new IntConstant($1);
+	}
+    | FLOAT_CONSTANT
+	| STRING_LITERAL
+	| '(' expression ')'
+	;
+
+postfix_expression
+	: primary_expression
+	| postfix_expression '[' expression ']'
+	| postfix_expression '(' ')'
+	| postfix_expression '(' argument_expression_list ')'
+	| postfix_expression '.' IDENTIFIER
+	| postfix_expression PTR_OP IDENTIFIER
+	| postfix_expression INC_OP
+	| postfix_expression DEC_OP
+	;
+
+argument_expression_list
+	: assignment_expression
+	| argument_expression_list ',' assignment_expression
+	;
+
+unary_expression
+	: postfix_expression
+	| INC_OP unary_expression
+	| DEC_OP unary_expression
+	| unary_operator cast_expression
+	| SIZEOF unary_expression
+	| SIZEOF '(' type_name ')'
+	;
+
+unary_operator
+	: '&'
+	| '*'
+	| '+'
+	| '-'
+	| '~'
+	| '!'
+	;
+
+cast_expression
+	: unary_expression
+	| '(' type_name ')' cast_expression
+	;
+
+multiplicative_expression
+	: cast_expression
+	| multiplicative_expression '*' cast_expression
+	| multiplicative_expression '/' cast_expression
+	| multiplicative_expression '%' cast_expression
+	;
+
+additive_expression
+	: multiplicative_expression
+	| additive_expression '+' multiplicative_expression
+	| additive_expression '-' multiplicative_expression
+	;
+
+shift_expression
+	: additive_expression
+	| shift_expression LEFT_OP additive_expression
+	| shift_expression RIGHT_OP additive_expression
+	;
+
+relational_expression
+	: shift_expression
+	| relational_expression '<' shift_expression
+	| relational_expression '>' shift_expression
+	| relational_expression LE_OP shift_expression
+	| relational_expression GE_OP shift_expression
+	;
+
+equality_expression
+	: relational_expression
+	| equality_expression EQ_OP relational_expression
+	| equality_expression NE_OP relational_expression
+	;
+
+and_expression
+	: equality_expression
+	| and_expression '&' equality_expression
+	;
+
+exclusive_or_expression
+	: and_expression
+	| exclusive_or_expression '^' and_expression
+	;
+
+inclusive_or_expression
+	: exclusive_or_expression
+	| inclusive_or_expression '|' exclusive_or_expression
+	;
+
+logical_and_expression
+	: inclusive_or_expression
+	| logical_and_expression AND_OP inclusive_or_expression
+	;
+
+logical_or_expression
+	: logical_and_expression
+	| logical_or_expression OR_OP logical_and_expression
+	;
+
+conditional_expression
+	: logical_or_expression
+	| logical_or_expression '?' expression ':' conditional_expression
+	;
+
+assignment_expression
+	: conditional_expression
+	| unary_expression assignment_operator assignment_expression
+	;
+
+assignment_operator
+	: '='
+	| MUL_ASSIGN
+	| DIV_ASSIGN
+	| MOD_ASSIGN
+	| ADD_ASSIGN
+	| SUB_ASSIGN
+	| LEFT_ASSIGN
+	| RIGHT_ASSIGN
+	| AND_ASSIGN
+	| XOR_ASSIGN
+	| OR_ASSIGN
+	;
+
+expression
+	: assignment_expression
+	| expression ',' assignment_expression
+	;
+
+constant_expression
+	: conditional_expression
+	;
+
+declaration
+	: declaration_specifiers ';'
+	| declaration_specifiers init_declarator_list ';'
 	;
 
 declaration_specifiers
-	: type_specifier { $$ = $1; }
+	: storage_class_specifier
+	| storage_class_specifier declaration_specifiers
+	| type_specifier { $$ = $1; }
+	| type_specifier declaration_specifiers
+	;
+
+init_declarator_list
+	: init_declarator
+	| init_declarator_list ',' init_declarator
+	;
+
+init_declarator
+	: declarator
+	| declarator '=' initializer
+	;
+
+storage_class_specifier
+	: TYPEDEF
+	| EXTERN
+	| STATIC
+	| AUTO
+	| REGISTER
 	;
 
 type_specifier
-	: INT {
+	: VOID
+	| CHAR
+	| SHORT
+	| INT {
 		$$ = new TypeSpecifier("int");
 	}
+	| LONG
+	| FLOAT
+	| DOUBLE
+	| SIGNED
+	| UNSIGNED
+  | struct_specifier
+	| enum_specifier
+	| TYPE_NAME
+	;
+
+struct_specifier
+	: STRUCT IDENTIFIER '{' struct_declaration_list '}'
+	| STRUCT '{' struct_declaration_list '}'
+	| STRUCT IDENTIFIER
+	;
+
+struct_declaration_list
+	: struct_declaration
+	| struct_declaration_list struct_declaration
+	;
+
+struct_declaration
+	: specifier_qualifier_list struct_declarator_list ';'
+	;
+
+specifier_qualifier_list
+	: type_specifier specifier_qualifier_list
+	| type_specifier
+	;
+
+struct_declarator_list
+	: struct_declarator
+	| struct_declarator_list ',' struct_declarator
+	;
+
+struct_declarator
+	: declarator
+	| ':' constant_expression
+	| declarator ':' constant_expression
+	;
+
+enum_specifier
+	: ENUM '{' enumerator_list '}'
+	| ENUM IDENTIFIER '{' enumerator_list '}'
+	| ENUM IDENTIFIER
+	;
+
+enumerator_list
+	: enumerator
+	| enumerator_list ',' enumerator
+	;
+
+enumerator
+	: IDENTIFIER
+	| IDENTIFIER '=' constant_expression
 	;
 
 declarator
-	: direct_declarator { $$ = $1; }
+	: pointer direct_declarator
+	| direct_declarator { $$ = $1; }
 	;
 
 direct_declarator
@@ -94,17 +319,107 @@ direct_declarator
 		$$ = new Identifier(*$1);
 		delete $1;
 	}
-	| direct_declarator OPEN_BRACKET CLOSE_BRACKET {
+	| '(' declarator ')'
+	| direct_declarator '[' constant_expression ']'
+	| direct_declarator '[' ']'
+	| direct_declarator '(' parameter_list ')'
+	| direct_declarator '(' identifier_list ')'
+	| direct_declarator '(' ')' {
 		$$ = new DirectDeclarator($1);
 	}
 	;
 
+pointer
+	: '*'
+	| '*' pointer
+	;
+
+parameter_list
+	: parameter_declaration
+	| parameter_list ',' parameter_declaration
+	;
+
+parameter_declaration
+	: declaration_specifiers declarator
+	| declaration_specifiers abstract_declarator
+	| declaration_specifiers
+	;
+
+identifier_list
+	: IDENTIFIER
+	| identifier_list ',' IDENTIFIER
+	;
+
+type_name
+	: specifier_qualifier_list
+	| specifier_qualifier_list abstract_declarator
+	;
+
+abstract_declarator
+	: pointer
+	| direct_abstract_declarator
+	| pointer direct_abstract_declarator
+	;
+
+direct_abstract_declarator
+	: '(' abstract_declarator ')'
+	| '[' ']'
+	| '[' constant_expression ']'
+	| direct_abstract_declarator '[' ']'
+	| direct_abstract_declarator '[' constant_expression ']'
+	| '(' ')'
+	| '(' parameter_list ')'
+	| direct_abstract_declarator '(' ')'
+	| direct_abstract_declarator '(' parameter_list ')'
+	;
+
+initializer
+	: assignment_expression
+	| '{' initializer_list '}'
+	| '{' initializer_list ',' '}'
+	;
+
+initializer_list
+	: initializer
+	| initializer_list ',' initializer
+	;
+
 statement
-	: jump_statement { $$ = $1; }
+	: labeled_statement
+	| compound_statement
+	| expression_statement
+	| selection_statement
+	| iteration_statement
+	| jump_statement { $$ = $1; }
+	;
+
+labeled_statement
+	: IDENTIFIER ':' statement
+	| CASE constant_expression ':' statement
+	| DEFAULT ':' statement
 	;
 
 compound_statement
-	: OPEN_BRACE statement_list CLOSE_BRACE { $$ = $2; }
+	: '{' '}' {
+		// TODO: correct this
+		$$ = nullptr;
+	}
+	| '{' statement_list '}' {
+		$$ = $2;
+	}
+	| '{' declaration_list '}' {
+		// TODO: correct this
+		$$ = nullptr;
+	}
+	| '{' declaration_list statement_list '}'  {
+		// TODO: correct this
+		$$ = nullptr;
+	}
+	;
+
+declaration_list
+	: declaration
+	| declaration_list declaration
 	;
 
 statement_list
@@ -112,88 +427,37 @@ statement_list
 	| statement_list statement { $1->PushBack($2); $$=$1; }
 	;
 
+expression_statement
+	: ';'
+	| expression ';' { $$ = $1; }
+	;
+
+selection_statement
+	: IF '(' expression ')' statement
+	| IF '(' expression ')' statement ELSE statement
+	| SWITCH '(' expression ')' statement
+	;
+
+iteration_statement
+	: WHILE '(' expression ')' statement
+	| DO statement WHILE '(' expression ')' ';'
+	| FOR '(' expression_statement expression_statement ')' statement
+	| FOR '(' expression_statement expression_statement expression ')' statement
+	;
+
 jump_statement
-	: RETURN COLON {
+	: GOTO IDENTIFIER ';'
+	| CONTINUE ';'
+	| BREAK ';'
+	| RETURN ';' {
 		$$ = new ReturnStatement(nullptr);
 	}
-	| RETURN expression COLON {
+	| RETURN expression ';' {
 		$$ = new ReturnStatement($2);
 	}
 	;
 
-primary_expression
-	: INT_CONSTANT {
-		$$ = new IntConstant($1);
-	}
-	;
 
-postfix_expression
-	: primary_expression
-	;
-
-argument_expression_list
-	: assignment_expression
-	;
-
-unary_expression
-	: postfix_expression
-	;
-
-cast_expression
-	: unary_expression
-	;
-
-multiplicative_expression
-	: cast_expression
-	;
-
-additive_expression
-	: multiplicative_expression
-	;
-
-shift_expression
-	: additive_expression
-	;
-
-relational_expression
-	: shift_expression
-	;
-
-equality_expression
-	: relational_expression
-	;
-
-and_expression
-	: equality_expression
-	;
-
-exclusive_or_expression
-	: and_expression
-	;
-
-inclusive_or_expression
-	: exclusive_or_expression
-	;
-
-logical_and_expression
-	: inclusive_or_expression
-	;
-
-logical_or_expression
-	: logical_and_expression
-	;
-
-conditional_expression
-	: logical_or_expression
-	;
-
-assignment_expression
-	: conditional_expression
-	;
-
-expression
-	: assignment_expression
-	;
 
 %%
 

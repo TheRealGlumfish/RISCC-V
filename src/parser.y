@@ -1,9 +1,13 @@
 // Adapted from: https://www.lysator.liu.se/c/ANSI-C-grammar-y.html
 
 %code requires{
-    #include "ast.hpp"
+    #include <stdio.h>
+    #include <stdint.h>
+    #include <stdbool.h>
 
-    extern Node *g_root;
+    #include "src/ast.h"
+
+    // extern Node *g_root;
     extern FILE *yyin;
     int yylex(void);
     void yyerror(const char *);
@@ -11,12 +15,10 @@
 
 // Represents the value associated with any kind of AST node.
 %union{
-  Node         *node;
-  NodeList     *nodes;
-  int          number_int;
-  double       number_float;
-  std::string  *string;
-  yytokentype  token;
+    char* string;
+    int32_t number_int;
+    float number_float;
+    Expr expr_node;
 }
 
 %token IDENTIFIER INT_CONSTANT FLOAT_CONSTANT STRING_LITERAL
@@ -31,8 +33,8 @@
 %token PERIOD AND_LOGIC NOT_LOGIC NOT_OP SUB_OP ADD_OP MUL_OP DIV_OP MOD_OP
 %token LT_OP GT_OP EXP_OP OR_LOGIC TERN_OP
 
-%type <node> translation_unit external_declaration function_definition primary_expression postfix_expression argument_expression_list
-%type <node> unary_expression cast_expression multiplicative_expression additive_expression shift_expression relational_expression
+%type <expr_node> translation_unit external_declaration function_definition primary_expression postfix_expression argument_expression_list
+%type <expr_node> unary_expression cast_expression multiplicative_expression additive_expression shift_expression relational_expression
 %type <node> equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
 %type <node> conditional_expression assignment_expression expression constant_expression declaration declaration_specifiers init_declarator_list
 %type <node> init_declarator type_specifier struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list
@@ -44,9 +46,9 @@
 
 %type <string> unary_operator assignment_operator storage_class_specifier
 
-%type <number_int> INT_CONSTANT STRING_LITERAL
+%type <number_int> INT_CONSTANT
 %type <number_float> FLOAT_CONSTANT
-%type <string> IDENTIFIER
+%type <string> IDENTIFIER STRING_LITERAL
 
 
 %start ROOT
@@ -76,12 +78,21 @@ function_definition
 
 
 primary_expression
-	: IDENTIFIER
+	: IDENTIFIER {
+
+    }
 	| INT_CONSTANT {
-		$$ = new IntConstant($1);
+		$$ = (Expr){ .type = CONSTANT_EXPR, .constant = constantExprCreate(INT_TYPE, false) };
+        $$.constant.int_const = $1;
 	}
-    | FLOAT_CONSTANT
-	| STRING_LITERAL
+    | FLOAT_CONSTANT {
+		$$ = (Expr){ .type = CONSTANT_EXPR, .constant = constantExprCreate(FLOAT_TYPE, false) };
+        $$.constant.int_const = $1;
+    }
+	| STRING_LITERAL {
+		$$ = (Expr){ .type = CONSTANT_EXPR, .constant = constantExprCreate(CHAR_TYPE, true) };
+        $$.constant.string_const = $1;
+    }
 	| '(' expression ')'
 	;
 
@@ -109,7 +120,6 @@ unary_expression
 	| SIZEOF unary_expression
 	| SIZEOF '(' type_name ')'
 	;
-
 unary_operator
 	: '&'
 	| '*'
@@ -461,16 +471,16 @@ jump_statement
 
 %%
 
-Node *g_root;
+// Node *g_root;
 
-Node *ParseAST(std::string file_name)
-{
-  yyin = fopen(file_name.c_str(), "r");
-  if(yyin == NULL){
-    std::cerr << "Couldn't open input file: " << file_name << std::endl;
-    exit(1);
-  }
-  g_root = nullptr;
-  yyparse();
-  return g_root;
-}
+// Node *ParseAST(std::string file_name)
+// {
+//  yyin = fopen(file_name.c_str(), "r");
+//  if(yyin == NULL){
+//    std::cerr << "Couldn't open input file: " << file_name << std::endl;
+//    exit(1);
+//  }
+//  g_root = nullptr;
+//  yyparse();
+//  return g_root;
+// }

@@ -61,9 +61,9 @@ IS  (u|U|l|L)*
 {D}+{IS}?		    {yylval.number_int = strtol(yytext, NULL, 0); return(INT_CONSTANT);}
 L?'(\\.|[^\\'])+'	{yylval.number_int = strtol(yytext, NULL, 0); return(INT_CONSTANT);}
 
-{D}+{E}{FS}?		    {yylval.number_float = strtod(yytext, NULL); return(FLOAT_CONSTANT);}
-{D}*"."{D}+({E})?{FS}?	{yylval.number_float = strtod(yytext, NULL); return(FLOAT_CONSTANT);}
-{D}+"."{D}*({E})?{FS}?	{yylval.number_float = strtod(yytext, NULL); return(FLOAT_CONSTANT);}
+{D}+{E}{FS}?            {yylval.number_float = strtof(yytext, NULL); return(FLOAT_CONSTANT);}
+{D}*"."{D}+({E})?{FS}?	{yylval.number_float = strtof(yytext, NULL); return(FLOAT_CONSTANT);}
+{D}+"."{D}*({E})?{FS}?	{yylval.number_float = strtof(yytext, NULL); return(FLOAT_CONSTANT);}
 
 
 L?\"(\\.|[^\\"])*\"	{yylval.string = malloc(sizeof(char) * (yyleng - 1)); memcpy(yylval.string, yytext + 1, yyleng - 2); yylval.string[yyleng - 2] = '\0'; return(STRING_LITERAL);}

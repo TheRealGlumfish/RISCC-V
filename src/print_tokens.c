@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "src/parser.tab.h"
+#include "parser.tab.h"
 
 YYSTYPE yylval;
 

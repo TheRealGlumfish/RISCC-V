@@ -93,14 +93,14 @@ primary_expression
 		$$ = (Expr){ .type = CONSTANT_EXPR, .constant = constantExprCreate(CHAR_TYPE, true) };
         $$.constant.string_const = $1;
     }
-	| '(' expression ')'
+	| OPEN_BRACKET expression CLOSE_BRACKET
 	;
 
 postfix_expression
 	: primary_expression
-	| postfix_expression '[' expression ']'
-	| postfix_expression '(' ')'
-	| postfix_expression '(' argument_expression_list ')'
+	| postfix_expression OPEN_SQUARE expression CLOSE_SQUARE
+	| postfix_expression OPEN_BRACKET CLOSE_BRACKET
+	| postfix_expression OPEN_BRACKET argument_expression_list CLOSE_BRACKET
 	| postfix_expression '.' IDENTIFIER
 	| postfix_expression PTR_OP IDENTIFIER
 	| postfix_expression INC_OP
@@ -109,7 +109,7 @@ postfix_expression
 
 argument_expression_list
 	: assignment_expression
-	| argument_expression_list ',' assignment_expression
+	| argument_expression_list COMMA assignment_expression
 	;
 
 unary_expression
@@ -118,33 +118,33 @@ unary_expression
 	| DEC_OP unary_expression
 	| unary_operator cast_expression
 	| SIZEOF unary_expression
-	| SIZEOF '(' type_name ')'
+	| SIZEOF OPEN_BRACKET type_name CLOSE_BRACKET
 	;
 unary_operator
-	: '&'
-	| '*'
-	| '+'
-	| '-'
-	| '~'
-	| '!'
+	: ADD_OP
+	| MUL_OP
+	| ADD_OP
+	| SUB_OP
+	| NOT_OP
+	| NOT_LOGIC
 	;
 
 cast_expression
 	: unary_expression
-	| '(' type_name ')' cast_expression
+	| OPEN_BRACKET type_name CLOSE_BRACKET cast_expression
 	;
 
 multiplicative_expression
 	: cast_expression
-	| multiplicative_expression '*' cast_expression
-	| multiplicative_expression '/' cast_expression
-	| multiplicative_expression '%' cast_expression
+	| multiplicative_expression MUL_OP cast_expression
+	| multiplicative_expression DIV_OP cast_expression
+	| multiplicative_expression MOD_OP cast_expression
 	;
 
 additive_expression
 	: multiplicative_expression
-	| additive_expression '+' multiplicative_expression
-	| additive_expression '-' multiplicative_expression
+	| additive_expression ADD_OP multiplicative_expression
+	| additive_expression SUB_OP multiplicative_expression
 	;
 
 shift_expression
@@ -155,8 +155,8 @@ shift_expression
 
 relational_expression
 	: shift_expression
-	| relational_expression '<' shift_expression
-	| relational_expression '>' shift_expression
+	| relational_expression LT_OP shift_expression
+	| relational_expression GT_OP shift_expression
 	| relational_expression LE_OP shift_expression
 	| relational_expression GE_OP shift_expression
 	;
@@ -169,17 +169,17 @@ equality_expression
 
 and_expression
 	: equality_expression
-	| and_expression '&' equality_expression
+	| and_expression ADD_OP equality_expression
 	;
 
 exclusive_or_expression
 	: and_expression
-	| exclusive_or_expression '^' and_expression
+	| exclusive_or_expression XOR_OP and_expression
 	;
 
 inclusive_or_expression
 	: exclusive_or_expression
-	| inclusive_or_expression '|' exclusive_or_expression
+	| inclusive_or_expression OR_OP exclusive_or_expression
 	;
 
 logical_and_expression
@@ -194,7 +194,7 @@ logical_or_expression
 
 conditional_expression
 	: logical_or_expression
-	| logical_or_expression '?' expression ':' conditional_expression
+	| logical_or_expression TERN_OP expression COLON conditional_expression
 	;
 
 assignment_expression
@@ -203,7 +203,7 @@ assignment_expression
 	;
 
 assignment_operator
-	: '='
+	: ASSIGN
 	| MUL_ASSIGN
 	| DIV_ASSIGN
 	| MOD_ASSIGN
@@ -218,7 +218,7 @@ assignment_operator
 
 expression
 	: assignment_expression
-	| expression ',' assignment_expression
+	| expression COMMA assignment_expression
 	;
 
 constant_expression
@@ -226,8 +226,8 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers ';'
-	| declaration_specifiers init_declarator_list ';'
+	: declaration_specifiers SEMI_COLON
+	| declaration_specifiers init_declarator_list SEMI_COLON
 	;
 
 declaration_specifiers
@@ -239,12 +239,12 @@ declaration_specifiers
 
 init_declarator_list
 	: init_declarator
-	| init_declarator_list ',' init_declarator
+	| init_declarator_list COMMA init_declarator
 	;
 
 init_declarator
 	: declarator
-	| declarator '=' initializer
+	| declarator ASSIGN initializer
 	;
 
 storage_class_specifier
@@ -273,8 +273,8 @@ type_specifier
 	;
 
 struct_specifier
-	: STRUCT IDENTIFIER '{' struct_declaration_list '}'
-	| STRUCT '{' struct_declaration_list '}'
+	: STRUCT IDENTIFIER OPEN_BRACE struct_declaration_list CLOSE_BRACE
+	| STRUCT OPEN_BRACE struct_declaration_list CLOSE_BRACE
 	| STRUCT IDENTIFIER
 	;
 
@@ -284,7 +284,7 @@ struct_declaration_list
 	;
 
 struct_declaration
-	: specifier_qualifier_list struct_declarator_list ';'
+	: specifier_qualifier_list struct_declarator_list SEMI_COLON
 	;
 
 specifier_qualifier_list
@@ -294,29 +294,29 @@ specifier_qualifier_list
 
 struct_declarator_list
 	: struct_declarator
-	| struct_declarator_list ',' struct_declarator
+	| struct_declarator_list COMMA struct_declarator
 	;
 
 struct_declarator
 	: declarator
-	| ':' constant_expression
-	| declarator ':' constant_expression
+	| COLON constant_expression
+	| declarator COLON constant_expression
 	;
 
 enum_specifier
-	: ENUM '{' enumerator_list '}'
-	| ENUM IDENTIFIER '{' enumerator_list '}'
+	: ENUM OPEN_BRACE enumerator_list CLOSE_BRACE
+	| ENUM IDENTIFIER OPEN_BRACE enumerator_list CLOSE_BRACE
 	| ENUM IDENTIFIER
 	;
 
 enumerator_list
 	: enumerator
-	| enumerator_list ',' enumerator
+	| enumerator_list COMMA enumerator
 	;
 
 enumerator
 	: IDENTIFIER
-	| IDENTIFIER '=' constant_expression
+	| IDENTIFIER ASSIGN constant_expression
 	;
 
 declarator
@@ -329,24 +329,24 @@ direct_declarator
 		$$ = new Identifier(*$1);
 		delete $1;
 	}
-	| '(' declarator ')'
-	| direct_declarator '[' constant_expression ']'
-	| direct_declarator '[' ']'
-	| direct_declarator '(' parameter_list ')'
-	| direct_declarator '(' identifier_list ')'
-	| direct_declarator '(' ')' {
+	| OPEN_BRACKET declarator CLOSE_BRACKET
+	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE
+	| direct_declarator OPEN_SQUARE CLOSE_SQUARE
+	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET
+	| direct_declarator OPEN_BRACKET identifier_list CLOSE_BRACKET
+	| direct_declarator OPEN_BRACKET CLOSE_BRACKET {
 		$$ = new DirectDeclarator($1);
 	}
 	;
 
 pointer
-	: '*'
-	| '*' pointer
+	: MUL_OP
+	| MUL_OP pointer
 	;
 
 parameter_list
 	: parameter_declaration
-	| parameter_list ',' parameter_declaration
+	| parameter_list COMMA parameter_declaration
 	;
 
 parameter_declaration
@@ -357,7 +357,7 @@ parameter_declaration
 
 identifier_list
 	: IDENTIFIER
-	| identifier_list ',' IDENTIFIER
+	| identifier_list COMMA IDENTIFIER
 	;
 
 type_name
@@ -372,26 +372,26 @@ abstract_declarator
 	;
 
 direct_abstract_declarator
-	: '(' abstract_declarator ')'
-	| '[' ']'
-	| '[' constant_expression ']'
-	| direct_abstract_declarator '[' ']'
-	| direct_abstract_declarator '[' constant_expression ']'
-	| '(' ')'
-	| '(' parameter_list ')'
-	| direct_abstract_declarator '(' ')'
-	| direct_abstract_declarator '(' parameter_list ')'
+	: OPEN_BRACKET abstract_declarator CLOSE_BRACKET
+	| OPEN_SQUARE CLOSE_SQUARE
+	| OPEN_SQUARE constant_expression CLOSE_SQUARE
+	| direct_abstract_declarator OPEN_SQUARE CLOSE_SQUARE
+	| direct_abstract_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE
+	| OPEN_BRACKET CLOSE_BRACKET
+	| OPEN_BRACKET parameter_list CLOSE_BRACKET
+	| direct_abstract_declarator OPEN_BRACKET CLOSE_BRACKET
+	| direct_abstract_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET
 	;
 
 initializer
 	: assignment_expression
-	| '{' initializer_list '}'
-	| '{' initializer_list ',' '}'
+	| OPEN_BRACE initializer_list CLOSE_BRACE
+	| OPEN_BRACE initializer_list COMMA CLOSE_BRACE
 	;
 
 initializer_list
 	: initializer
-	| initializer_list ',' initializer
+	| initializer_list COMMA initializer
 	;
 
 statement
@@ -404,24 +404,24 @@ statement
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement
-	| CASE constant_expression ':' statement
-	| DEFAULT ':' statement
+	: IDENTIFIER COLON statement
+	| CASE constant_expression COLON statement
+	| DEFAULT COLON statement
 	;
 
 compound_statement
-	: '{' '}' {
+	: OPEN_BRACE CLOSE_BRACE {
 		// TODO: correct this
 		$$ = nullptr;
 	}
-	| '{' statement_list '}' {
+	| OPEN_BRACE statement_list CLOSE_BRACE {
 		$$ = $2;
 	}
-	| '{' declaration_list '}' {
+	| OPEN_BRACE declaration_list CLOSE_BRACE {
 		// TODO: correct this
 		$$ = nullptr;
 	}
-	| '{' declaration_list statement_list '}'  {
+	| OPEN_BRACE declaration_list statement_list CLOSE_BRACE  {
 		// TODO: correct this
 		$$ = nullptr;
 	}
@@ -438,31 +438,31 @@ statement_list
 	;
 
 expression_statement
-	: ';'
-	| expression ';' { $$ = $1; }
+	: SEMI_COLON
+	| expression SEMI_COLON { $$ = $1; }
 	;
 
 selection_statement
-	: IF '(' expression ')' statement
-	| IF '(' expression ')' statement ELSE statement
-	| SWITCH '(' expression ')' statement
+	: IF OPEN_BRACKET expression CLOSE_BRACKET statement
+	| IF OPEN_BRACKET expression CLOSE_BRACKET statement ELSE statement
+	| SWITCH OPEN_BRACKET expression CLOSE_BRACKET statement
 	;
 
 iteration_statement
-	: WHILE '(' expression ')' statement
-	| DO statement WHILE '(' expression ')' ';'
-	| FOR '(' expression_statement expression_statement ')' statement
-	| FOR '(' expression_statement expression_statement expression ')' statement
+	: WHILE OPEN_BRACKET expression CLOSE_BRACKET statement
+	| DO statement WHILE OPEN_BRACKET expression CLOSE_BRACKET SEMI_COLON
+	| FOR OPEN_BRACKET expression_statement expression_statement CLOSE_BRACKET statement
+	| FOR OPEN_BRACKET expression_statement expression_statement expression CLOSE_BRACKET statement
 	;
 
 jump_statement
-	: GOTO IDENTIFIER ';'
-	| CONTINUE ';'
-	| BREAK ';'
-	| RETURN ';' {
+	: GOTO IDENTIFIER SEMI_COLON
+	| CONTINUE SEMI_COLON
+	| BREAK SEMI_COLON
+	| RETURN SEMI_COLON {
 		$$ = new ReturnStatement(nullptr);
 	}
-	| RETURN expression ';' {
+	| RETURN expression SEMI_COLON {
 		$$ = new ReturnStatement($2);
 	}
 	;

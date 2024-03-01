@@ -170,7 +170,8 @@ const char* token_to_string(yytoken_kind_t token)
             return "LessThan";
         case GT_OP:
             return "GreaterThan";
-        case EXP_OP: // TODO: what is this?
+        case XOR_OP:
+            return "Xor";
         case OR_LOGIC:
             return "Or";
         case TERN_OP:

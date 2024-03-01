@@ -88,8 +88,8 @@ L?\"(\\.|[^\\"])*\"	{yylval.string = malloc(sizeof(char) * (yyleng - 1)); memcpy
 
 "->"			 {return(PTR_OP);}
 
-"&&"			 {return(AND_OP);}
-"||"			 {return(OR_OP);}
+"&&"			 {return(AND_LOGIC);}
+"||"			 {return(OR_LOGIC);}
 "~"			   {return(NOT_OP);}
 
 "<="			 {return(LE_OP);}
@@ -108,8 +108,8 @@ L?\"(\\.|[^\\"])*\"	{yylval.string = malloc(sizeof(char) * (yyleng - 1)); memcpy
 ("]"|":>") {return(CLOSE_SQUARE);}
 "."			   {return(PERIOD);}
 
-"&"			   {return(AND_LOGIC);}
-"|"			   {return(OR_LOGIC);}
+"&"			   {return(AND_OP);}
+"|"			   {return(OR_OP);}
 "!"			   {return(NOT_LOGIC);}
 
 "-"			   {return(SUB_OP);}
@@ -119,7 +119,7 @@ L?\"(\\.|[^\\"])*\"	{yylval.string = malloc(sizeof(char) * (yyleng - 1)); memcpy
 "%"			   {return(MOD_OP);}
 "<"			   {return(LT_OP);}
 ">"			   {return(GT_OP);}
-"^"			   {return(EXP_OP);}
+"^"			   {return(XOR_OP);}
 
 "?"			   {return(TERN_OP);}
 ":"			   {return(COLON);}

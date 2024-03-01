@@ -31,7 +31,7 @@
 %token SEMI_COLON OPEN_BRACE CLOSE_BRACE COMMA COLON ASSIGN 
 %token OPEN_BRACKET CLOSE_BRACKET OPEN_SQUARE CLOSE_SQUARE
 %token PERIOD AND_LOGIC NOT_LOGIC NOT_OP SUB_OP ADD_OP MUL_OP DIV_OP MOD_OP
-%token LT_OP GT_OP EXP_OP OR_LOGIC TERN_OP
+%token LT_OP GT_OP XOR_OP OR_LOGIC TERN_OP
 
 %type <expr_node> translation_unit external_declaration function_definition primary_expression postfix_expression argument_expression_list
 %type <expr_node> unary_expression cast_expression multiplicative_expression additive_expression shift_expression relational_expression

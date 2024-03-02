@@ -210,17 +210,17 @@ assignment_expression
 	;
 
 assignment_operator
-	: ASSIGN
-	| MUL_ASSIGN
-	| DIV_ASSIGN
-	| MOD_ASSIGN
-	| ADD_ASSIGN
-	| SUB_ASSIGN
-	| LEFT_ASSIGN
-	| RIGHT_ASSIGN
-	| AND_ASSIGN
-	| XOR_ASSIGN
-	| OR_ASSIGN
+	: ASSIGN { $$ = NOT; } // supposed to be zesty
+	| MUL_ASSIGN { $$ = MUL; } 
+	| DIV_ASSIGN { $$ = DIV; } 
+	| MOD_ASSIGN { $$ = MOD; } 
+	| ADD_ASSIGN { $$ = ADD; } 
+	| SUB_ASSIGN { $$ = SUB; } 
+	| LEFT_ASSIGN { $$ = LEFT; } 
+	| RIGHT_ASSIGN { $$ = RIGHT; } 
+	| AND_ASSIGN { $$ = AND; } 
+	| XOR_ASSIGN { $$ = XOR; } 
+	| OR_ASSIGN { $$ = OR; } 
 	;
 
 expression

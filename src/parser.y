@@ -18,7 +18,8 @@
     char* string;
     int32_t number_int;
     float number_float;
-    Expr expr_node;
+    Expr* expr_node;
+    Operator operator;
 }
 
 %token IDENTIFIER INT_CONSTANT FLOAT_CONSTANT STRING_LITERAL
@@ -43,8 +44,9 @@
 %type <node> compound_statement declaration_list expression_statement selection_statement iteration_statement jump_statement
 
 %type <nodes> statement_list
+%type <operator> unary_operator
 
-%type <string> unary_operator assignment_operator storage_class_specifier
+%type <string> assignment_operator storage_class_specifier
 
 %type <number_int> INT_CONSTANT
 %type <number_float> FLOAT_CONSTANT
@@ -79,19 +81,23 @@ function_definition
 
 primary_expression
 	: IDENTIFIER {
-
+        $$ = exprCreate(VARIABLE_EXPR);
+        $$->variable = variableExprCreate($1);
     }
 	| INT_CONSTANT {
-		$$ = (Expr){ .type = CONSTANT_EXPR, .constant = constantExprCreate(INT_TYPE, false) };
-        $$.constant.int_const = $1;
+        $$ = exprCreate(CONSTANT_EXPR);
+		$$->constant = constantExprCreate(INT_TYPE, false);
+        $$->constant->int_const = $1;
 	}
     | FLOAT_CONSTANT {
-		$$ = (Expr){ .type = CONSTANT_EXPR, .constant = constantExprCreate(FLOAT_TYPE, false) };
-        $$.constant.int_const = $1;
+        $$ = exprCreate(CONSTANT_EXPR);
+		$$->constant = constantExprCreate(FLOAT_TYPE, false);
+        $$->constant->int_const = $1;
     }
 	| STRING_LITERAL {
-		$$ = (Expr){ .type = CONSTANT_EXPR, .constant = constantExprCreate(CHAR_TYPE, true) };
-        $$.constant.string_const = $1;
+        $$ = exprCreate(CONSTANT_EXPR);
+		$$->constant = constantExprCreate(CHAR_TYPE, true);
+        $$->constant->int_const = $1;
     }
 	| OPEN_BRACKET expression CLOSE_BRACKET
 	;
@@ -120,13 +126,14 @@ unary_expression
 	| SIZEOF unary_expression
 	| SIZEOF OPEN_BRACKET type_name CLOSE_BRACKET
 	;
+ 
 unary_operator
-	: ADD_OP
-	| MUL_OP
-	| ADD_OP
-	| SUB_OP
-	| NOT_OP
-	| NOT_LOGIC
+	: AND_OP { $$ = AND; } 
+	| MUL_OP { $$ = MUL; }
+	| ADD_OP { $$ = ADD; }
+	| SUB_OP { $$ = SUB; }
+	| NOT_OP { $$ = NOT_BIT; }
+	| NOT_LOGIC { $$ = NOT; }
 	;
 
 cast_expression

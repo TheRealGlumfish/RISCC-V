@@ -107,7 +107,7 @@ postfix_expression
 	| postfix_expression OPEN_SQUARE expression CLOSE_SQUARE
 	| postfix_expression OPEN_BRACKET CLOSE_BRACKET
 	| postfix_expression OPEN_BRACKET argument_expression_list CLOSE_BRACKET
-	| postfix_expression '.' IDENTIFIER
+	| postfix_expression PERIOD IDENTIFIER
 	| postfix_expression PTR_OP IDENTIFIER
 	| postfix_expression INC_OP
 	| postfix_expression DEC_OP

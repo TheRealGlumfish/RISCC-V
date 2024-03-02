@@ -130,7 +130,7 @@ unary_expression
 unary_operator
 	: AND_OP { $$ = AND; } 
 	| MUL_OP { $$ = MUL; }
-	| ADD_OP { $$ = ADD; }
+	| ADD_OP { $$ = ADD_BIT; }
 	| SUB_OP { $$ = SUB; }
 	| NOT_OP { $$ = NOT_BIT; }
 	| NOT_LOGIC { $$ = NOT; }
@@ -176,7 +176,7 @@ equality_expression
 
 and_expression
 	: equality_expression
-	| and_expression ADD_OP equality_expression
+	| and_expression AND_OP equality_expression
 	;
 
 exclusive_or_expression
@@ -191,12 +191,12 @@ inclusive_or_expression
 
 logical_and_expression
 	: inclusive_or_expression
-	| logical_and_expression AND_OP inclusive_or_expression
+	| logical_and_expression AND_LOGIC inclusive_or_expression
 	;
 
 logical_or_expression
 	: logical_and_expression
-	| logical_or_expression OR_OP logical_and_expression
+	| logical_or_expression OR_LOGIC logical_and_expression
 	;
 
 conditional_expression

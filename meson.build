@@ -19,5 +19,5 @@ arguments : ['@INPUT@', '--defines=@OUTPUT1@', '--output=@OUTPUT0@'])
 lexfiles = lexgen.process('src/lexer.flex')
 bisonfiles = bisongen.process('src/parser.y')
 
-executable('print_tokens', 'src/print_tokens.c', lexfiles, bisonfiles)
-
+executable('print_tokens', ['src/ast.c', 'src/print_tokens.c'], lexfiles, bisonfiles)
+executable('print_tree', ['src/ast.c', 'src/print_tree.c'], lexfiles, bisonfiles)

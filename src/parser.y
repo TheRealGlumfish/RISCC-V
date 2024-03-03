@@ -1,6 +1,7 @@
 // Adapted from: https://www.lysator.liu.se/c/ANSI-C-grammar-y.html
 
 %code requires{
+    #include <stdlib.h>
     #include <stdio.h>
     #include <stdint.h>
     #include <stdbool.h>
@@ -8,6 +9,7 @@
     #include "src/ast.h"
 
     // extern Node *g_root;
+    extern Expr *rootExpr;
     extern FILE *yyin;
     int yylex(void);
     void yyerror(const char *);
@@ -19,6 +21,7 @@
     int32_t number_int;
     float number_float;
     Expr* expr_node;
+    FuncExpr* func_node;
     Operator operator;
 }
 
@@ -34,30 +37,33 @@
 %token PERIOD AND_LOGIC NOT_LOGIC NOT_OP SUB_OP ADD_OP MUL_OP DIV_OP MOD_OP
 %token LT_OP GT_OP XOR_OP OR_LOGIC TERN_OP
 
-%type <expr_node> translation_unit external_declaration function_definition primary_expression postfix_expression argument_expression_list
+%type <expr_node> translation_unit external_declaration function_definition primary_expression postfix_expression
+%type <func_node> argument_expression_list
 %type <expr_node> unary_expression cast_expression multiplicative_expression additive_expression shift_expression relational_expression
-%type <node> equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
-%type <node> conditional_expression assignment_expression expression constant_expression declaration declaration_specifiers init_declarator_list
+%type <expr_node> equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
+%type <expr_node> conditional_expression assignment_expression expression constant_expression declaration declaration_specifiers init_declarator_list
 %type <node> init_declarator type_specifier struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list
 %type <node> struct_declarator enum_specifier enumerator_list enumerator declarator direct_declarator pointer parameter_list parameter_declaration
 %type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list statement labeled_statement
 %type <node> compound_statement declaration_list expression_statement selection_statement iteration_statement jump_statement
 
 %type <nodes> statement_list
-%type <operator> unary_operator
+%type <operator> unary_operator assignment_operator
 
-%type <string> assignment_operator storage_class_specifier
+%type <string> storage_class_specifier
 
 %type <number_int> INT_CONSTANT
 %type <number_float> FLOAT_CONSTANT
 %type <string> IDENTIFIER STRING_LITERAL
 
 
-%start ROOT
+%start expression
 %%
 
 ROOT
-  : translation_unit { g_root = $1; }
+  : translation_unit { 
+        // g_root = $1; 
+    }
 
 translation_unit
 	: external_declaration { $$ = $1; }
@@ -72,7 +78,7 @@ external_declaration
 function_definition
 	: declaration_specifiers declarator declaration_list compound_statement
 	| declaration_specifiers declarator compound_statement {
-		$$ = new FunctionDefinition($1, $2, $3);
+		// $$ = new FunctionDefinition($1, $2, $3);
 	}
 	| declarator declaration_list compound_statement
 	| declarator compound_statement
@@ -97,139 +103,305 @@ primary_expression
 	| STRING_LITERAL {
         $$ = exprCreate(CONSTANT_EXPR);
 		$$->constant = constantExprCreate(CHAR_TYPE, true);
-        $$->constant->int_const = $1;
+        $$->constant->string_const = $1;
     }
-	| OPEN_BRACKET expression CLOSE_BRACKET
+	| OPEN_BRACKET expression CLOSE_BRACKET { $$ = $2; }
 	;
 
 postfix_expression
-	: primary_expression
-	| postfix_expression OPEN_SQUARE expression CLOSE_SQUARE
-	| postfix_expression OPEN_BRACKET CLOSE_BRACKET
-	| postfix_expression OPEN_BRACKET argument_expression_list CLOSE_BRACKET
+	: primary_expression { $$ = $1; }
+	| postfix_expression OPEN_SQUARE expression CLOSE_SQUARE {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(DEREF);
+        $$->operation->op1 = exprCreate(OPERATION_EXPR);
+        $$->operation->op1->operation = operationExprCreate(ADD);
+        $$->operation->op1->operation->op1 = $1; // Potentially may have to manually override the primative type field
+        $$->operation->op1->operation->op1 = $3;
+        }
+	| postfix_expression OPEN_BRACKET CLOSE_BRACKET {
+        if($1->type == VARIABLE_EXPR)
+        {
+           $$ = exprCreate(FUNC_EXPR);
+           $$->function = funcExprCreate(0);
+           $$->function->ident = $1->variable->ident;
+           $1->variable->ident = NULL;
+           exprDestroy($1);
+        }
+        else
+        {
+            fprintf(stderr, "Called object is not a function, exitting..."); // TODO: Maybe add the type of the object in the error message
+            exit(-1);
+        }   
+        }
+	| postfix_expression OPEN_BRACKET argument_expression_list CLOSE_BRACKET {
+        if($1->type == VARIABLE_EXPR)
+        {
+           $$ = exprCreate(FUNC_EXPR);
+           $$->function = $3;
+           $$->function->ident = $1->variable->ident;
+           $1->variable->ident = NULL;
+           exprDestroy($1);
+        }
+        else
+        {
+            fprintf(stderr, "Called object is not a function, exitting..."); // TODO: Maybe add the type of the object in the error message
+            exit(-1);
+        }   
+        }
 	| postfix_expression PERIOD IDENTIFIER
 	| postfix_expression PTR_OP IDENTIFIER
-	| postfix_expression INC_OP
-	| postfix_expression DEC_OP
+	| postfix_expression INC_OP {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(INC_POST);
+        $$->operation->op1 = $1;
+        }
+	| postfix_expression DEC_OP {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(DEC_POST);
+        $$->operation->op1 = $1;
+        }
 	;
 
 argument_expression_list
-	: assignment_expression
-	| argument_expression_list COMMA assignment_expression
+	: assignment_expression { 
+        $$ = funcExprCreate(1);
+        $$->args[0] = $1;
+        }
+	| argument_expression_list COMMA assignment_expression {
+        $$ = $1;
+        funcExprArgsPush($$, $3);
+        }
 	;
 
 unary_expression
-	: postfix_expression
-	| INC_OP unary_expression
-	| DEC_OP unary_expression
-	| unary_operator cast_expression
-	| SIZEOF unary_expression
+	: postfix_expression { $$ = $1; }
+	| INC_OP unary_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(INC);
+        $$->operation->op1 = $2;
+        }
+	| DEC_OP unary_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(DEC);
+        $$->operation->op1 = $2;
+        }
+	| unary_operator cast_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate($1);
+        $$->operation->op1 = $2;
+        }
+	| SIZEOF unary_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(SIZEOF_OP);
+        $$->operation->op1 = $2;
+        }
 	| SIZEOF OPEN_BRACKET type_name CLOSE_BRACKET
 	;
  
 unary_operator
-	: AND_OP { $$ = AND; } 
-	| MUL_OP { $$ = MUL; }
-	| ADD_OP { $$ = ADD_BIT; }
+	: AND_OP { $$ = ADDRESS; } 
+	| MUL_OP { $$ = DEREF; }
+	| ADD_OP { $$ = ADD; }
 	| SUB_OP { $$ = SUB; }
 	| NOT_OP { $$ = NOT_BIT; }
 	| NOT_LOGIC { $$ = NOT; }
 	;
 
 cast_expression
-	: unary_expression
-	| OPEN_BRACKET type_name CLOSE_BRACKET cast_expression
+	: unary_expression { $$ = $1; }
+	| OPEN_BRACKET type_name CLOSE_BRACKET cast_expression {
+            $$ = $4;
+            fprintf(stderr, "Casts not implemented, ignoring...");
+        } // Casts out of spec
 	;
 
 multiplicative_expression
-	: cast_expression
-	| multiplicative_expression MUL_OP cast_expression
-	| multiplicative_expression DIV_OP cast_expression
-	| multiplicative_expression MOD_OP cast_expression
+	: cast_expression { $$ = $1; }
+	| multiplicative_expression MUL_OP cast_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(MUL);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
+	| multiplicative_expression DIV_OP cast_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(DIV);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
+	| multiplicative_expression MOD_OP cast_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(MOD);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
 	;
 
 additive_expression
-	: multiplicative_expression
-	| additive_expression ADD_OP multiplicative_expression
-	| additive_expression SUB_OP multiplicative_expression
+	: multiplicative_expression { $$ = $1; }
+	| additive_expression ADD_OP multiplicative_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(ADD);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
+	| additive_expression SUB_OP multiplicative_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(SUB);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
 	;
 
 shift_expression
-	: additive_expression
-	| shift_expression LEFT_OP additive_expression
-	| shift_expression RIGHT_OP additive_expression
+	: additive_expression { $$ = $1; }
+	| shift_expression LEFT_OP additive_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(LEFT_SHIFT);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
+	| shift_expression RIGHT_OP additive_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(RIGHT_SHIFT);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
 	;
 
 relational_expression
-	: shift_expression
-	| relational_expression LT_OP shift_expression
-	| relational_expression GT_OP shift_expression
-	| relational_expression LE_OP shift_expression
-	| relational_expression GE_OP shift_expression
+	: shift_expression { $$ = $1; }
+	| relational_expression LT_OP shift_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(LT);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
+	| relational_expression GT_OP shift_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(GT);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
+	| relational_expression LE_OP shift_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(LE);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
+	| relational_expression GE_OP shift_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(GE);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
 	;
 
 equality_expression
-	: relational_expression
-	| equality_expression EQ_OP relational_expression
-	| equality_expression NE_OP relational_expression
+	: relational_expression { $$ = $1; }
+	| equality_expression EQ_OP relational_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(EQ);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
+	| equality_expression NE_OP relational_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(NE);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
 	;
 
 and_expression
-	: equality_expression
-	| and_expression AND_OP equality_expression
+	: equality_expression { $$ = $1; }
+	| and_expression AND_OP equality_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(AND_BIT);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
 	;
 
 exclusive_or_expression
-	: and_expression
-	| exclusive_or_expression XOR_OP and_expression
+	: and_expression { $$ = $1; }
+	| exclusive_or_expression XOR_OP and_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(XOR);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
 	;
 
 inclusive_or_expression
-	: exclusive_or_expression
-	| inclusive_or_expression OR_OP exclusive_or_expression
+	: exclusive_or_expression { $$ = $1; }
+	| inclusive_or_expression OR_OP exclusive_or_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(OR_BIT);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
 	;
 
 logical_and_expression
-	: inclusive_or_expression
-	| logical_and_expression AND_LOGIC inclusive_or_expression
+	: inclusive_or_expression { $$ = $1; }
+	| logical_and_expression AND_LOGIC inclusive_or_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(AND);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
 	;
 
 logical_or_expression
-	: logical_and_expression
-	| logical_or_expression OR_LOGIC logical_and_expression
+	: logical_and_expression { $$ = $1; }
+	| logical_or_expression OR_LOGIC logical_and_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(OR);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        }
 	;
 
 conditional_expression
-	: logical_or_expression
-	| logical_or_expression TERN_OP expression COLON conditional_expression
+	: logical_or_expression { $$ = $1; }
+	| logical_or_expression TERN_OP expression COLON conditional_expression {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(TERN);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
+        $$->operation->op3 = $5;
+        }
 	;
 
 assignment_expression
-	: conditional_expression
+	: conditional_expression { $$ = $1; }
 	| unary_expression assignment_operator assignment_expression
 	;
 
 assignment_operator
-	: ASSIGN { $$ = NOT; } // supposed to be zesty
+	: ASSIGN { $$ = NOT; }
 	| MUL_ASSIGN { $$ = MUL; } 
 	| DIV_ASSIGN { $$ = DIV; } 
 	| MOD_ASSIGN { $$ = MOD; } 
 	| ADD_ASSIGN { $$ = ADD; } 
 	| SUB_ASSIGN { $$ = SUB; } 
-	| LEFT_ASSIGN { $$ = LEFT; } 
-	| RIGHT_ASSIGN { $$ = RIGHT; } 
+	| LEFT_ASSIGN { $$ = LEFT_SHIFT; } 
+	| RIGHT_ASSIGN { $$ = RIGHT_SHIFT; } 
 	| AND_ASSIGN { $$ = AND; } 
 	| XOR_ASSIGN { $$ = XOR; } 
 	| OR_ASSIGN { $$ = OR; } 
 	;
 
 expression
-	: assignment_expression
+	: assignment_expression { 
+        $$ = $1;
+        rootExpr = $1; }
 	| expression COMMA assignment_expression
 	;
 
 constant_expression
-	: conditional_expression
+	: conditional_expression { $$ = $1; }
 	;
 
 declaration
@@ -240,7 +412,9 @@ declaration
 declaration_specifiers
 	: storage_class_specifier
 	| storage_class_specifier declaration_specifiers
-	| type_specifier { $$ = $1; }
+	| type_specifier {
+        // $$ = $1; 
+        }
 	| type_specifier declaration_specifiers
 	;
 
@@ -267,16 +441,16 @@ type_specifier
 	| CHAR
 	| SHORT
 	| INT {
-		$$ = new TypeSpecifier("int");
+		// $$ = new TypeSpecifier("int");
 	}
 	| LONG
 	| FLOAT
 	| DOUBLE
 	| SIGNED
 	| UNSIGNED
-  | struct_specifier
+    | struct_specifier
 	| enum_specifier
-	| TYPE_NAME
+	| TYPE_NAME // Never returned by the lexer
 	;
 
 struct_specifier
@@ -328,13 +502,15 @@ enumerator
 
 declarator
 	: pointer direct_declarator
-	| direct_declarator { $$ = $1; }
+	| direct_declarator { 
+        // $$ = $1; 
+        }
 	;
 
 direct_declarator
 	: IDENTIFIER {
-		$$ = new Identifier(*$1);
-		delete $1;
+		// $$ = new Identifier(*$1);
+		// delete $1;
 	}
 	| OPEN_BRACKET declarator CLOSE_BRACKET
 	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE
@@ -342,7 +518,7 @@ direct_declarator
 	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET
 	| direct_declarator OPEN_BRACKET identifier_list CLOSE_BRACKET
 	| direct_declarator OPEN_BRACKET CLOSE_BRACKET {
-		$$ = new DirectDeclarator($1);
+		// $$ = new DirectDeclarator($1);
 	}
 	;
 
@@ -407,7 +583,9 @@ statement
 	| expression_statement
 	| selection_statement
 	| iteration_statement
-	| jump_statement { $$ = $1; }
+	| jump_statement { 
+        // $$ = $1; 
+        }
 	;
 
 labeled_statement
@@ -419,19 +597,19 @@ labeled_statement
 compound_statement
 	: OPEN_BRACE CLOSE_BRACE {
 		// TODO: correct this
-		$$ = nullptr;
-	}
+		// $$ = nullptr;
+	    }
 	| OPEN_BRACE statement_list CLOSE_BRACE {
-		$$ = $2;
-	}
+		// $$ = $2;
+	    }
 	| OPEN_BRACE declaration_list CLOSE_BRACE {
 		// TODO: correct this
-		$$ = nullptr;
-	}
+		// $$ = nullptr;
+	    }
 	| OPEN_BRACE declaration_list statement_list CLOSE_BRACE  {
 		// TODO: correct this
-		$$ = nullptr;
-	}
+		// $$ = nullptr;
+	    }
 	;
 
 declaration_list
@@ -440,13 +618,16 @@ declaration_list
 	;
 
 statement_list
-	: statement { $$ = new NodeList($1); }
-	| statement_list statement { $1->PushBack($2); $$=$1; }
+	: statement { // $$ = new NodeList($1); 
+        }
+	| statement_list statement { // $1->PushBack($2); $$=$1; 
+        }
 	;
 
 expression_statement
 	: SEMI_COLON
-	| expression SEMI_COLON { $$ = $1; }
+	| expression SEMI_COLON { // $$ = $1; 
+        }
 	;
 
 selection_statement
@@ -467,11 +648,11 @@ jump_statement
 	| CONTINUE SEMI_COLON
 	| BREAK SEMI_COLON
 	| RETURN SEMI_COLON {
-		$$ = new ReturnStatement(nullptr);
-	}
+		// $$ = new ReturnStatement(nullptr);
+	    }
 	| RETURN expression SEMI_COLON {
-		$$ = new ReturnStatement($2);
-	}
+		// $$ = new ReturnStatement($2);
+	    }
 	;
 
 

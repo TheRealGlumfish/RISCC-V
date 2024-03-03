@@ -1,12 +1,13 @@
 #include <stdlib.h>
 
 #include "ast.h"
+#include <stdio.h>
 
 // Expression constructor
 Expr *exprCreate(const ExprType type)
 {
     Expr *expr = malloc(sizeof(Expr));
-    if(expr == NULL)
+    if (expr == NULL)
     {
         abort();
     }
@@ -17,41 +18,42 @@ Expr *exprCreate(const ExprType type)
 // Expression destructor
 void exprDestroy(Expr *expr)
 {
-    switch(expr->type)
+    switch (expr->type)
     {
-        case VARIABLE_EXPR:
-        {
-            variableExprDestroy(expr->variable);
-            break;
-        }
-        case CONSTANT_EXPR:
-        {
-            constantExprDestroy(expr->constant);
-            break;
-        }
-        case OPERATION_EXPR:
-        {
-            operationExprDestroy(expr->operation);
-            break;
-        }
-        case ASSIGN_EXPR:
-        {
-            assignExprDestroy(expr->assignment);
-            break;
-        }
-        case FUNC_EXPR:
-        {
-            funcExprDestroy(expr->function);
-            break;
-        }
+    case VARIABLE_EXPR:
+    {
+        variableExprDestroy(expr->variable);
+        break;
     }
+    case CONSTANT_EXPR:
+    {
+        constantExprDestroy(expr->constant);
+        break;
+    }
+    case OPERATION_EXPR:
+    {
+        operationExprDestroy(expr->operation);
+        break;
+    }
+    case ASSIGN_EXPR:
+    {
+        assignExprDestroy(expr->assignment);
+        break;
+    }
+    case FUNC_EXPR:
+    {
+        funcExprDestroy(expr->function);
+        break;
+    }
+    }
+    free(expr);
 }
 
 // Variable expression constructor
 VariableExpr *variableExprCreate(char *ident)
 {
     VariableExpr *expr = malloc(sizeof(VariableExpr));
-    if(expr == NULL)
+    if (expr == NULL)
     {
         abort();
     }
@@ -60,10 +62,10 @@ VariableExpr *variableExprCreate(char *ident)
 }
 
 // Variable expresssion destructor
-void variableExprDestroy(VariableExpr *dest)
+void variableExprDestroy(VariableExpr *expr)
 {
-    free(dest->ident);
-    free(dest);
+    free(expr->ident);
+    free(expr);
 }
 
 // Constant expression constructor
@@ -80,103 +82,149 @@ ConstantExpr *constantExprCreate(const PrimativeType type, const bool isString)
 }
 
 // Constant expression destructor
-void constantExprDestroy(ConstantExpr *dest)
+void constantExprDestroy(ConstantExpr *expr)
 {
-    if(dest->isString)
+    if (expr->isString)
     {
-        free(dest->string_const);
+        free(expr->string_const);
     }
-    free(dest);
+    free(expr);
 }
 
 // Operation expression constructor
 OperationExpr *operationExprCreate(const Operator operator)
 {
     OperationExpr *expr = malloc(sizeof(OperationExpr));
-    if(expr == NULL)
+    if (expr == NULL)
     {
         abort();
     }
-    expr->operator = operator;
+    expr->op1 = NULL;
+    expr->op2 = NULL;
+    expr->op3 = NULL;
+    expr->operator= operator;
     return expr;
 }
 
 // Operation expression destructor
-void operationExprDestroy(OperationExpr *dest)
+void operationExprDestroy(OperationExpr *expr)
 {
-    switch(dest->operator)
+    exprDestroy(expr->op1);
+    if (expr->op2 != NULL)
     {
-        case NOT:
-        {
-            exprDestroy(dest->op1);
-            break;
-        }
+        exprDestroy(expr->op2);
     }
-    free(dest);
+    if (expr->op3 != NULL)
+    {
+        exprDestroy(expr->op3);
+    }
+    free(expr);
 }
 
 // Assignment expression constructor
-AssignExpr *assignExprCreate(char *ident, Expr *op)
+AssignExpr *assignExprCreate(char *ident, Expr *op, const Operator operator)
 {
     AssignExpr *expr = malloc(sizeof(AssignExpr));
-    if(expr == NULL)
+    if (expr == NULL)
     {
         abort();
     }
     expr->ident = ident;
     expr->op = op;
+    expr->operator= operator;
     return expr;
 }
 
 // Assignment expression destructor
-void assignExprDestroy(AssignExpr *dest)
+void assignExprDestroy(AssignExpr *expr)
 {
-    exprDestroy(dest->op);
-    free(dest->ident);
-    free(dest);
+    exprDestroy(expr->op);
+    free(expr->ident);
+    free(expr);
 }
 
 // Function call expression constructor
-// Important: size must be greater than 0, if the allocation fails abort() is called
-FuncExpr *funcExprCreate(char *ident, const size_t argsSize, const PrimativeType type)
+// Important: if the allocation fails abort() is called
+FuncExpr *funcExprCreate(const size_t argsSize)
 {
-    FuncExpr *dest = malloc(sizeof(FuncExpr));
-    if(dest == NULL)
+    FuncExpr *expr = malloc(sizeof(FuncExpr));
+    if (expr == NULL)
     {
         abort();
     }
-    dest->args = malloc(sizeof(Expr) * argsSize);
-    if(dest->args == NULL)
+    if (argsSize != 0)
     {
-        abort();
+        expr->args = malloc(sizeof(Expr) * argsSize);
+        if (expr->args == NULL)
+        {
+            abort();
+        }
     }
-    dest->ident = ident;
-    dest->argsSize = argsSize;
-    dest->argsCapacity = argsSize;
-    dest->type = type;
-    return dest;
+    else
+    {
+        expr->args = NULL;
+    }
+    expr->ident = NULL;
+    expr->argsSize = argsSize;
+    expr->argsCapacity = argsSize;
+    return expr;
 }
 
 // Resizes the size of the argument list
 // Important: size must greater than 0
-void funcExprResize(FuncExpr *dest, const size_t argsSize)
+void funcExprArgsResize(FuncExpr *expr, const size_t argsSize)
 {
-    if(dest->argsSize > dest->argsCapacity)
+    if (expr->argsSize != 0)
     {
-        dest->args = realloc(dest->args, sizeof(Expr) * dest->argsCapacity * 2);
-        if(dest->args == NULL)
+        if (expr->argsSize > expr->argsCapacity)
+        {
+            expr->args = realloc(expr->args, sizeof(Expr *) * expr->argsCapacity * 2);
+            if (expr->args == NULL)
+            {
+                abort();
+            }
+            expr->argsCapacity *= 2;
+        }
+    }
+    else
+    {
+        expr->args = malloc(sizeof(Expr *) * argsSize);
+        if (expr->args == NULL)
         {
             abort();
         }
-        dest->argsCapacity *= 2;
+        expr->argsCapacity = argsSize;
     }
-    dest->argsSize = argsSize;
+    expr->argsSize = argsSize;
+}
+
+// Adds an argument to the end of the argument list
+void funcExprArgsPush(FuncExpr *expr, Expr *arg)
+{
+    fprintf(stderr, "%zu", expr->argsSize);
+    funcExprArgsResize(expr, expr->argsSize + 1);
+    expr->args[expr->argsSize - 1] = arg;
+}
+
+// Removes an argument from the end of the argument list
+Expr *funcExprArgsPop(FuncExpr *expr)
+{
+    Expr *arg = expr->args[expr->argsSize - 1];
+    funcExprArgsResize(expr, expr->argsSize - 1);
+    return arg;
 }
 
 // Function expression destructor
-void funcExprDestroy(FuncExpr *dest)
+void funcExprDestroy(FuncExpr *expr)
 {
-    free(dest->ident);
-    free(dest->args);
-    free(dest);
+    free(expr->ident);
+    if (expr->argsCapacity != 0)
+    {
+        for (size_t i = 0; i < expr->argsSize; i++)
+        {
+            exprDestroy(expr->args[i]);
+        }
+        free(expr->args);
+    }
+    free(expr);
 }

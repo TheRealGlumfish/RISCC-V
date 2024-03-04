@@ -176,18 +176,23 @@ void funcExprArgsResize(FuncExpr *expr, const size_t argsSize)
 {
     if (expr->argsSize != 0)
     {
+        expr->argsSize = argsSize;
         if (expr->argsSize > expr->argsCapacity)
         {
-            expr->args = realloc(expr->args, sizeof(Expr *) * expr->argsCapacity * 2);
+            while (expr->argsSize > expr->argsCapacity)
+            {
+                expr->argsCapacity *= 2;
+            }
+            expr->args = realloc(expr->args, sizeof(Expr *) * expr->argsCapacity);
             if (expr->args == NULL)
             {
                 abort();
             }
-            expr->argsCapacity *= 2;
         }
     }
     else
     {
+        expr->argsSize = argsSize;
         expr->args = malloc(sizeof(Expr *) * argsSize);
         if (expr->args == NULL)
         {
@@ -195,13 +200,11 @@ void funcExprArgsResize(FuncExpr *expr, const size_t argsSize)
         }
         expr->argsCapacity = argsSize;
     }
-    expr->argsSize = argsSize;
 }
 
 // Adds an argument to the end of the argument list
 void funcExprArgsPush(FuncExpr *expr, Expr *arg)
 {
-    fprintf(stderr, "%zu", expr->argsSize);
     funcExprArgsResize(expr, expr->argsSize + 1);
     expr->args[expr->argsSize - 1] = arg;
 }

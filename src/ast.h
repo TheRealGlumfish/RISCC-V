@@ -186,20 +186,21 @@ typedef struct ExprStmt
 
 typedef struct CompoundStmt
 {
+    // declarations are not expressions - need to fix.
     size_t declSize;
     size_t declCapacity;
     Expr **decls;
 
     size_t stmtSize;
     size_t stmtCapacity;
-    Expr **stmts;
+    Stmt **stmts;
 
 } CompoundStmt;
 
 typedef struct LabelStmt
 {
-    char *ident;
-    Expr *caseLabel; // NULL for default label
+    char *ident; // not NULL for goto
+    Expr *caseLabel; // not NULL for case
     Stmt *body;
 
 } LabelStmt;
@@ -231,5 +232,36 @@ void funcExprArgsResize(FuncExpr *expr, size_t argsSize);
 void funcExprArgsPush(FuncExpr *expr, Expr *arg);
 Expr *funcExprArgsPop(FuncExpr *expr);
 void funcExprDestroy(FuncExpr *expr);
+
+Stmt *stmtCreate(const StmtType type);
+void stmtDestroy(Stmt* stmt);
+
+Stmt *whileStmtCreate(Expr *condition, Stmt *body, bool doWhile);
+void *whileStmtDestroy(WhileStmt *whileStmt);
+
+ForStmt *forStmtCreate(Stmt *init, Stmt *condition, Stmt *body);
+void forStmtDestroy(ForStmt *forStmt);
+
+IfStmt *ifStmtCreate(Expr *condition, Stmt *trueBody);
+void ifStmtDestroy(IfStmt *ifStmt);
+
+SwitchStmt *switchStmtCreate(Expr *selector, Stmt *body);
+void switchStmtDestroy(SwitchStmt *switchStmt);
+
+ExprStmt *exprStmtCreate();
+void exprStmtDestroy(ExprStmt *exprStmt);
+
+CompoundStmt *compoundStmtCreate(const size_t declSize, const size_t stmtSize);
+void compoundStmtDeclResize(CompoundStmt *stmt, const size_t declSize);
+void compoundStmtStmtResize(CompoundStmt *stmt, const size_t stmtSize);
+void compoundStmtDeclPush(CompoundStmt *compoundStmt, Expr *decl);
+void compoundStmtStmtPush(CompoundStmt *compoundStmt, Stmt *stmt);
+void compoundStmtDestroy(CompoundStmt *stmt);
+
+LabelStmt *labelStmtCreate(Stmt *body);
+void labelStmtDestroy(LabelStmt *labelStmt);
+
+JumpStmt *jumpStmtCreate(const JumpType type);
+void jumpStmtDestroy(JumpStmt *jumpStmt);
 
 #endif

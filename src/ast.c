@@ -319,6 +319,7 @@ ForStmt *forStmtCreate(Stmt *init, Stmt *condition, Stmt *body)
     stmt->init = init;
     stmt->condition = condition;
     stmt->body = body;
+    stmt->modifier = NULL;
     return stmt;
 }
 
@@ -345,6 +346,7 @@ IfStmt *ifStmtCreate(Expr *condition, Stmt *trueBody)
     }
     stmt->condition = condition;
     stmt->trueBody = trueBody;
+    stmt->falseBody = NULL;
     return stmt;
 }
 
@@ -550,6 +552,8 @@ LabelStmt *labelStmtCreate(Stmt *body)
         abort();
     }
     stmt->body = body;
+    stmt->ident = NULL;
+    stmt->caseLabel = NULL;
     return stmt;
 }
 
@@ -578,19 +582,18 @@ JumpStmt *jumpStmtCreate(const JumpType type)
         abort();
     }
     stmt->type = type;
+    stmt->ident = NULL;
+    stmt->expr = NULL;
     return stmt;
 }
 
 // Jump statement destuctor
 void jumpStmtDestroy(JumpStmt *stmt)
 {
-    if (stmt->ident != NULL)
-    {
-        free(stmt->ident);
-    }
     if (stmt->expr != NULL)
     {
         exprDestroy(stmt->expr);
     }
+    free(stmt->ident);
     free(stmt);
 }

@@ -212,19 +212,19 @@ typedef struct JumpStmt
     Expr *expr;  // can be NULL
 } JumpStmt;
 
-Expr *exprCreate(const ExprType type);
+Expr *exprCreate(ExprType type);
 void exprDestroy(Expr *expr);
 
 VariableExpr *variableExprCreate(char *ident);
 void variableExprDestroy(VariableExpr *expr);
 
-ConstantExpr *constantExprCreate(const PrimativeType type, const bool isString);
+ConstantExpr *constantExprCreate(PrimativeType type, bool isString);
 void constantExprDestroy(ConstantExpr *expr);
 
 OperationExpr *operationExprCreate(const Operator operator);
 void operationExprDestroy(OperationExpr *expr);
 
-AssignExpr *assignExprCreate(Expr *op, const Operator operator);
+AssignExpr *assignExprCreate(Expr *op, Operator operator);
 void assignExprDestroy(AssignExpr *expr);
 
 FuncExpr *funcExprCreate(size_t argsSize);

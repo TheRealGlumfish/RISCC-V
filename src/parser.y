@@ -48,11 +48,11 @@
 %type <node> init_declarator type_specifier struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list
 %type <node> struct_declarator enum_specifier enumerator_list enumerator declarator direct_declarator  parameter_list parameter_declaration
 %type <ptr_count> pointer
-%type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list  declaration_list  
+%type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list  
 
-%type <stmt_node> compound_statement labeled_statement expression_statement selection_statement iteration_statement jump_statement statement
+%type <stmt_node> declaration_list  
+%type <stmt_node> compound_statement labeled_statement expression_statement selection_statement iteration_statement jump_statement statement statement_list
 
-%type <nodes> statement_list
 %type <operator> unary_operator assignment_operator
 
 %type <string> storage_class_specifier
@@ -62,7 +62,7 @@
 %type <string> IDENTIFIER STRING_LITERAL
 
 
-%start expression
+%start statement
 %%
 
 ROOT
@@ -94,22 +94,22 @@ primary_expression
 	: IDENTIFIER {
         $$ = exprCreate(VARIABLE_EXPR);
         $$->variable = variableExprCreate($1);
-    }
+        }
 	| INT_CONSTANT {
         $$ = exprCreate(CONSTANT_EXPR);
 		$$->constant = constantExprCreate(INT_TYPE, false);
         $$->constant->int_const = $1;
-	}
+	    }
     | FLOAT_CONSTANT {
         $$ = exprCreate(CONSTANT_EXPR);
 		$$->constant = constantExprCreate(FLOAT_TYPE, false);
         $$->constant->float_const = $1;
-    }
+        }
 	| STRING_LITERAL {
         $$ = exprCreate(CONSTANT_EXPR);
 		$$->constant = constantExprCreate(CHAR_TYPE, true);
         $$->constant->string_const = $1;
-    }
+        }
 	| OPEN_BRACKET expression CLOSE_BRACKET { $$ = $2; }
 	;
 
@@ -426,13 +426,12 @@ assignment_operator
 expression
 	: assignment_expression { 
         $$ = $1;
-        rootExpr = $1; }
+        }
 	| expression COMMA assignment_expression {
-            $$ = exprCreate(OPERATION_EXPR);
-            $$->operation = operationExprCreate(COMMA_OP);
-            $$->operation->op1 = $1;
-            $$->operation->op2 = $3;
-            rootExpr = $$;
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(COMMA_OP);
+        $$->operation->op1 = $1;
+        $$->operation->op2 = $3;
         }
 	;
 
@@ -614,80 +613,148 @@ initializer_list
 	;
 
 statement
-	: labeled_statement
-	| compound_statement
-	| expression_statement
-	| selection_statement
-	| iteration_statement
-	| jump_statement { 
-        // $$ = $1; 
-        }
+	: labeled_statement { $$ = $1; }
+	| compound_statement { $$ = $1; }
+	| expression_statement { $$ = $1; }
+	| selection_statement { $$ = $1; }
+	| iteration_statement { $$ = $1; }
+	| jump_statement { $$ = $1; }
 	;
 
 labeled_statement
-	: IDENTIFIER COLON statement
-	| CASE constant_expression COLON statement
-	| DEFAULT COLON statement
+	: IDENTIFIER COLON statement {
+        $$ = stmtCreate(LABEL_STMT);
+        $$->labelStmt = labelStmtCreate($3);
+        $$->labelStmt->ident = $1;
+        }
+	| CASE constant_expression COLON statement {
+        $$ = stmtCreate(LABEL_STMT);
+        $$->labelStmt = labelStmtCreate($4);
+        $$->labelStmt->caseLabel = $2;
+        }
+	| DEFAULT COLON statement {
+        $$ = stmtCreate(LABEL_STMT);
+        $$->labelStmt = labelStmtCreate($3);
+        }
 	;
 
 compound_statement
 	: OPEN_BRACE CLOSE_BRACE {
-		// TODO: correct this
-		// $$ = nullptr;
+        $$ = stmtCreate(COMPOUND_STMT);
+        $$->compoundStmt = compoundStmtCreate(0, 0);
 	    }
 	| OPEN_BRACE statement_list CLOSE_BRACE {
-		// $$ = $2;
+		$$ = $2;
 	    }
 	| OPEN_BRACE declaration_list CLOSE_BRACE {
-		// TODO: correct this
-		// $$ = nullptr;
+        $$ = $2;
 	    }
 	| OPEN_BRACE declaration_list statement_list CLOSE_BRACE  {
-		// TODO: correct this
-		// $$ = nullptr;
-	    }
+        $$ = $2;
+        $$->compoundStmt->stmtSize = $3->compoundStmt->stmtSize;
+        $$->compoundStmt->stmtCapacity = $3->compoundStmt->stmtCapacity;
+        $$->compoundStmt->stmts = $3->compoundStmt->stmts;
+        $2->compoundStmt->stmts = NULL;
+        $2->compoundStmt->stmtSize = 0;
+        $2->compoundStmt->stmtCapacity = 0;
+        stmtDestroy($3);
+    	}
 	;
 
 declaration_list
-	: declaration
-	| declaration_list declaration
+	: declaration {
+        $$ = stmtCreate(COMPOUND_STMT);    
+        $$->compoundStmt = compoundStmtCreate(1, 0);
+        $$->compoundStmt->decls[0] = $1;
+        }
+	| declaration_list declaration {
+        $$ = $1;
+        compoundStmtDeclPush($$->compoundStmt, $2);
+        }
 	;
 
 statement_list
-	: statement { // $$ = new NodeList($1); 
+	: statement {
+        $$ = stmtCreate(COMPOUND_STMT);    
+        $$->compoundStmt = compoundStmtCreate(0, 1);
+        $$->compoundStmt->stmts[0] = $1;
         }
-	| statement_list statement { // $1->PushBack($2); $$=$1; 
+	| statement_list statement { 
+        $$ = $1;
+        compoundStmtStmtPush($$->compoundStmt, $2);
         }
 	;
 
 expression_statement
-	: SEMI_COLON
-	| expression SEMI_COLON { // $$ = $1; 
+	: SEMI_COLON {
+        $$ = stmtCreate(EXPR_STMT);
+        $$->exprStmt = exprStmtCreate();
+        }
+	| expression SEMI_COLON {
+        $$ = stmtCreate(EXPR_STMT);
+        $$->exprStmt = exprStmtCreate();
+        $$->exprStmt->expr = $1;
         }
 	;
 
 selection_statement
-	: IF OPEN_BRACKET expression CLOSE_BRACKET statement
-	| IF OPEN_BRACKET expression CLOSE_BRACKET statement ELSE statement
-	| SWITCH OPEN_BRACKET expression CLOSE_BRACKET statement
+	: IF OPEN_BRACKET expression CLOSE_BRACKET statement {
+        $$ = stmtCreate(IF_STMT);
+        $$->ifStmt = ifStmtCreate($3, $5);
+        }
+	| IF OPEN_BRACKET expression CLOSE_BRACKET statement ELSE statement {
+        $$ = stmtCreate(IF_STMT);
+        $$->ifStmt = ifStmtCreate($3, $5);
+        $$->ifStmt->falseBody = $7;
+        }
+	| SWITCH OPEN_BRACKET expression CLOSE_BRACKET statement {
+        $$ = stmtCreate(SWITCH_STMT);
+        $$->switchStmt = switchStmtCreate($3, $5);
+        }
 	;
 
 iteration_statement
-	: WHILE OPEN_BRACKET expression CLOSE_BRACKET statement
-	| DO statement WHILE OPEN_BRACKET expression CLOSE_BRACKET SEMI_COLON
-	| FOR OPEN_BRACKET expression_statement expression_statement CLOSE_BRACKET statement
-	| FOR OPEN_BRACKET expression_statement expression_statement expression CLOSE_BRACKET statement
+	: WHILE OPEN_BRACKET expression CLOSE_BRACKET statement {
+        $$ = stmtCreate(WHILE_STMT);
+        $$->whileStmt = whileStmtCreate($3, $5, false);
+        }
+	| DO statement WHILE OPEN_BRACKET expression CLOSE_BRACKET SEMI_COLON {
+        $$ = stmtCreate(WHILE_STMT);
+        $$->whileStmt = whileStmtCreate($5, $2, true);
+        }
+	| FOR OPEN_BRACKET expression_statement expression_statement CLOSE_BRACKET statement{
+        $$ = stmtCreate(FOR_STMT);
+        $$->forStmt = forStmtCreate($3, $4, $6);
+        }
+	| FOR OPEN_BRACKET expression_statement expression_statement expression CLOSE_BRACKET statement {
+        $$ = stmtCreate(FOR_STMT);
+        $$->forStmt = forStmtCreate($3, $4, $7);
+        $$->forStmt->modifier = $5;
+        }
 	;
 
 jump_statement
-	: GOTO IDENTIFIER SEMI_COLON
-	| CONTINUE SEMI_COLON
-	| BREAK SEMI_COLON
+	: GOTO IDENTIFIER SEMI_COLON {
+        $$ = stmtCreate(JUMP_STMT);
+        $$->jumpStmt = jumpStmtCreate(GOTO_JUMP);
+        $$->jumpStmt->ident = $2;
+        }
+	| CONTINUE SEMI_COLON {
+        $$ = stmtCreate(JUMP_STMT);
+        $$->jumpStmt = jumpStmtCreate(CONTINUE_JUMP);
+        }
+	| BREAK SEMI_COLON {
+        $$ = stmtCreate(JUMP_STMT);
+        $$->jumpStmt = jumpStmtCreate(BREAK_JUMP);
+        }
 	| RETURN SEMI_COLON {
-		// $$ = new ReturnStatement(nullptr);
+        $$ = stmtCreate(JUMP_STMT);
+        $$->jumpStmt = jumpStmtCreate(RETURN_JUMP);
 	    }
 	| RETURN expression SEMI_COLON {
-		// $$ = new ReturnStatement($2);
+        $$ = stmtCreate(JUMP_STMT);
+        $$->jumpStmt = jumpStmtCreate(RETURN_JUMP);
+        $$->jumpStmt->expr = $2;
 	    }
 	;
 

@@ -109,7 +109,11 @@ OperationExpr *operationExprCreate(const Operator operator)
 // Operation expression destructor
 void operationExprDestroy(OperationExpr *expr)
 {
-    exprDestroy(expr->op1);
+    // Note: Do not change deallocation behaviour, parser relies on it
+    if (expr->op1 != NULL)
+    {
+        exprDestroy(expr->op1);
+    }
     if (expr->op2 != NULL)
     {
         exprDestroy(expr->op2);
@@ -122,14 +126,15 @@ void operationExprDestroy(OperationExpr *expr)
 }
 
 // Assignment expression constructor
-AssignExpr *assignExprCreate(char *ident, Expr *op, const Operator operator)
+AssignExpr *assignExprCreate(Expr *op, const Operator operator)
 {
     AssignExpr *expr = malloc(sizeof(AssignExpr));
     if (expr == NULL)
     {
         abort();
     }
-    expr->ident = ident;
+    expr->ident = NULL;
+    expr->lvalue = NULL;
     expr->op = op;
     expr->operator= operator;
     return expr;
@@ -139,6 +144,10 @@ AssignExpr *assignExprCreate(char *ident, Expr *op, const Operator operator)
 void assignExprDestroy(AssignExpr *expr)
 {
     exprDestroy(expr->op);
+    if (expr->lvalue != NULL)
+    {
+        exprDestroy(expr->lvalue);
+    }
     free(expr->ident);
     free(expr);
 }
@@ -245,52 +254,54 @@ Stmt *stmtCreate(const StmtType type)
 }
 
 // Statement destructor
-void stmtDestroy(Stmt* stmt)
+void stmtDestroy(Stmt *stmt)
 {
-    switch(stmt->type)
+    switch (stmt->type)
     {
-        case WHILE_STMT:
-            whileStmtDestroy(stmt->whileStmt);
-            break;
-        case FOR_STMT:
-            forStmtDestroy(stmt->forStmt);
-            break;
-        case IF_STMT:
-            ifStmtDestroy(stmt->ifStmt);
-            break;
-        case SWITCH_STMT:
-            switchStmtDestroy(stmt->switchStmt);
-            break;
-        case EXPR_STMT:
-            exprStmtDestroy(stmt->exprStmt);
-            break;
-        case COMPOUND_STMT:
-            compoundStmtDestroy(stmt->compoundStmt);
-            break;
-        case LABEL_STMT:
-            labelStmtDestroy(stmt->labelStmt);
-            break;
-        case JUMP_STMT:
-            jumpStmtDestroy(stmt->jumpStmt);
-            break;
+    case WHILE_STMT:
+        whileStmtDestroy(stmt->whileStmt);
+        break;
+    case FOR_STMT:
+        forStmtDestroy(stmt->forStmt);
+        break;
+    case IF_STMT:
+        ifStmtDestroy(stmt->ifStmt);
+        break;
+    case SWITCH_STMT:
+        switchStmtDestroy(stmt->switchStmt);
+        break;
+    case EXPR_STMT:
+        exprStmtDestroy(stmt->exprStmt);
+        break;
+    case COMPOUND_STMT:
+        compoundStmtDestroy(stmt->compoundStmt);
+        break;
+    case LABEL_STMT:
+        labelStmtDestroy(stmt->labelStmt);
+        break;
+    case JUMP_STMT:
+        jumpStmtDestroy(stmt->jumpStmt);
+        break;
     }
     free(stmt);
 }
 
 // While statement constructor
-Stmt *whileStmtCreate(Expr *condition, Stmt *body, bool doWhile)
+WhileStmt *whileStmtCreate(Expr *condition, Stmt *body, const bool doWhile)
 {
     WhileStmt *stmt = malloc(sizeof(WhileStmt));
-    if (stmt == NULL){
+    if (stmt == NULL)
+    {
         abort();
     }
     stmt->condition = condition;
     stmt->body = body;
     stmt->doWhile = doWhile;
+    return stmt;
 }
 
 // While statement destructor
-void *whileStmtDestroy(WhileStmt *stmt)
+void whileStmtDestroy(WhileStmt *stmt)
 {
     exprDestroy(stmt->condition);
     stmtDestroy(stmt->body);
@@ -317,7 +328,7 @@ void forStmtDestroy(ForStmt *stmt)
     stmtDestroy(stmt->init);
     stmtDestroy(stmt->condition);
     stmtDestroy(stmt->body);
-    if (stmt->modifier != NULL) 
+    if (stmt->modifier != NULL)
     {
         exprDestroy(stmt->modifier);
     }
@@ -326,7 +337,7 @@ void forStmtDestroy(ForStmt *stmt)
 
 // If statement constructor
 IfStmt *ifStmtCreate(Expr *condition, Stmt *trueBody)
-{   
+{
     IfStmt *stmt = malloc(sizeof(IfStmt));
     if (stmt == NULL)
     {
@@ -367,19 +378,21 @@ void switchStmtDestroy(SwitchStmt *stmt)
 }
 
 // Expression statement constructor
-ExprStmt *exprStmtCreate()
+ExprStmt *exprStmtCreate(void)
 {
     ExprStmt *stmt = malloc(sizeof(ExprStmt));
-    if (stmt == NULL){
+    if (stmt == NULL)
+    {
         abort();
     }
+    stmt->expr = NULL;
     return stmt;
 }
 
 // Expression statement destructor
 void exprStmtDestroy(ExprStmt *stmt)
 {
-    if(stmt->expr != NULL)
+    if (stmt->expr != NULL)
     {
         exprDestroy(stmt->expr);
     }
@@ -397,28 +410,28 @@ CompoundStmt *compoundStmtCreate(const size_t declSize, const size_t stmtSize)
 
     if (declSize != 0)
     {
-        stmt->declSize = malloc(sizeof(Expr) * declSize);
-        if (stmt->declSize == NULL)
+        stmt->decls = malloc(sizeof(Expr *) * declSize); // TODO: change to decls
+        if (stmt->decls == NULL)
         {
             abort();
         }
     }
     else
     {
-        stmt->declSize = NULL;
+        stmt->decls = NULL;
     }
 
     if (stmtSize != 0)
     {
-        stmt->stmtSize = malloc(sizeof(Expr) * stmtSize);
-        if (stmt->stmtSize == NULL)
+        stmt->stmts = malloc(sizeof(Expr *) * stmtSize);
+        if (stmt->stmts == NULL)
         {
             abort();
         }
     }
     else
     {
-        stmt->stmtSize = NULL;
+        stmt->stmts = NULL;
     }
 
     stmt->declSize = declSize;
@@ -501,9 +514,8 @@ void compoundStmtDeclPush(CompoundStmt *compoundStmt, Expr *decl)
 void compoundStmtStmtPush(CompoundStmt *compoundStmt, Stmt *stmt)
 {
     compoundStmtDeclResize(compoundStmt, compoundStmt->stmtSize + 1);
-    compoundStmt->decls[compoundStmt->declSize - 1] = stmt;
+    compoundStmt->stmts[compoundStmt->declSize - 1] = stmt;
 }
-
 
 // Function expression destructor
 void compoundStmtDestroy(CompoundStmt *stmt)
@@ -521,7 +533,7 @@ void compoundStmtDestroy(CompoundStmt *stmt)
     {
         for (size_t i = 0; i < stmt->stmtSize; i++)
         {
-            exprDestroy(stmt->stmts[i]);
+            stmtDestroy(stmt->stmts[i]);
         }
         free(stmt->stmts);
     }
@@ -545,11 +557,11 @@ LabelStmt *labelStmtCreate(Stmt *body)
 void labelStmtDestroy(LabelStmt *stmt)
 {
     stmtDestroy(stmt->body);
-    if(stmt->ident != NULL)
+    if (stmt->ident != NULL)
     {
         free(stmt->ident);
     }
-    if(stmt->caseLabel != NULL)
+    if (stmt->caseLabel != NULL)
     {
         exprDestroy(stmt->caseLabel);
     }
@@ -565,29 +577,20 @@ JumpStmt *jumpStmtCreate(const JumpType type)
     {
         abort();
     }
-    stmt->type;
+    stmt->type = type;
     return stmt;
 }
 
 // Jump statement destuctor
 void jumpStmtDestroy(JumpStmt *stmt)
 {
-    if(stmt->ident != NULL)
+    if (stmt->ident != NULL)
     {
         free(stmt->ident);
     }
-    if(stmt->expr != NULL)
+    if (stmt->expr != NULL)
     {
         exprDestroy(stmt->expr);
     }
     free(stmt);
 }
-
-
-
-
-
-
-
-
-

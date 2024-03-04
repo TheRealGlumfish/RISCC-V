@@ -76,7 +76,6 @@ typedef enum
     RETURN_JUMP
 } JumpType;
 
-
 typedef struct Expr
 {
     ExprType type;
@@ -122,6 +121,7 @@ typedef struct AssignExpr
 {
     char *ident;
     Expr *op;
+    Expr *lvalue;
     Operator operator;  // Info: when set to NOT, regular assignment
     PrimativeType type; // TODO: Replace, could accept compound types
 } AssignExpr;
@@ -181,7 +181,7 @@ typedef struct SwitchStmt
 
 typedef struct ExprStmt
 {
-    Expr* expr; // can be NULL
+    Expr *expr; // can be NULL
 } ExprStmt;
 
 typedef struct CompoundStmt
@@ -199,7 +199,7 @@ typedef struct CompoundStmt
 
 typedef struct LabelStmt
 {
-    char *ident; // not NULL for goto
+    char *ident;     // not NULL for goto
     Expr *caseLabel; // not NULL for case
     Stmt *body;
 
@@ -209,7 +209,7 @@ typedef struct JumpStmt
 {
     JumpType type;
     char *ident; // can be NULL
-    Expr* expr; // can be NULL
+    Expr *expr;  // can be NULL
 } JumpStmt;
 
 Expr *exprCreate(const ExprType type);
@@ -224,7 +224,7 @@ void constantExprDestroy(ConstantExpr *expr);
 OperationExpr *operationExprCreate(const Operator operator);
 void operationExprDestroy(OperationExpr *expr);
 
-AssignExpr *assignExprCreate(char *ident, Expr *op, const Operator operator);
+AssignExpr *assignExprCreate(Expr *op, const Operator operator);
 void assignExprDestroy(AssignExpr *expr);
 
 FuncExpr *funcExprCreate(size_t argsSize);
@@ -233,11 +233,11 @@ void funcExprArgsPush(FuncExpr *expr, Expr *arg);
 Expr *funcExprArgsPop(FuncExpr *expr);
 void funcExprDestroy(FuncExpr *expr);
 
-Stmt *stmtCreate(const StmtType type);
-void stmtDestroy(Stmt* stmt);
+Stmt *stmtCreate(StmtType type);
+void stmtDestroy(Stmt *stmt);
 
-Stmt *whileStmtCreate(Expr *condition, Stmt *body, bool doWhile);
-void *whileStmtDestroy(WhileStmt *whileStmt);
+WhileStmt *whileStmtCreate(Expr *condition, Stmt *body, bool doWhile);
+void whileStmtDestroy(WhileStmt *whileStmt);
 
 ForStmt *forStmtCreate(Stmt *init, Stmt *condition, Stmt *body);
 void forStmtDestroy(ForStmt *forStmt);
@@ -248,12 +248,12 @@ void ifStmtDestroy(IfStmt *ifStmt);
 SwitchStmt *switchStmtCreate(Expr *selector, Stmt *body);
 void switchStmtDestroy(SwitchStmt *switchStmt);
 
-ExprStmt *exprStmtCreate();
+ExprStmt *exprStmtCreate(void);
 void exprStmtDestroy(ExprStmt *exprStmt);
 
-CompoundStmt *compoundStmtCreate(const size_t declSize, const size_t stmtSize);
-void compoundStmtDeclResize(CompoundStmt *stmt, const size_t declSize);
-void compoundStmtStmtResize(CompoundStmt *stmt, const size_t stmtSize);
+CompoundStmt *compoundStmtCreate(size_t declSize, size_t stmtSize);
+void compoundStmtDeclResize(CompoundStmt *stmt, size_t declSize);
+void compoundStmtStmtResize(CompoundStmt *stmt, size_t stmtSize);
 void compoundStmtDeclPush(CompoundStmt *compoundStmt, Expr *decl);
 void compoundStmtStmtPush(CompoundStmt *compoundStmt, Stmt *stmt);
 void compoundStmtDestroy(CompoundStmt *stmt);
@@ -261,7 +261,7 @@ void compoundStmtDestroy(CompoundStmt *stmt);
 LabelStmt *labelStmtCreate(Stmt *body);
 void labelStmtDestroy(LabelStmt *labelStmt);
 
-JumpStmt *jumpStmtCreate(const JumpType type);
+JumpStmt *jumpStmtCreate(JumpType type);
 void jumpStmtDestroy(JumpStmt *jumpStmt);
 
 #endif

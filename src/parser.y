@@ -24,6 +24,7 @@
 	Stmt* stmt_node;
     FuncExpr* func_node;
     Operator operator;
+    size_t ptr_count;
 }
 
 %token IDENTIFIER INT_CONSTANT FLOAT_CONSTANT STRING_LITERAL
@@ -45,7 +46,8 @@
 %type <expr_node> conditional_expression assignment_expression expression constant_expression declaration declaration_specifiers init_declarator_list
 
 %type <node> init_declarator type_specifier struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list
-%type <node> struct_declarator enum_specifier enumerator_list enumerator declarator direct_declarator pointer parameter_list parameter_declaration
+%type <node> struct_declarator enum_specifier enumerator_list enumerator declarator direct_declarator  parameter_list parameter_declaration
+%type <ptr_count> pointer
 %type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list  declaration_list  
 
 %type <stmt_node> compound_statement labeled_statement expression_statement selection_statement iteration_statement jump_statement statement
@@ -119,7 +121,7 @@ postfix_expression
         $$->operation->op1 = exprCreate(OPERATION_EXPR);
         $$->operation->op1->operation = operationExprCreate(ADD);
         $$->operation->op1->operation->op1 = $1; // Potentially may have to manually override the primative type field
-        $$->operation->op1->operation->op1 = $3;
+        $$->operation->op1->operation->op2 = $3;
         }
 	| postfix_expression OPEN_BRACKET CLOSE_BRACKET {
         if($1->type == VARIABLE_EXPR)
@@ -151,8 +153,14 @@ postfix_expression
             exit(-1);
         }   
         }
-	| postfix_expression PERIOD IDENTIFIER
-	| postfix_expression PTR_OP IDENTIFIER
+	| postfix_expression PERIOD IDENTIFIER {
+        fprintf(stderr, "Operation not implemented, exitting...");
+        exit(-1);
+        }
+	| postfix_expression PTR_OP IDENTIFIER {
+        fprintf(stderr, "Operation not implemented, exitting...");
+        exit(-1);
+        }
 	| postfix_expression INC_OP {
         $$ = exprCreate(OPERATION_EXPR);
         $$->operation = operationExprCreate(INC_POST);
@@ -534,8 +542,8 @@ direct_declarator
 	;
 
 pointer
-	: MUL_OP
-	| MUL_OP pointer
+	: MUL_OP { $$ = 1; }
+	| MUL_OP pointer { $$ = $2 + 1; }
 	;
 
 parameter_list

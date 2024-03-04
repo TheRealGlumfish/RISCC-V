@@ -30,8 +30,7 @@ void printIndent(int indentSize)
 
 void displayOpExpr(OperationExpr *opExpr)
 {
-    Operator operator= opExpr->operator;
-    switch (operator)
+    switch (opExpr->operator)
     {
     case ADD:
         printf("+");
@@ -147,8 +146,7 @@ void displayConstExpr(ConstantExpr *constExpr)
 
 void displayAssignExpr(AssignExpr *assignExpr)
 {
-    Operator operator= assignExpr->operator;
-    switch (operator)
+    switch (assignExpr->operator)
     {
     case NOT:
         printf("=");
@@ -261,7 +259,7 @@ int main(int argc, char **argv)
     }
     if (yyparse())
     {
-        fprintf(stderr, "Error: parsing unnsuccessful\n");
+        fprintf(stderr, "Error: parsing unsuccessful\n");
     }
     displayExpr(rootExpr, 0);
     exprDestroy(rootExpr);

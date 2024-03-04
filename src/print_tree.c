@@ -33,32 +33,92 @@ void displayOpExpr(OperationExpr *opExpr)
     Operator operator= opExpr->operator;
     switch (operator)
     {
-    case (ADD):
-        printf("ADD");
+    case ADD:
+        printf("+");
         break;
-    case (SUB):
-        printf("SUB");
+    case SUB:
+        printf("-");
         break;
-    case (MUL):
-        printf("MUL");
+    case MUL:
+        printf("*");
         break;
-    case (DIV):
-        printf("DIV");
+    case DIV:
+        printf("/");
         break;
-    case (AND):
-        printf("AND");
+    case AND:
+        printf("&&");
         break;
-    case (OR):
-        printf("OR");
+    case OR:
+        printf("||");
         break;
-    case (NOT):
-        printf("NOT");
+    case NOT:
+        printf("!");
+        break;,
+    case AND_BIT:
+        printf("&");
         break;
-    case (COMMA_OP):
-        printf("COMMA");
+    case OR_BIT:
+        printf("|");
         break;
-    case (DEREF):
+    case NOT_BIT:
+        printf("~");
+        break;
+    case XOR:
+        printf("^");
+        break;
+    case EQ:
+        printf("==");
+        break;
+    case NE:
+        printf("!=");
+        break;
+    case LT:
+        printf(",");
+        break;
+    case GT:
+        printf(">");
+        break;
+    case LE:
+        printf("<=");
+        break;
+    case GE:
+        printf(">=");
+        break;
+    case LEFT_SHIFT:
+        printf("<<");
+        break;
+    case RIGHT_SHIFT:
+        printf(">>");
+        break;
+    case DEC_POST:
+        printf("-- (POST)");
+        break;
+    case INC_POST:
+        printf("++ (POST)");
+        break;
+    case DEC:
+        printf("--");
+        break;
+    case INC:
+        printf("++");
+        break;
+    case TERN:
+        printf("?");
+        break;
+    case COMMA_OP:
+        printf(",");
+        break;
+    case SIZEOF_OP:
+        printf("SIZEOF");
+        break;
+    case ADDRESS:
+        printf("&");
+        break;
+    case DEREF:
         printf("DEREF");
+        break;
+    default:
+        printf("UNKNOWN OP");
         break;
     }
     printf("\n");
@@ -87,7 +147,43 @@ void displayConstExpr(ConstantExpr *constExpr)
 
 void displayAssignExpr(AssignExpr *assignExpr)
 {
-    printf("ASSIGN OP\n");
+    Operator operator= assignExpr->operator;
+    switch (operator)
+    {
+    case NOT:
+        printf("=");
+        break;
+    case MUL:
+        printf("*=");
+        break;
+    case DIV:
+        printf("/=");
+        break;
+    case MOD:
+        printf("%=");
+        break;
+    case ADD:
+        printf("+=");
+        break;
+    case SUB:
+        printf("-=");
+        break;
+    case LEFT_SHIFT:
+        printf("<<=");
+        break;
+    case RIGHT_SHIFT:
+        printf(">>=");
+        break;
+    case AND:
+        printf("&=");
+        break;
+    case XOR:
+        printf("^=");
+        break;
+    case OR:
+        printf("|=");
+        break;
+    }
 }
 
 void displayFuncExpr(FuncExpr *funcExpr, int indent)

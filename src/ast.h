@@ -56,6 +56,27 @@ typedef enum
     FUNC_EXPR
 } ExprType;
 
+typedef enum
+{
+    WHILE_STMT,
+    FOR_STMT,
+    IF_STMT,
+    SWITCH_STMT,
+    EXPR_STMT,
+    COMPOUND_STMT,
+    LABEL_STMT,
+    JUMP_STMT
+} StmtType;
+
+typedef enum
+{
+    GOTO_JUMP,
+    CONTINUE_JUMP,
+    BREAK_JUMP,
+    RETURN_JUMP
+} JumpType;
+
+
 typedef struct Expr
 {
     ExprType type;
@@ -113,6 +134,82 @@ typedef struct FuncExpr
     Expr **args;
     PrimativeType type; // TODO: Replace, functions may not retrun primative types only
 } FuncExpr;
+
+typedef struct Stmt
+{
+    StmtType type;
+    union
+    {
+        struct WhileStmt *whileStmt;
+        struct ForStmt *forStmt;
+        struct IfStmt *ifStmt;
+        struct SwitchStmt *switchStmt;
+        struct ExprStmt *exprStmt;
+        struct CompoundStmt *compoundStmt;
+        struct LabelStmt *labelStmt;
+        struct JumpStmt *jumpStmt;
+    };
+} Stmt;
+
+typedef struct WhileStmt
+{
+    Expr *condition;
+    Stmt *body;
+    bool doWhile;
+} WhileStmt;
+
+typedef struct ForStmt
+{
+    Stmt *init;
+    Stmt *condition;
+    Expr *modifier;
+    Stmt *body;
+} ForStmt;
+
+typedef struct IfStmt
+{
+    Expr *condition;
+    Stmt *trueBody;
+    Stmt *falseBody; // NULL for else
+} IfStmt;
+
+typedef struct SwitchStmt
+{
+    Expr *selector;
+    Stmt *body;
+} SwitchStmt;
+
+typedef struct ExprStmt
+{
+    Expr* expr; // can be NULL
+} ExprStmt;
+
+typedef struct CompoundStmt
+{
+    size_t declSize;
+    size_t declCapacity;
+    Expr **decls;
+
+    size_t stmtSize;
+    size_t stmtCapacity;
+    Expr **stmts;
+
+} CompoundStmt;
+
+typedef struct LabelStmt
+{
+    char *ident;
+    Expr *caseLabel; // NULL for default label
+    Stmt *body;
+
+} LabelStmt;
+
+typedef struct JumpStmt
+{
+    JumpType type;
+    char *ident; // can be NULL
+    Expr* expr; // can be NULL
+} JumpStmt;
 
 Expr *exprCreate(const ExprType type);
 void exprDestroy(Expr *expr);

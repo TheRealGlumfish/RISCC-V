@@ -53,7 +53,7 @@ void displayOpExpr(OperationExpr *opExpr)
         break;
     case NOT:
         printf("!");
-        break;,
+        break;
     case AND_BIT:
         printf("&");
         break;
@@ -133,13 +133,13 @@ void displayConstExpr(ConstantExpr *constExpr)
 {
     switch (constExpr->type)
     { // doesnt do string literal
-    case (CHAR_TYPE):
+    case CHAR_TYPE:
         printf("%c\n", constExpr->char_const);
         break;
-    case (INT_TYPE):
+    case INT_TYPE:
         printf("%i\n", constExpr->int_const);
         break;
-    case (FLOAT_TYPE):
+    case FLOAT_TYPE:
         printf("%f\n", constExpr->float_const);
         break;
     }

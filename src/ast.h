@@ -32,6 +32,7 @@ typedef enum
     DEC,
     INC,
     TERN,
+    COMMA_OP,
     SIZEOF_OP,
     ADDRESS,
     DEREF

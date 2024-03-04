@@ -98,7 +98,7 @@ primary_expression
     | FLOAT_CONSTANT {
         $$ = exprCreate(CONSTANT_EXPR);
 		$$->constant = constantExprCreate(FLOAT_TYPE, false);
-        $$->constant->int_const = $1;
+        $$->constant->float_const = $1;
     }
 	| STRING_LITERAL {
         $$ = exprCreate(CONSTANT_EXPR);
@@ -397,7 +397,13 @@ expression
 	: assignment_expression { 
         $$ = $1;
         rootExpr = $1; }
-	| expression COMMA assignment_expression
+	| expression COMMA assignment_expression {
+            $$ = exprCreate(OPERATION_EXPR);
+            $$->operation = operationExprCreate(COMMA_OP);
+            $$->operation->op1 = $1;
+            $$->operation->op2 = $3;
+            rootExpr = $$;
+        }
 	;
 
 constant_expression

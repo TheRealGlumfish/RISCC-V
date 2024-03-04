@@ -21,6 +21,7 @@
     int32_t number_int;
     float number_float;
     Expr* expr_node;
+	Stmt* stmt_node;
     FuncExpr* func_node;
     Operator operator;
 }
@@ -42,10 +43,12 @@
 %type <expr_node> unary_expression cast_expression multiplicative_expression additive_expression shift_expression relational_expression
 %type <expr_node> equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
 %type <expr_node> conditional_expression assignment_expression expression constant_expression declaration declaration_specifiers init_declarator_list
+
 %type <node> init_declarator type_specifier struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list
 %type <node> struct_declarator enum_specifier enumerator_list enumerator declarator direct_declarator pointer parameter_list parameter_declaration
-%type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list statement labeled_statement
-%type <node> compound_statement declaration_list expression_statement selection_statement iteration_statement jump_statement
+%type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list  declaration_list  
+
+%type <stmt_node> compound_statement labeled_statement expression_statement selection_statement iteration_statement jump_statement statement
 
 %type <nodes> statement_list
 %type <operator> unary_operator assignment_operator
@@ -376,7 +379,9 @@ conditional_expression
 
 assignment_expression
 	: conditional_expression { $$ = $1; }
-	| unary_expression assignment_operator assignment_expression
+	| unary_expression assignment_operator assignment_expression {
+		
+	}
 	;
 
 assignment_operator

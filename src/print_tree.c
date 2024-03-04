@@ -54,6 +54,12 @@ void displayOpExpr(OperationExpr *opExpr)
     case (NOT):
         printf("NOT");
         break;
+    case (COMMA_OP):
+        printf("COMMA");
+        break;
+    case (DEREF):
+        printf("DEREF");
+        break;
     }
     printf("\n");
 }

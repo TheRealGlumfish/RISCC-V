@@ -120,7 +120,7 @@ postfix_expression
         $$->operation = operationExprCreate(DEREF);
         $$->operation->op1 = exprCreate(OPERATION_EXPR);
         $$->operation->op1->operation = operationExprCreate(ADD);
-        $$->operation->op1->operation->op1 = $1; // Potentially may have to manually override the primative type field
+        $$->operation->op1->operation->op1 = $1; // Potentially may have to manually override the primitive type field
         $$->operation->op1->operation->op2 = $3;
         }
 	| postfix_expression OPEN_BRACKET CLOSE_BRACKET {
@@ -134,7 +134,7 @@ postfix_expression
         }
         else
         {
-            fprintf(stderr, "Called object is not a function, exitting..."); // TODO: Maybe add the type of the object in the error message
+            fprintf(stderr, "Called object is not a function, exiting..."); // TODO: Maybe add the type of the object in the error message
             exit(-1);
         }   
         }
@@ -149,16 +149,16 @@ postfix_expression
         }
         else
         {
-            fprintf(stderr, "Called object is not a function, exitting..."); // TODO: Maybe add the type of the object in the error message
+            fprintf(stderr, "Called object is not a function, exiting..."); // TODO: Maybe add the type of the object in the error message
             exit(-1);
         }   
         }
 	| postfix_expression PERIOD IDENTIFIER {
-        fprintf(stderr, "Operation not implemented, exitting...");
+        fprintf(stderr, "Operation not implemented, exiting...");
         exit(-1);
         }
 	| postfix_expression PTR_OP IDENTIFIER {
-        fprintf(stderr, "Operation not implemented, exitting...");
+        fprintf(stderr, "Operation not implemented, exiting...");
         exit(-1);
         }
 	| postfix_expression INC_OP {
@@ -388,8 +388,25 @@ conditional_expression
 assignment_expression
 	: conditional_expression { $$ = $1; }
 	| unary_expression assignment_operator assignment_expression {
-		
-	}
+        $$ = exprCreate(ASSIGN_EXPR);
+        $$->assignment = assignExprCreate($3, $2);
+        if ($1->type == VARIABLE_EXPR) 
+        {
+            $$->assignment->ident = $1->variable->ident;
+            $1->variable->ident = NULL;
+            exprDestroy($1);
+        }
+        else if ($1->type == OPERATION_EXPR && $1->operation->operator == DEREF)
+        {
+            $$->assignment->lvalue = $1->operation->op1;
+            $1->operation->op1 = NULL;
+            exprDestroy($1);
+        } else
+        {
+            fprintf(stderr, "Expression is not assignable, exiting..."); // TODO: Maybe add the type of the object in the error message
+            exit(-1); // TODO: Maybe change error message
+        }
+        }
 	;
 
 assignment_operator

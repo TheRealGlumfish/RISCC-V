@@ -9,7 +9,7 @@
     #include "src/ast.h"
 
     // extern Node *g_root;
-    extern Expr *rootExpr;
+    extern Stmt *rootExpr;
     extern FILE *yyin;
     int yylex(void);
     void yyerror(const char *);
@@ -21,7 +21,7 @@
     int32_t number_int;
     float number_float;
     Expr* expr_node;
-	Stmt* stmt_node;
+    Stmt* stmt_node;
     FuncExpr* func_node;
     Operator operator;
     size_t ptr_count;
@@ -61,13 +61,12 @@
 %type <number_float> FLOAT_CONSTANT
 %type <string> IDENTIFIER STRING_LITERAL
 
-
-%start statement
+%start ROOT
 %%
 
 ROOT
-  : translation_unit { 
-        // g_root = $1; 
+  : statement { // change back to translation_unit
+        rootExpr = $1; 
     }
 
 translation_unit
@@ -100,7 +99,7 @@ primary_expression
 		$$->constant = constantExprCreate(INT_TYPE, false);
         $$->constant->int_const = $1;
 	    }
-    | FLOAT_CONSTANT {
+        | FLOAT_CONSTANT {
         $$ = exprCreate(CONSTANT_EXPR);
 		$$->constant = constantExprCreate(FLOAT_TYPE, false);
         $$->constant->float_const = $1;
@@ -483,7 +482,7 @@ type_specifier
 	| DOUBLE
 	| SIGNED
 	| UNSIGNED
-    | struct_specifier
+        | struct_specifier
 	| enum_specifier
 	| TYPE_NAME // Never returned by the lexer
 	;
@@ -613,12 +612,24 @@ initializer_list
 	;
 
 statement
-	: labeled_statement { $$ = $1; }
-	| compound_statement { $$ = $1; }
-	| expression_statement { $$ = $1; }
-	| selection_statement { $$ = $1; }
-	| iteration_statement { $$ = $1; }
-	| jump_statement { $$ = $1; }
+	: labeled_statement { 
+        $$ = $1; 
+        }
+	| compound_statement { 
+        $$ = $1; 
+        }
+	| expression_statement {
+        $$ = $1;
+        }
+	| selection_statement {
+        $$ = $1;
+        }
+	| iteration_statement {
+        $$ = $1;
+        }
+	| jump_statement {
+        $$ = $1;
+        }
 	;
 
 labeled_statement

@@ -4,7 +4,7 @@
 #include "ast.h"
 #include "parser.tab.h"
 
-Expr *rootExpr;
+Stmt *rootExpr;
 
 // will probably need this later...
 // typedef struct {
@@ -402,7 +402,7 @@ int main(int argc, char **argv)
     {
         fprintf(stderr, "Error: parsing unsuccessful\n");
     }
-    displayExpr(rootExpr, 0);
-    exprDestroy(rootExpr);
+    displayStmt(rootExpr, 0);
+    stmtDestroy(rootExpr);
     return EXIT_SUCCESS;
 }

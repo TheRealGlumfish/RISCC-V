@@ -3,7 +3,7 @@
 
 #include "parser.tab.h"
 
-Expr *rootExpr;
+Stmt *rootExpr;
 
 // Convert a token into a string representation
 const char *token_to_string(yytoken_kind_t token)

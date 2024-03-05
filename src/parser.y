@@ -1,5 +1,5 @@
 // Adapted from: https://www.lysator.liu.se/c/ANSI-C-grammar-y.html
-
+%define parse.error verbose
 %code requires{
     #include <stdlib.h>
     #include <stdio.h>

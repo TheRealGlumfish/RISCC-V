@@ -97,7 +97,7 @@ L?\"(\\.|[^\\"])*\"	{yylval.string = malloc(sizeof(char) * (yyleng - 1)); memcpy
 "=="			 {return(EQ_OP);}
 "!="			 {return(NE_OP);}
 
-";"			   {return(COLON);}
+";"			   {return(SEMI_COLON);}
 ("{"|"<%") {return(OPEN_BRACE);}
 ("}"|"%>") {return(CLOSE_BRACE);}
 ","			   {return(COMMA);}

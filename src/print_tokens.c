@@ -137,7 +137,7 @@ const char *token_to_string(yytoken_kind_t token)
     case COMMA:
         return ",";
     case COLON:
-        return ";";
+        return ":";
     case ASSIGN:
         return "Assign";
     case OPEN_BRACKET:

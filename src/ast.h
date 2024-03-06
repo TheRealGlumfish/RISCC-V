@@ -224,14 +224,22 @@ typedef struct TypeSpecList
     size_t typeSpecCapacity;
 } TypeSpecList;
 
-typedef struct Declaration
-{
-    TypeSpecList *typeSpecList;
-    // struct pointer will be here eventually.
+typedef struct DeclInit // holds declarator and sometimes an initializer
+{ 
     size_t pointerCount;
     char *ident; // needs array and function definitions too
     Expr* initExpr; // both initExpr and initArray can be NULL when defining a struct
     // array initializer defined here
+} DeclInit;
+
+typedef struct Declaration
+{
+    TypeSpecList *typeSpecList;
+    // struct pointer will be here eventually.
+
+    DeclInit **declInits;
+    size_t declInitSize;
+    size_t declInitCapacity;
 } Declaration;
 
 
@@ -293,7 +301,13 @@ void typeSpecListDestroy(TypeSpecList *typeSpecList);
 void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize);
 void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier typeSpec);
 
-Declaration *declarationCreate();
+DeclInit *declInitCreate(const char* ident, const size_t pointerCount);
+void declInitDestroy(DeclInit *declInit);
+
+Declaration *declarationCreate(const size_t declInitSize);
 void declarationDestroy(Declaration *decl);
+void declarationResize(Declaration *decl, const size_t declInitSize);
+void declInitPush(Declaration *decl, DeclInit *declInit);
 
 #endif
+

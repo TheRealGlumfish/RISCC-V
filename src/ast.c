@@ -675,8 +675,32 @@ void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier typeSpec)
     typeSpecList->typeSpecs[typeSpecList->typeSpecSize - 1] = typeSpec;
 }
 
+// Declaration-Initializer constructor
+DeclInit *declInitCreate(const char* ident, const size_t pointerCount)
+{
+    DeclInit *declInit = malloc(sizeof(DeclInit));
+    if (declInit == NULL)
+    {
+        abort();
+    }
+    declInit->ident = ident;
+    declInit->pointerCount = pointerCount;
+    return declInit;
+}
+
+// Declaration-Initializer destructor
+void declInitDestroy(DeclInit *declInit)
+{
+    if (declInit->initExpr!=NULL)
+    {
+        free(declInit->initExpr);
+    }
+    free(declInit->ident);
+    free(declInit);
+}
+
 // Declaration constructor
-Declaration *declarationCreate(TypeSpecList *typeSpecList)
+Declaration *declarationCreate(const size_t declInitSize)
 {
     Declaration *decl = malloc(sizeof(Declaration));
     if (decl == NULL)
@@ -684,8 +708,22 @@ Declaration *declarationCreate(TypeSpecList *typeSpecList)
         abort();
     }
 
-    decl->typeSpecList = typeSpecList;
-    decl->pointerCount = 0;
+    if (declInitSize != 0)
+    {
+        decl->declInits = malloc(sizeof(DeclInit *) * declInitSize); 
+        if (decl->declInits == NULL)
+        {
+            abort();
+        }
+    }
+    else
+    {
+        decl->declInits = NULL;
+    }
+
+    decl->declInitSize = declInitSize;
+    decl->declInitCapacity = declInitSize;
+
     return decl;
 }
 
@@ -693,12 +731,56 @@ Declaration *declarationCreate(TypeSpecList *typeSpecList)
 void declarationDestroy(Declaration *decl)
 {   
     typeSpecListDestroy(decl->typeSpecList);
-    free(decl->ident);
-    if(decl->initExpr != NULL)
+    
+    if (decl->declInitCapacity != 0)
     {
-        exprDestroy(decl->initExpr);
+        for (size_t i = 0; i < decl->declInitSize; i++)
+        {
+            declInitDestroy(decl->declInits[i]);
+        }
+        free(decl->declInits);
     }
+
     free(decl);
+}
+
+
+// Resizes the size of the declInit list in the declaration
+void declarationResize(Declaration *decl, const size_t declInitSize)
+{
+    if (decl->declInitSize != 0)
+    {
+        decl->declInitSize = declInitSize;
+        if (decl->declInitSize > decl->declInitCapacity)
+        {
+            while (decl->declInitSize > decl->declInitCapacity)
+            {
+                decl->declInitCapacity *= 2;
+            }
+            decl->declInits = realloc(decl->declInits, sizeof(DeclInit *) * decl->declInitCapacity);
+            if (decl->declInits == NULL)
+            {
+                abort();
+            }
+        }
+    }
+    else
+    {
+        decl->declInitSize = declInitSize;
+        decl->declInits = malloc(sizeof(DeclInit *) * declInitSize);
+        if (decl->declInits == NULL)
+        {
+            abort();
+        }
+        decl->declInitCapacity = declInitSize;
+    }
+}
+
+// Adds a declInit to the declaration node
+void declInitPush(Declaration *decl, DeclInit *declInit)
+{
+    declarationResize(decl, decl->declInitSize + 1);
+    decl->declInits[decl->declInitSize - 1] = declInit;
 }
 
 

@@ -24,6 +24,10 @@
     Stmt* stmt_node;
     FuncExpr* func_node;
     Operator operator;
+    Declaration* decl_node;
+    DeclInit* decl_init_node;
+    TypeSpecifier type_spec;
+    TypeSpecList* type_spec_list;
     size_t ptr_count;
 }
 
@@ -43,19 +47,27 @@
 %type <func_node> argument_expression_list
 %type <expr_node> unary_expression cast_expression multiplicative_expression additive_expression shift_expression relational_expression
 %type <expr_node> equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
-%type <expr_node> conditional_expression assignment_expression expression constant_expression declaration declaration_specifiers init_declarator_list
+%type <expr_node> conditional_expression assignment_expression expression constant_expression
 
-%type <node> init_declarator type_specifier struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list
-%type <node> struct_declarator enum_specifier enumerator_list enumerator declarator direct_declarator  parameter_list parameter_declaration
+%type <node>  struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list
+%type <node> struct_declarator enum_specifier enumerator_list enumerator  parameter_list parameter_declaration
 %type <ptr_count> pointer
-%type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer initializer_list  
+%type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer_list  
 
 %type <stmt_node> declaration_list  
 %type <stmt_node> compound_statement labeled_statement expression_statement selection_statement iteration_statement jump_statement statement statement_list
 
 %type <operator> unary_operator assignment_operator
+%type <type_spec> type_specifier
 
-%type <string> storage_class_specifier
+%type <type_spec_list> declaration_specifiers 
+
+%type <string> storage_class_specifier  
+
+%type <decl_node> declaration init_declarator_list 
+%type <decl_init_node> init_declarator declarator direct_declarator
+
+%type <expr_node> initializer
 
 %type <number_int> INT_CONSTANT
 %type <number_float> FLOAT_CONSTANT
@@ -65,7 +77,7 @@
 %%
 
 ROOT
-  : statement { // change back to translation_unit
+  : declaration { // change back to translation_unit
         rootExpr = $1; 
     }
 
@@ -438,31 +450,56 @@ constant_expression
 	: conditional_expression { $$ = $1; }
 	;
 
+
 declaration
-	: declaration_specifiers SEMI_COLON
-	| declaration_specifiers init_declarator_list SEMI_COLON
+	: declaration_specifiers SEMI_COLON // struct definition case
+	| declaration_specifiers init_declarator_list SEMI_COLON{
+                $$ = $2;
+                $$->typeSpecList = $1;
+        }
 	;
 
-declaration_specifiers
+
+// storage class specifiers aren't required
+// should return a typespec list
+declaration_specifiers 
 	: storage_class_specifier
 	| storage_class_specifier declaration_specifiers
+
 	| type_specifier {
-        // $$ = $1; 
+                $$ = typeSpecListCreate(1);
+                $$->typeSpecs[0] = $1; 
         }
-	| type_specifier declaration_specifiers
+        // these are in a weird order - could cause issues
+	| type_specifier declaration_specifiers{
+                $$ = $2;
+                typeSpecListPush($$, $1);
+        }
 	;
 
 init_declarator_list
-	: init_declarator
-	| init_declarator_list COMMA init_declarator
+	: init_declarator{
+                $$ = declarationCreate(1);
+                $$->declInits[0] = $1;
+        }
+	| init_declarator_list COMMA init_declarator{
+                $$ = $1;
+                declInitPush($$, $3);
+        }
 	;
 
 init_declarator
-	: declarator
-	| declarator ASSIGN initializer
+	: declarator {
+                $$ = $1;
+        }
+	| declarator ASSIGN initializer {
+                $1->initExpr = $3;
+                $$ = $1;
+        }
 	;
 
-storage_class_specifier // not required for our spec
+// not required for our spec
+storage_class_specifier 
 	: TYPEDEF
 	| EXTERN
 	| STATIC
@@ -471,19 +508,17 @@ storage_class_specifier // not required for our spec
 	;
 
 type_specifier
-	: VOID
-	| CHAR
-	| SHORT
-	| INT {
-		// $$ = new TypeSpecifier("int");
-	}
-	| LONG
-	| FLOAT
-	| DOUBLE
-	| SIGNED
-	| UNSIGNED
-        | struct_specifier
-	| enum_specifier
+	: VOID { $$ = VOID_TYPE; }
+	| CHAR { $$ = CHAR_TYPE; }
+	| SHORT { $$ = SHORT_TYPE; }
+	| INT { $$ = INT_TYPE; }
+	| LONG { $$ = LONG_TYPE; }
+	| FLOAT { $$ = FLOAT_TYPE; }
+	| DOUBLE { $$ = DOUBLE_TYPE; }
+	| SIGNED { $$ = SIGNED_TYPE; }
+	| UNSIGNED { $$ = UNSIGNED_TYPE; }
+        | struct_specifier // later
+	| enum_specifier // doesnt need to be implemented
 	| TYPE_NAME // Never returned by the lexer
 	;
 
@@ -534,17 +569,20 @@ enumerator
 	| IDENTIFIER ASSIGN constant_expression
 	;
 
-declarator
-	: pointer direct_declarator
+// pointer is just a number here!
+declarator 
+	: pointer direct_declarator {
+                $2->pointerCount = $1;
+                $$ = $2;
+        }
 	| direct_declarator { 
-        // $$ = $1; 
+                $$ = $1; 
         }
 	;
 
 direct_declarator
 	: IDENTIFIER {
-		// $$ = new Identifier(*$1);
-		// delete $1;
+		$$ = declInitCreate($1, 0);
 	}
 	| OPEN_BRACKET declarator CLOSE_BRACKET
 	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE
@@ -600,8 +638,11 @@ direct_abstract_declarator
 	| direct_abstract_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET
 	;
 
+// returns an expresson
 initializer
-	: assignment_expression
+	: assignment_expression {
+                $$ = $1;
+        }
 	| OPEN_BRACE initializer_list CLOSE_BRACE
 	| OPEN_BRACE initializer_list COMMA CLOSE_BRACE
 	;

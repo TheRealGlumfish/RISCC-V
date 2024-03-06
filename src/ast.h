@@ -49,7 +49,7 @@ typedef enum
     DOUBLE_TYPE,
     SIGNED_TYPE,
     UNSIGNED_TYPE
-} TypeQualifier; // TODO: Add full list of types and deal with unsigned and void
+} TypeSpecifier; // TODO: Add full list of types and deal with unsigned and void
 
 typedef enum
 {
@@ -96,7 +96,7 @@ typedef struct Expr
 typedef struct VariableExpr
 {
     char *ident;
-    TypeQualifier type;
+    TypeSpecifier type;
 } VariableExpr;
 
 typedef struct ConstantExpr
@@ -108,7 +108,7 @@ typedef struct ConstantExpr
         char char_const;
         char *string_const;
     };
-    TypeQualifier type;
+    TypeSpecifier type;
     bool isString;
 } ConstantExpr;
 
@@ -118,7 +118,7 @@ typedef struct OperationExpr
     Expr *op2;
     Expr *op3;
     Operator operator;
-    TypeQualifier type;
+    TypeSpecifier type;
 } OperationExpr;
 
 typedef struct AssignExpr
@@ -127,7 +127,7 @@ typedef struct AssignExpr
     Expr *op;
     Expr *lvalue;
     Operator operator;  // Info: when set to NOT, regular assignment
-    TypeQualifier type; // TODO: Replace, could accept compound types
+    TypeSpecifier type; // TODO: Replace, could accept compound types
 } AssignExpr;
 
 typedef struct FuncExpr
@@ -136,7 +136,7 @@ typedef struct FuncExpr
     size_t argsSize;
     size_t argsCapacity;
     Expr **args;
-    TypeQualifier type; // TODO: Replace, functions may not retrun primative types only
+    TypeSpecifier type; // TODO: Replace, functions may not retrun primative types only
 } FuncExpr;
 
 typedef struct Stmt
@@ -217,20 +217,20 @@ typedef struct JumpStmt
 } JumpStmt;
 
 
-typedef struct TypeQualList
+typedef struct TypeSpecList
 {
-    TypeQualifier *typeQuals;
-    size_t typeQualSize;
-    size_t typeQualCapacity;
-} TypeQualList;
+    TypeSpecifier *typeSpecs;
+    size_t typeSpecSize;
+    size_t typeSpecCapacity;
+} TypeSpecList;
 
 typedef struct Declaration
 {
-    TypeQualList *typeQualList;
+    TypeSpecList *typeSpecList;
     // struct pointer will be here eventually.
     size_t pointerCount;
     char *ident; // needs array and function definitions too
-    Expr* initExpr;
+    Expr* initExpr; // both initExpr and initArray can be NULL when defining a struct
     // array initializer defined here
 } Declaration;
 
@@ -242,7 +242,7 @@ void exprDestroy(Expr *expr);
 VariableExpr *variableExprCreate(char *ident);
 void variableExprDestroy(VariableExpr *expr);
 
-ConstantExpr *constantExprCreate(TypeQualifier type, bool isString);
+ConstantExpr *constantExprCreate(TypeSpecifier type, bool isString);
 void constantExprDestroy(ConstantExpr *expr);
 
 OperationExpr *operationExprCreate(const Operator operator);
@@ -287,5 +287,13 @@ void labelStmtDestroy(LabelStmt *labelStmt);
 
 JumpStmt *jumpStmtCreate(JumpType type);
 void jumpStmtDestroy(JumpStmt *jumpStmt);
+
+TypeSpecList *typeSpecListCreate(const size_t typeSpecSize);
+void typeSpecListDestroy(TypeSpecList *typeSpecList);
+void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize);
+void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier typeSpec);
+
+Declaration *declarationCreate();
+void declarationDestroy(Declaration *decl);
 
 #endif

@@ -69,7 +69,7 @@ void variableExprDestroy(VariableExpr *expr)
 }
 
 // Constant expression constructor
-ConstantExpr *constantExprCreate(const TypeQualifier type, const bool isString)
+ConstantExpr *constantExprCreate(const TypeSpecifier type, const bool isString)
 {
     ConstantExpr *expr = malloc(sizeof(ConstantExpr));
     if (expr == NULL)
@@ -599,58 +599,58 @@ void jumpStmtDestroy(JumpStmt *stmt)
 }
 
 // Type Qualifier List constructor
-TypeQualList *typeQualListCreate(const size_t typeQualSize)
+TypeSpecList *typeSpecListCreate(const size_t typeSpecSize)
 {
-    TypeQualList *typeQualList = malloc(sizeof(typeQualList));
-    if (typeQualList == NULL)
+    TypeSpecList *typeSpecList = malloc(sizeof(TypeSpecList));
+    if (typeSpecList == NULL)
     {
         abort();
     }
 
-    if (typeQualSize != 0)
+    if (typeSpecSize != 0)
     {
-        typeQualList->typeQuals = malloc(sizeof(TypeQualifier *) * typeQualSize); // TODO: change to decls
-        if (typeQualList->typeQuals == NULL)
+        typeSpecList->typeSpecs = malloc(sizeof(TypeSpecifier *) * typeSpecSize); 
+        if (typeSpecList->typeSpecs == NULL)
         {
             abort();
         }
     }
     else
     {
-        typeQualList->typeQuals = NULL;
+        typeSpecList->typeSpecs = NULL;
     }
 
-    typeQualList->typeQualSize = typeQualSize;
-    typeQualList->typeQualCapacity = typeQualSize;
-    return typeQualList;
+    typeSpecList->typeSpecSize = typeSpecSize;
+    typeSpecList->typeSpecCapacity = typeSpecSize;
+    return typeSpecList;
 }
 
 // Type Qualifier List destructor
-void typeQualListDestroy(TypeQualList *typeQualList)
+void typeSpecListDestroy(TypeSpecList *typeSpecList)
 {   
-    if (typeQualList->typeQuals != NULL) // don't free a NULL pointer
+    if (typeSpecList->typeSpecs != NULL) // don't free a NULL pointer
     {
-        free(typeQualList->typeQuals);
+        free(typeSpecList->typeSpecs);
     }
 
-    free(typeQualList);
+    free(typeSpecList);
 }
 
 
 // Resizes the size of the type qualifier list
-void typeQualListResize(TypeQualList *typeQualList, const size_t typeQualSize)
+void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize)
 {
-    if (typeQualList->typeQualSize != 0)
+    if (typeSpecList->typeSpecSize != 0)
     {
-        typeQualList->typeQualSize = typeQualSize;
-        if (typeQualList->typeQualSize > typeQualList->typeQualCapacity)
+        typeSpecList->typeSpecSize = typeSpecSize;
+        if (typeSpecList->typeSpecSize > typeSpecList->typeSpecCapacity)
         {
-            while (typeQualList->typeQualSize > typeQualList->typeQualCapacity)
+            while (typeSpecList->typeSpecSize > typeSpecList->typeSpecCapacity)
             {
-                typeQualList->typeQualCapacity *= 2;
+                typeSpecList->typeSpecCapacity *= 2;
             }
-            typeQualList->typeQuals = realloc(typeQualList->typeQuals, sizeof(TypeQualifier *) * typeQualList->typeQualCapacity);
-            if (typeQualList->typeQuals == NULL)
+            typeSpecList->typeSpecs = realloc(typeSpecList->typeSpecs, sizeof(TypeSpecifier *) * typeSpecList->typeSpecCapacity);
+            if (typeSpecList->typeSpecs == NULL)
             {
                 abort();
             }
@@ -658,25 +658,25 @@ void typeQualListResize(TypeQualList *typeQualList, const size_t typeQualSize)
     }
     else
     {
-        typeQualList->typeQualSize = typeQualSize;
-        typeQualList->typeQuals = malloc(sizeof(TypeQualifier *) * typeQualSize);
-        if (typeQualList->typeQuals == NULL)
+        typeSpecList->typeSpecSize = typeSpecSize;
+        typeSpecList->typeSpecs = malloc(sizeof(TypeSpecifier *) * typeSpecSize);
+        if (typeSpecList->typeSpecs == NULL)
         {
             abort();
         }
-        typeQualList->typeQualCapacity = typeQualSize;
+        typeSpecList->typeSpecCapacity = typeSpecSize;
     }
 }
 
 // Adds a type qualifier to a type qualifier list
-void typeQualListPush(TypeQualList *typeQualList, TypeQualifier typeQual)
+void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier typeSpec)
 {
-    typeQualListResize(typeQualList, typeQualList->typeQualSize + 1);
-    typeQualList->typeQuals[typeQualList->typeQualSize - 1] = typeQual;
+    typeSpecListResize(typeSpecList, typeSpecList->typeSpecSize + 1);
+    typeSpecList->typeSpecs[typeSpecList->typeSpecSize - 1] = typeSpec;
 }
 
 // Declaration constructor
-Declaration *declarationCreate()
+Declaration *declarationCreate(TypeSpecList *typeSpecList)
 {
     Declaration *decl = malloc(sizeof(Declaration));
     if (decl == NULL)
@@ -684,7 +684,7 @@ Declaration *declarationCreate()
         abort();
     }
 
-    decl->typeQualList = typeQualListCreate(0);
+    decl->typeSpecList = typeSpecList;
     decl->pointerCount = 0;
     return decl;
 }
@@ -692,7 +692,7 @@ Declaration *declarationCreate()
 // Declaration destructor
 void declarationDestroy(Declaration *decl)
 {   
-    typeQualListDestroy(decl->typeQualList);
+    typeSpecListDestroy(decl->typeSpecList);
     free(decl->ident);
     if(decl->initExpr != NULL)
     {

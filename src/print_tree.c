@@ -207,7 +207,7 @@ void displayExpr(Expr *expr, int indent)
     printIndent(indent);
     if (indent > 0)
     {
-        printf("└──");
+        printf("└── ");
     }
 
     switch (expr->type)
@@ -231,7 +231,7 @@ void displayExpr(Expr *expr, int indent)
 
         // indented variable name
         printIndent(indent + 4);
-        printf("└──%s\n", expr->assignment->ident);
+        printf("└── %s\n", expr->assignment->ident);
 
         break;
     case FUNC_EXPR:
@@ -346,7 +346,7 @@ void displayStmt(Stmt *stmt, int indent)
     printIndent(indent);
     if (indent > 0)
     {
-        printf("└──");
+        printf("└── ");
     }
 
     switch (stmt->type)
@@ -398,10 +398,12 @@ int main(int argc, char **argv)
             return EXIT_FAILURE;
         }
     }
-    if (yyparse())
-    {
-        fprintf(stderr, "Error: parsing unsuccessful\n");
-    }
+
+    yyparse();
+    // if (yyparse())
+    // {
+    //     fprintf(stderr, "Error: parsing unsuccessful\n");
+    // }
     displayStmt(rootExpr, 0);
     stmtDestroy(rootExpr);
     return EXIT_SUCCESS;

@@ -462,7 +462,7 @@ init_declarator
 	| declarator ASSIGN initializer
 	;
 
-storage_class_specifier
+storage_class_specifier // not required for our spec
 	: TYPEDEF
 	| EXTERN
 	| STATIC

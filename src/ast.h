@@ -40,12 +40,16 @@ typedef enum
 
 typedef enum
 {
+    VOID_TYPE,
     CHAR_TYPE,
+    SHORT_TYPE,
     INT_TYPE,
     LONG_TYPE,
     FLOAT_TYPE,
-    DOUBLE_TYPE
-} PrimativeType; // TODO: Add full list of types and deal with unsigned and void
+    DOUBLE_TYPE,
+    SIGNED_TYPE,
+    UNSIGNED_TYPE
+} TypeQualifier; // TODO: Add full list of types and deal with unsigned and void
 
 typedef enum
 {
@@ -92,7 +96,7 @@ typedef struct Expr
 typedef struct VariableExpr
 {
     char *ident;
-    PrimativeType type;
+    TypeQualifier type;
 } VariableExpr;
 
 typedef struct ConstantExpr
@@ -104,7 +108,7 @@ typedef struct ConstantExpr
         char char_const;
         char *string_const;
     };
-    PrimativeType type;
+    TypeQualifier type;
     bool isString;
 } ConstantExpr;
 
@@ -114,7 +118,7 @@ typedef struct OperationExpr
     Expr *op2;
     Expr *op3;
     Operator operator;
-    PrimativeType type;
+    TypeQualifier type;
 } OperationExpr;
 
 typedef struct AssignExpr
@@ -123,7 +127,7 @@ typedef struct AssignExpr
     Expr *op;
     Expr *lvalue;
     Operator operator;  // Info: when set to NOT, regular assignment
-    PrimativeType type; // TODO: Replace, could accept compound types
+    TypeQualifier type; // TODO: Replace, could accept compound types
 } AssignExpr;
 
 typedef struct FuncExpr
@@ -132,7 +136,7 @@ typedef struct FuncExpr
     size_t argsSize;
     size_t argsCapacity;
     Expr **args;
-    PrimativeType type; // TODO: Replace, functions may not retrun primative types only
+    TypeQualifier type; // TODO: Replace, functions may not retrun primative types only
 } FuncExpr;
 
 typedef struct Stmt
@@ -212,13 +216,33 @@ typedef struct JumpStmt
     Expr *expr;  // can be NULL
 } JumpStmt;
 
+
+typedef struct TypeQualList
+{
+    TypeQualifier *typeQuals;
+    size_t typeQualSize;
+    size_t typeQualCapacity;
+} TypeQualList;
+
+typedef struct Declaration
+{
+    TypeQualList *typeQualList;
+    // struct pointer will be here eventually.
+    size_t pointerCount;
+    char *ident; // needs array and function definitions too
+    Expr* initExpr;
+    // array initializer defined here
+} Declaration;
+
+
+
 Expr *exprCreate(ExprType type);
 void exprDestroy(Expr *expr);
 
 VariableExpr *variableExprCreate(char *ident);
 void variableExprDestroy(VariableExpr *expr);
 
-ConstantExpr *constantExprCreate(PrimativeType type, bool isString);
+ConstantExpr *constantExprCreate(TypeQualifier type, bool isString);
 void constantExprDestroy(ConstantExpr *expr);
 
 OperationExpr *operationExprCreate(const Operator operator);

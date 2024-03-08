@@ -206,7 +206,7 @@ typedef struct CompoundStmt
 {
     // declarations are not expressions - need to fix.
     StatementList stmtList;
-    DeclarationList declList; 
+    DeclarationList declList;
 } CompoundStmt;
 
 typedef struct LabelStmt
@@ -224,7 +224,6 @@ typedef struct JumpStmt
     Expr *expr;  // can be NULL
 } JumpStmt;
 
-
 typedef struct TypeSpecList
 {
     TypeSpecifier *typeSpecs;
@@ -233,10 +232,10 @@ typedef struct TypeSpecList
 } TypeSpecList;
 
 typedef struct DeclInit // holds declarator and sometimes an initializer
-{ 
+{
     size_t pointerCount;
-    char *ident; // needs array and function definitions too
-    Expr* initExpr; // both initExpr and initArray can be NULL when defining a struct
+    char *ident;    // needs array and function definitions too
+    Expr *initExpr; // both initExpr and initArray can be NULL when defining a struct
     // array initializer defined here
 } DeclInit;
 
@@ -249,8 +248,6 @@ typedef struct Declaration
     size_t declInitSize;
     size_t declInitCapacity;
 } Declaration;
-
-
 
 Expr *exprCreate(ExprType type);
 void exprDestroy(Expr *expr);
@@ -301,6 +298,9 @@ void declarationListDestroy(DeclarationList *declList);
 void declarationListResize(DeclarationList *declList, size_t size);
 void declarationListPush(DeclarationList *declList, Expr *decl);
 
+CompoundStmt *compoundStmtCreate(void);
+void compoundStmtDestroy(CompoundStmt *stmt);
+
 LabelStmt *labelStmtCreate(Stmt *body);
 void labelStmtDestroy(LabelStmt *labelStmt);
 
@@ -312,7 +312,7 @@ void typeSpecListDestroy(TypeSpecList *typeSpecList);
 void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize);
 void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier typeSpec);
 
-DeclInit *declInitCreate(const char* ident, const size_t pointerCount);
+DeclInit *declInitCreate(char *ident, const size_t pointerCount);
 void declInitDestroy(DeclInit *declInit);
 
 Declaration *declarationCreate(const size_t declInitSize);
@@ -321,4 +321,3 @@ void declarationResize(Declaration *decl, const size_t declInitSize);
 void declInitPush(Declaration *decl, DeclInit *declInit);
 
 #endif
-

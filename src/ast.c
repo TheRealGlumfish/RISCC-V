@@ -407,7 +407,7 @@ void statementListInit(StatementList *stmtList, const size_t size)
     stmtList->stmts = malloc(sizeof(Stmt *) * size);
     if (stmtList->stmts == NULL)
     {
-       abort();
+        abort();
     }
     stmtList->size = size;
     stmtList->capacity = size;
@@ -467,7 +467,7 @@ void declarationListInit(DeclarationList *declList, const size_t size)
     declList->decls = malloc(sizeof(Expr *) * size); // TODO: Change to declarations
     if (declList->decls == NULL)
     {
-       abort();
+        abort();
     }
     declList->size = size;
     declList->capacity = size;
@@ -519,6 +519,31 @@ void declarationListPush(DeclarationList *declList, Expr *decl)
 {
     declarationListResize(declList, declList->size + 1);
     declList->decls[declList->size - 1] = decl;
+}
+
+// Compound statement constructor
+CompoundStmt *compoundStmtCreate(void)
+{
+    CompoundStmt *stmt = malloc(sizeof(CompoundStmt));
+    if (stmt == NULL)
+    {
+        abort();
+    }
+    stmt->stmtList.size = 0;
+    stmt->stmtList.capacity = 0;
+    stmt->stmtList.stmts = NULL;
+    stmt->declList.size = 0;
+    stmt->declList.capacity = 0;
+    stmt->declList.decls = NULL;
+    return stmt;
+}
+
+// Compound statement destructor
+void compoundStmtDestroy(CompoundStmt *stmt)
+{
+    statementListDestroy(&stmt->stmtList);
+    declarationListDestroy(&stmt->declList);
+    free(stmt);
 }
 
 // Label statement constructor
@@ -587,7 +612,7 @@ TypeSpecList *typeSpecListCreate(const size_t typeSpecSize)
 
     if (typeSpecSize != 0)
     {
-        typeSpecList->typeSpecs = malloc(sizeof(TypeSpecifier *) * typeSpecSize); 
+        typeSpecList->typeSpecs = malloc(sizeof(TypeSpecifier *) * typeSpecSize);
         if (typeSpecList->typeSpecs == NULL)
         {
             abort();
@@ -605,7 +630,7 @@ TypeSpecList *typeSpecListCreate(const size_t typeSpecSize)
 
 // Type Qualifier List destructor
 void typeSpecListDestroy(TypeSpecList *typeSpecList)
-{   
+{
     if (typeSpecList->typeSpecs != NULL) // don't free a NULL pointer
     {
         free(typeSpecList->typeSpecs);
@@ -613,7 +638,6 @@ void typeSpecListDestroy(TypeSpecList *typeSpecList)
 
     free(typeSpecList);
 }
-
 
 // Resizes the size of the type qualifier list
 void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize)
@@ -654,7 +678,7 @@ void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier typeSpec)
 }
 
 // Declaration-Initializer constructor
-DeclInit *declInitCreate(const char* ident, const size_t pointerCount)
+DeclInit *declInitCreate(char *ident, const size_t pointerCount)
 {
     DeclInit *declInit = malloc(sizeof(DeclInit));
     if (declInit == NULL)
@@ -669,7 +693,7 @@ DeclInit *declInitCreate(const char* ident, const size_t pointerCount)
 // Declaration-Initializer destructor
 void declInitDestroy(DeclInit *declInit)
 {
-    if (declInit->initExpr!=NULL)
+    if (declInit->initExpr != NULL)
     {
         free(declInit->initExpr);
     }
@@ -688,7 +712,7 @@ Declaration *declarationCreate(const size_t declInitSize)
 
     if (declInitSize != 0)
     {
-        decl->declInits = malloc(sizeof(DeclInit *) * declInitSize); 
+        decl->declInits = malloc(sizeof(DeclInit *) * declInitSize);
         if (decl->declInits == NULL)
         {
             abort();
@@ -707,9 +731,9 @@ Declaration *declarationCreate(const size_t declInitSize)
 
 // Declaration destructor
 void declarationDestroy(Declaration *decl)
-{   
+{
     typeSpecListDestroy(decl->typeSpecList);
-    
+
     if (decl->declInitCapacity != 0)
     {
         for (size_t i = 0; i < decl->declInitSize; i++)
@@ -721,7 +745,6 @@ void declarationDestroy(Declaration *decl)
 
     free(decl);
 }
-
 
 // Resizes the size of the declInit list in the declaration
 void declarationResize(Declaration *decl, const size_t declInitSize)
@@ -760,7 +783,3 @@ void declInitPush(Declaration *decl, DeclInit *declInit)
     declarationResize(decl, decl->declInitSize + 1);
     decl->declInits[decl->declInitSize - 1] = declInit;
 }
-
-
-
-

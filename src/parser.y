@@ -24,6 +24,8 @@
     Stmt* stmt_node;
     FuncExpr* func_node;
     Operator operator;
+    DeclarationList decl_list;
+    StatementList stmt_list;
     Declaration* decl_node;
     DeclInit* decl_init_node;
     TypeSpecifier type_spec;
@@ -54,8 +56,10 @@
 %type <ptr_count> pointer
 %type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer_list  
 
-%type <stmt_node> declaration_list  
-%type <stmt_node> compound_statement labeled_statement expression_statement selection_statement iteration_statement jump_statement statement statement_list
+%type <stmt_list> statement_list
+%type <decl_list> declaration_list  
+
+%type <stmt_node> compound_statement labeled_statement expression_statement selection_statement iteration_statement jump_statement statement
 
 %type <operator> unary_operator assignment_operator
 %type <type_spec> type_specifier
@@ -453,9 +457,9 @@ constant_expression
 
 declaration
 	: declaration_specifiers SEMI_COLON // struct definition case
-	| declaration_specifiers init_declarator_list SEMI_COLON{
-                $$ = $2;
-                $$->typeSpecList = $1;
+	| declaration_specifiers init_declarator_list SEMI_COLON {
+        $$ = $2;
+        $$->typeSpecList = $1;
         }
 	;
 
@@ -465,36 +469,35 @@ declaration
 declaration_specifiers 
 	: storage_class_specifier
 	| storage_class_specifier declaration_specifiers
-
 	| type_specifier {
-                $$ = typeSpecListCreate(1);
-                $$->typeSpecs[0] = $1; 
+        $$ = typeSpecListCreate(1);
+        $$->typeSpecs[0] = $1; 
         }
         // these are in a weird order - could cause issues
-	| type_specifier declaration_specifiers{
-                $$ = $2;
-                typeSpecListPush($$, $1);
+	| type_specifier declaration_specifiers {
+        $$ = $2;
+        typeSpecListPush($$, $1);
         }
 	;
 
 init_declarator_list
-	: init_declarator{
-                $$ = declarationCreate(1);
-                $$->declInits[0] = $1;
+	: init_declarator {
+        $$ = declarationCreate(1);
+        $$->declInits[0] = $1;
         }
-	| init_declarator_list COMMA init_declarator{
-                $$ = $1;
-                declInitPush($$, $3);
+	| init_declarator_list COMMA init_declarator {
+        $$ = $1;
+        declInitPush($$, $3);
         }
 	;
 
 init_declarator
 	: declarator {
-                $$ = $1;
+        $$ = $1;
         }
 	| declarator ASSIGN initializer {
-                $1->initExpr = $3;
-                $$ = $1;
+        $1->initExpr = $3;
+        $$ = $1;
         }
 	;
 
@@ -572,18 +575,18 @@ enumerator
 // pointer is just a number here!
 declarator 
 	: pointer direct_declarator {
-                $2->pointerCount = $1;
-                $$ = $2;
+        $2->pointerCount = $1;
+        $$ = $2;
         }
 	| direct_declarator { 
-                $$ = $1; 
+        $$ = $1; 
         }
 	;
 
 direct_declarator
 	: IDENTIFIER {
 		$$ = declInitCreate($1, 0);
-	}
+	    }
 	| OPEN_BRACKET declarator CLOSE_BRACKET
 	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE
 	| direct_declarator OPEN_SQUARE CLOSE_SQUARE
@@ -591,7 +594,7 @@ direct_declarator
 	| direct_declarator OPEN_BRACKET identifier_list CLOSE_BRACKET
 	| direct_declarator OPEN_BRACKET CLOSE_BRACKET {
 		// $$ = new DirectDeclarator($1);
-	}
+	    }
 	;
 
 pointer
@@ -641,7 +644,7 @@ direct_abstract_declarator
 // returns an expresson
 initializer
 	: assignment_expression {
-                $$ = $1;
+        $$ = $1;
         }
 	| OPEN_BRACE initializer_list CLOSE_BRACE
 	| OPEN_BRACE initializer_list COMMA CLOSE_BRACE
@@ -693,47 +696,45 @@ labeled_statement
 compound_statement
 	: OPEN_BRACE CLOSE_BRACE {
         $$ = stmtCreate(COMPOUND_STMT);
-        $$->compoundStmt = compoundStmtCreate(0, 0);
+        $$->compoundStmt = compoundStmtCreate();
 	    }
 	| OPEN_BRACE statement_list CLOSE_BRACE {
-		$$ = $2;
+        $$ = stmtCreate(COMPOUND_STMT);
+        $$->compoundStmt = compoundStmtCreate();
+        $$->compoundStmt->stmtList = $2;
 	    }
 	| OPEN_BRACE declaration_list CLOSE_BRACE {
-        $$ = $2;
+        $$ = stmtCreate(COMPOUND_STMT);
+        $$->compoundStmt = compoundStmtCreate();
+        $$->compoundStmt->declList = $2;
 	    }
 	| OPEN_BRACE declaration_list statement_list CLOSE_BRACE  {
-        $$ = $2;
-        $$->compoundStmt->stmtSize = $3->compoundStmt->stmtSize;
-        $$->compoundStmt->stmtCapacity = $3->compoundStmt->stmtCapacity;
-        $$->compoundStmt->stmts = $3->compoundStmt->stmts;
-        $2->compoundStmt->stmts = NULL;
-        $2->compoundStmt->stmtSize = 0;
-        $2->compoundStmt->stmtCapacity = 0;
-        stmtDestroy($3);
+        $$ = stmtCreate(COMPOUND_STMT);
+        $$->compoundStmt = compoundStmtCreate();
+        $$->compoundStmt->declList = $2;
+        $$->compoundStmt->stmtList = $3;
     	}
 	;
 
 declaration_list
 	: declaration {
-        $$ = stmtCreate(COMPOUND_STMT);    
-        $$->compoundStmt = compoundStmtCreate(1, 0);
-        $$->compoundStmt->decls[0] = $1;
+        declarationListInit(&$$, 1);
+        $$->decls[0] = $1;
         }
 	| declaration_list declaration {
         $$ = $1;
-        compoundStmtDeclPush($$->compoundStmt, $2);
+        declarationListPush(&$$, $2);
         }
 	;
 
 statement_list
 	: statement {
-        $$ = stmtCreate(COMPOUND_STMT);    
-        $$->compoundStmt = compoundStmtCreate(0, 1);
-        $$->compoundStmt->stmts[0] = $1;
+        statementListInit(&$$, 1);
+        $$->stmts[0] = $1;
         }
 	| statement_list statement { 
         $$ = $1;
-        compoundStmtStmtPush($$->compoundStmt, $2);
+        statementListPush(&$$, $2);
         }
 	;
 

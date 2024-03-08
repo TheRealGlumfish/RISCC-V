@@ -188,17 +188,25 @@ typedef struct ExprStmt
     Expr *expr; // can be NULL
 } ExprStmt;
 
+typedef struct StatementList
+{
+    size_t size;
+    size_t capacity;
+    Stmt **stmts;
+} StatementList;
+
+typedef struct DeclarationList
+{
+    size_t size;
+    size_t capacity;
+    Expr **decls;
+} DeclarationList;
+
 typedef struct CompoundStmt
 {
     // declarations are not expressions - need to fix.
-    size_t declSize;
-    size_t declCapacity;
-    Expr **decls;
-
-    size_t stmtSize;
-    size_t stmtCapacity;
-    Stmt **stmts;
-
+    StatementList stmtList;
+    DeclarationList declList; 
 } CompoundStmt;
 
 typedef struct LabelStmt
@@ -283,12 +291,15 @@ void switchStmtDestroy(SwitchStmt *switchStmt);
 ExprStmt *exprStmtCreate(void);
 void exprStmtDestroy(ExprStmt *exprStmt);
 
-CompoundStmt *compoundStmtCreate(size_t declSize, size_t stmtSize);
-void compoundStmtDeclResize(CompoundStmt *stmt, size_t declSize);
-void compoundStmtStmtResize(CompoundStmt *stmt, size_t stmtSize);
-void compoundStmtDeclPush(CompoundStmt *compoundStmt, Expr *decl);
-void compoundStmtStmtPush(CompoundStmt *compoundStmt, Stmt *stmt);
-void compoundStmtDestroy(CompoundStmt *stmt);
+void statementListInit(StatementList *stmtList, size_t size);
+void statementListDestroy(StatementList *stmtList);
+void statementListResize(StatementList *stmtList, size_t size);
+void statementListPush(StatementList *stmtList, Stmt *stmt);
+
+void declarationListInit(DeclarationList *declList, size_t size);
+void declarationListDestroy(DeclarationList *declList);
+void declarationListResize(DeclarationList *declList, size_t size);
+void declarationListPush(DeclarationList *declList, Expr *decl);
 
 LabelStmt *labelStmtCreate(Stmt *body);
 void labelStmtDestroy(LabelStmt *labelStmt);

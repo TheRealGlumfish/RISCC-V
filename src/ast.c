@@ -401,93 +401,42 @@ void exprStmtDestroy(ExprStmt *stmt)
     free(stmt);
 }
 
-// Compound statement constructor
-CompoundStmt *compoundStmtCreate(const size_t declSize, const size_t stmtSize)
+// Statement List initializer
+void statementListInit(StatementList *stmtList, const size_t size)
 {
-    CompoundStmt *stmt = malloc(sizeof(CompoundStmt));
-    if (stmt == NULL)
+    stmtList->stmts = malloc(sizeof(Stmt *) * size);
+    if (stmtList->stmts == NULL)
     {
-        abort();
+       abort();
     }
-
-    if (declSize != 0)
-    {
-        stmt->decls = malloc(sizeof(Expr *) * declSize); // TODO: change to decls
-        if (stmt->decls == NULL)
-        {
-            abort();
-        }
-    }
-    else
-    {
-        stmt->decls = NULL;
-    }
-
-    if (stmtSize != 0)
-    {
-        stmt->stmts = malloc(sizeof(Expr *) * stmtSize);
-        if (stmt->stmts == NULL)
-        {
-            abort();
-        }
-    }
-    else
-    {
-        stmt->stmts = NULL;
-    }
-
-    stmt->declSize = declSize;
-    stmt->declCapacity = declSize;
-    stmt->stmtSize = stmtSize;
-    stmt->stmtCapacity = stmtSize;
-    return stmt;
+    stmtList->size = size;
+    stmtList->capacity = size;
 }
 
-// Resizes the size of the declaration list
-void compoundStmtDeclResize(CompoundStmt *stmt, const size_t declSize)
+// Statement List destructor
+void statementListDestroy(StatementList *stmtList)
 {
-    if (stmt->declSize != 0)
-    {
-        stmt->declSize = declSize;
-        if (stmt->declSize > stmt->declCapacity)
-        {
-            while (stmt->declSize > stmt->declCapacity)
-            {
-                stmt->declCapacity *= 2;
-            }
-            stmt->decls = realloc(stmt->decls, sizeof(Expr *) * stmt->declCapacity);
-            if (stmt->decls == NULL)
-            {
-                abort();
-            }
-        }
-    }
-    else
-    {
-        stmt->declSize = declSize;
-        stmt->decls = malloc(sizeof(Expr *) * declSize);
-        if (stmt->decls == NULL)
-        {
-            abort();
-        }
-        stmt->declCapacity = declSize;
-    }
+    free(stmtList->stmts);
+    stmtList->stmts = NULL;
+    stmtList->size = 0;
+    stmtList->capacity = 0;
 }
 
 // Resizes the size of the statement list
-void compoundStmtStmtResize(CompoundStmt *stmt, const size_t stmtSize)
+// Important: size must greater than 0
+void statementListResize(StatementList *stmtList, const size_t size)
 {
-    if (stmt->stmtSize != 0)
+    if (stmtList->size != 0)
     {
-        stmt->stmtSize = stmtSize;
-        if (stmt->stmtSize > stmt->stmtCapacity)
+        stmtList->size = size;
+        if (stmtList->size > stmtList->capacity)
         {
-            while (stmt->stmtSize > stmt->stmtCapacity)
+            while (stmtList->size > stmtList->capacity)
             {
-                stmt->stmtCapacity *= 2;
+                stmtList->capacity *= 2;
             }
-            stmt->stmts = realloc(stmt->stmts, sizeof(Stmt *) * stmt->stmtCapacity);
-            if (stmt->stmts == NULL)
+            stmtList->stmts = realloc(stmtList->stmts, sizeof(Stmt *) * stmtList->capacity);
+            if (stmtList->stmts == NULL)
             {
                 abort();
             }
@@ -495,52 +444,81 @@ void compoundStmtStmtResize(CompoundStmt *stmt, const size_t stmtSize)
     }
     else
     {
-        stmt->stmtSize = stmtSize;
-        stmt->stmts = malloc(sizeof(Stmt *) * stmtSize);
-        if (stmt->stmts == NULL)
+        stmtList->size = size;
+        stmtList->stmts = malloc(sizeof(Stmt *) * size);
+        if (stmtList->stmts == NULL)
         {
             abort();
         }
-        stmt->stmtCapacity = stmtSize;
+        stmtList->capacity = size;
     }
 }
 
-// Adds a declaration to the compound statement
-void compoundStmtDeclPush(CompoundStmt *compoundStmt, Expr *decl)
+// Adds an argument to the end of the statement list
+void statementListPush(StatementList *stmtList, Stmt *stmt)
 {
-    compoundStmtDeclResize(compoundStmt, compoundStmt->declSize + 1);
-    compoundStmt->decls[compoundStmt->declSize - 1] = decl;
+    statementListResize(stmtList, stmtList->size + 1);
+    stmtList->stmts[stmtList->size - 1] = stmt;
 }
 
-// Adds a statement to the compound statement
-void compoundStmtStmtPush(CompoundStmt *compoundStmt, Stmt *stmt)
+// Declaration List initializer
+void declarationListInit(DeclarationList *declList, const size_t size)
 {
-    compoundStmtDeclResize(compoundStmt, compoundStmt->stmtSize + 1);
-    compoundStmt->stmts[compoundStmt->declSize - 1] = stmt;
-}
-
-// Function expression destructor
-void compoundStmtDestroy(CompoundStmt *stmt)
-{
-    if (stmt->declCapacity != 0)
+    declList->decls = malloc(sizeof(Expr *) * size); // TODO: Change to declarations
+    if (declList->decls == NULL)
     {
-        for (size_t i = 0; i < stmt->declSize; i++)
-        {
-            exprDestroy(stmt->decls[i]);
-        }
-        free(stmt->decls);
+       abort();
     }
+    declList->size = size;
+    declList->capacity = size;
+}
 
-    if (stmt->stmtCapacity != 0)
+// Declaration List destructor
+void declarationListDestroy(DeclarationList *declList)
+{
+    free(declList->decls);
+    declList->decls = NULL;
+    declList->size = 0;
+    declList->capacity = 0;
+}
+
+// Resizes the size of the declaration list
+// Important: size must greater than 0
+void declarationListResize(DeclarationList *declList, const size_t size)
+{
+    if (declList->size != 0)
     {
-        for (size_t i = 0; i < stmt->stmtSize; i++)
+        declList->size = size;
+        if (declList->size > declList->capacity)
         {
-            stmtDestroy(stmt->stmts[i]);
+            while (declList->size > declList->capacity)
+            {
+                declList->capacity *= 2;
+            }
+            declList->decls = realloc(declList->decls, sizeof(Expr *) * declList->capacity); // TODO: Change to declaration type
+            if (declList->decls == NULL)
+            {
+                abort();
+            }
         }
-        free(stmt->stmts);
     }
+    else
+    {
+        declList->size = size;
+        declList->decls = malloc(sizeof(Stmt *) * size);
+        if (declList->decls == NULL)
+        {
+            abort();
+        }
+        declList->capacity = size;
+    }
+}
 
-    free(stmt);
+// Adds an argument to the end of the declaration list
+void declarationListPush(DeclarationList *declList, Expr *decl)
+{
+    declarationListResize(declList, declList->size + 1);
+    declList->decls[declList->size - 1] = decl;
 }
 
 // Label statement constructor

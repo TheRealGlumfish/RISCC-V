@@ -416,6 +416,10 @@ void statementListInit(StatementList *stmtList, const size_t size)
 // Statement List destructor
 void statementListDestroy(StatementList *stmtList)
 {
+    for (size_t i = 0; i < stmtList->size; i++)
+    {
+        stmtDestroy(stmtList->stmts[i]);
+    }
     free(stmtList->stmts);
     stmtList->stmts = NULL;
     stmtList->size = 0;
@@ -464,7 +468,7 @@ void statementListPush(StatementList *stmtList, Stmt *stmt)
 // Declaration List initializer
 void declarationListInit(DeclarationList *declList, const size_t size)
 {
-    declList->decls = malloc(sizeof(Expr *) * size); // TODO: Change to declarations
+    declList->decls = malloc(sizeof(Declaration *) * size);
     if (declList->decls == NULL)
     {
         abort();
@@ -476,7 +480,11 @@ void declarationListInit(DeclarationList *declList, const size_t size)
 // Declaration List destructor
 void declarationListDestroy(DeclarationList *declList)
 {
-    free(declList->decls);
+    for (size_t i = 0; i < declList->size; i++)
+    {
+        // TODO: Toby make a destructor...
+    }
+    free(declList->decls); // TODO: Need to add logic to go through all the elements and call the destructor
     declList->decls = NULL;
     declList->size = 0;
     declList->capacity = 0;
@@ -495,7 +503,7 @@ void declarationListResize(DeclarationList *declList, const size_t size)
             {
                 declList->capacity *= 2;
             }
-            declList->decls = realloc(declList->decls, sizeof(Expr *) * declList->capacity); // TODO: Change to declaration type
+            declList->decls = realloc(declList->decls, sizeof(Declaration *) * declList->capacity); // TODO: Change to declaration type
             if (declList->decls == NULL)
             {
                 abort();
@@ -505,7 +513,7 @@ void declarationListResize(DeclarationList *declList, const size_t size)
     else
     {
         declList->size = size;
-        declList->decls = malloc(sizeof(Stmt *) * size);
+        declList->decls = malloc(sizeof(Declaration *) * size);
         if (declList->decls == NULL)
         {
             abort();
@@ -515,7 +523,7 @@ void declarationListResize(DeclarationList *declList, const size_t size)
 }
 
 // Adds an argument to the end of the declaration list
-void declarationListPush(DeclarationList *declList, Expr *decl)
+void declarationListPush(DeclarationList *declList, Declaration *decl)
 {
     declarationListResize(declList, declList->size + 1);
     declList->decls[declList->size - 1] = decl;

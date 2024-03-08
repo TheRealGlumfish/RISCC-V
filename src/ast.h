@@ -155,6 +155,31 @@ typedef struct Stmt
     };
 } Stmt;
 
+typedef struct TypeSpecList
+{
+    TypeSpecifier *typeSpecs;
+    size_t typeSpecSize;
+    size_t typeSpecCapacity;
+} TypeSpecList;
+
+typedef struct DeclInit // holds declarator and sometimes an initializer
+{
+    size_t pointerCount;
+    char *ident;    // needs array and function definitions too
+    Expr *initExpr; // both initExpr and initArray can be NULL when defining a struct
+    // array initializer defined here
+} DeclInit;
+
+typedef struct Declaration
+{
+    TypeSpecList *typeSpecList;
+    // struct pointer will be here eventually.
+
+    DeclInit **declInits;
+    size_t declInitSize;
+    size_t declInitCapacity;
+} Declaration;
+
 typedef struct WhileStmt
 {
     Expr *condition;
@@ -199,7 +224,7 @@ typedef struct DeclarationList
 {
     size_t size;
     size_t capacity;
-    Expr **decls;
+    Declaration **decls;
 } DeclarationList;
 
 typedef struct CompoundStmt
@@ -223,31 +248,6 @@ typedef struct JumpStmt
     char *ident; // can be NULL
     Expr *expr;  // can be NULL
 } JumpStmt;
-
-typedef struct TypeSpecList
-{
-    TypeSpecifier *typeSpecs;
-    size_t typeSpecSize;
-    size_t typeSpecCapacity;
-} TypeSpecList;
-
-typedef struct DeclInit // holds declarator and sometimes an initializer
-{
-    size_t pointerCount;
-    char *ident;    // needs array and function definitions too
-    Expr *initExpr; // both initExpr and initArray can be NULL when defining a struct
-    // array initializer defined here
-} DeclInit;
-
-typedef struct Declaration
-{
-    TypeSpecList *typeSpecList;
-    // struct pointer will be here eventually.
-
-    DeclInit **declInits;
-    size_t declInitSize;
-    size_t declInitCapacity;
-} Declaration;
 
 Expr *exprCreate(ExprType type);
 void exprDestroy(Expr *expr);
@@ -296,7 +296,7 @@ void statementListPush(StatementList *stmtList, Stmt *stmt);
 void declarationListInit(DeclarationList *declList, size_t size);
 void declarationListDestroy(DeclarationList *declList);
 void declarationListResize(DeclarationList *declList, size_t size);
-void declarationListPush(DeclarationList *declList, Expr *decl);
+void declarationListPush(DeclarationList *declList, Declaration *decl);
 
 CompoundStmt *compoundStmtCreate(void);
 void compoundStmtDestroy(CompoundStmt *stmt);

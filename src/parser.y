@@ -51,7 +51,7 @@
 %type <expr_node> equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
 %type <expr_node> conditional_expression assignment_expression expression constant_expression
 
-%type <node>  struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list
+%type <node> struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list
 %type <node> struct_declarator enum_specifier enumerator_list enumerator  parameter_list parameter_declaration
 %type <ptr_count> pointer
 %type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer_list  
@@ -81,8 +81,8 @@
 %%
 
 ROOT
-  : declaration { // change back to translation_unit
-        rootExpr = $1; 
+  : compound_statement { // change back to translation_unit
+        rootExpr = $1;
     }
 
 translation_unit
@@ -719,7 +719,7 @@ compound_statement
 declaration_list
 	: declaration {
         declarationListInit(&$$, 1);
-        $$->decls[0] = $1;
+        $$.decls[0] = $1;
         }
 	| declaration_list declaration {
         $$ = $1;
@@ -730,7 +730,7 @@ declaration_list
 statement_list
 	: statement {
         statementListInit(&$$, 1);
-        $$->stmts[0] = $1;
+        $$.stmts[0] = $1;
         }
 	| statement_list statement { 
         $$ = $1;

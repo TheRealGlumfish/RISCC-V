@@ -9,7 +9,7 @@
     #include "src/ast.h"
 
     // extern Node *g_root;
-    extern Stmt *rootExpr;
+    extern DeclarationList rootExpr;
     extern FILE *yyin;
     int yylex(void);
     void yyerror(const char *);
@@ -24,9 +24,12 @@
     Stmt* stmt_node;
     FuncExpr* func_node;
     Operator operator;
+
+    Decl* decl_node;
     DeclarationList decl_list;
     StatementList stmt_list;
-    Declaration* decl_node;
+
+    DeclInitList* decl_init_list;
     DeclInit* decl_init_node;
     TypeSpecifier type_spec;
     TypeSpecList* type_spec_list;
@@ -56,8 +59,7 @@
 %type <ptr_count> pointer
 %type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer_list  
 
-%type <stmt_list> statement_list
-%type <decl_list> declaration_list  
+
 
 %type <stmt_node> compound_statement labeled_statement expression_statement selection_statement iteration_statement jump_statement statement
 
@@ -66,9 +68,11 @@
 
 %type <type_spec_list> declaration_specifiers 
 
-%type <string> storage_class_specifier  
+%type <string> storage_class_specifier 
 
-%type <decl_node> declaration init_declarator_list 
+%type <stmt_list> statement_list
+%type <decl_list> declaration declaration_list  
+%type <decl_init_list> init_declarator_list 
 %type <decl_init_node> init_declarator declarator direct_declarator
 
 %type <expr_node> initializer
@@ -81,7 +85,7 @@
 %%
 
 ROOT
-  : compound_statement { // change back to translation_unit
+  : declaration { // change back to translation_unit
         rootExpr = $1;
     }
 
@@ -455,11 +459,33 @@ constant_expression
 	;
 
 
+// returns a list of declarations
 declaration
-	: declaration_specifiers SEMI_COLON // struct definition case
-	| declaration_specifiers init_declarator_list SEMI_COLON {
-        $$ = $2;
-        $$->typeSpecList = $1;
+	: declaration_specifiers SEMI_COLON{
+                declarationListInit(&$$, 0);
+                declarationListPush(&$$, declCreate($1));
+        }
+	| declaration_specifiers init_declarator_list SEMI_COLON{
+                declarationListInit(&$$, 0);
+                // assuming init_declarator_list is a list of decl_inits
+                for (size_t i = 0; i < $2->declInitListSize; i++)
+                {
+                        TypeSpecList * typeSpecList;
+                        if (i == 0)
+                        {
+                                typeSpecList  = $1;
+                        }
+                        else
+                        {
+                                typeSpecList = typeSpecListCopy($1);
+                        }
+                        
+                        Decl* decl = declCreate(typeSpecList);
+                        decl->declInit =  $2->declInits[i];
+                        declarationListPush(&$$, decl);
+                }
+                free($2->declInits);
+                free($2);
         }
 	;
 
@@ -480,14 +506,15 @@ declaration_specifiers
         }
 	;
 
+// returns a list of declaration inits
 init_declarator_list
-	: init_declarator {
-        $$ = declarationCreate(1);
-        $$->declInits[0] = $1;
+	: init_declarator{
+                $$ = declInitListCreate(1);
+                $$->declInits[0] = $1;
         }
-	| init_declarator_list COMMA init_declarator {
-        $$ = $1;
-        declInitPush($$, $3);
+	| init_declarator_list COMMA init_declarator{
+                $$ = $1;
+                declInitListPush($$, $3);
         }
 	;
 

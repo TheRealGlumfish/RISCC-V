@@ -155,31 +155,6 @@ typedef struct Stmt
     };
 } Stmt;
 
-typedef struct TypeSpecList
-{
-    TypeSpecifier *typeSpecs;
-    size_t typeSpecSize;
-    size_t typeSpecCapacity;
-} TypeSpecList;
-
-typedef struct DeclInit // holds declarator and sometimes an initializer
-{
-    size_t pointerCount;
-    char *ident;    // needs array and function definitions too
-    Expr *initExpr; // both initExpr and initArray can be NULL when defining a struct
-    // array initializer defined here
-} DeclInit;
-
-typedef struct Declaration
-{
-    TypeSpecList *typeSpecList;
-    // struct pointer will be here eventually.
-
-    DeclInit **declInits;
-    size_t declInitSize;
-    size_t declInitCapacity;
-} Declaration;
-
 typedef struct WhileStmt
 {
     Expr *condition;
@@ -213,6 +188,38 @@ typedef struct ExprStmt
     Expr *expr; // can be NULL
 } ExprStmt;
 
+
+typedef struct TypeSpecList
+{
+    TypeSpecifier *typeSpecs;
+    size_t typeSpecSize;
+    size_t typeSpecCapacity;
+} TypeSpecList;
+
+typedef struct DeclInit // holds declarator and sometimes an initializer
+{ 
+    size_t pointerCount;
+    char *ident; // needs array and function definitions too
+    Expr *initExpr; // both initExpr and initArray can be NULL when defining a struct
+    // array initializer defined here
+} DeclInit;
+
+typedef struct Decl
+{
+    TypeSpecList *typeSpecList;
+    // struct pointer will be here eventually.
+
+    // Try just one declInit for split
+    DeclInit *declInit;
+} Decl;
+
+typedef struct DeclInitList
+{
+    DeclInit **declInits;
+    size_t declInitListSize;
+    size_t declInitListCapacity;
+} DeclInitList;
+
 typedef struct StatementList
 {
     size_t size;
@@ -224,7 +231,7 @@ typedef struct DeclarationList
 {
     size_t size;
     size_t capacity;
-    Declaration **decls;
+    Decl **decls;
 } DeclarationList;
 
 typedef struct CompoundStmt
@@ -248,6 +255,8 @@ typedef struct JumpStmt
     char *ident; // can be NULL
     Expr *expr;  // can be NULL
 } JumpStmt;
+
+
 
 Expr *exprCreate(ExprType type);
 void exprDestroy(Expr *expr);
@@ -296,7 +305,7 @@ void statementListPush(StatementList *stmtList, Stmt *stmt);
 void declarationListInit(DeclarationList *declList, size_t size);
 void declarationListDestroy(DeclarationList *declList);
 void declarationListResize(DeclarationList *declList, size_t size);
-void declarationListPush(DeclarationList *declList, Declaration *decl);
+void declarationListPush(DeclarationList *declList, Decl *decl);
 
 CompoundStmt *compoundStmtCreate(void);
 void compoundStmtDestroy(CompoundStmt *stmt);
@@ -311,13 +320,17 @@ TypeSpecList *typeSpecListCreate(const size_t typeSpecSize);
 void typeSpecListDestroy(TypeSpecList *typeSpecList);
 void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize);
 void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier typeSpec);
+TypeSpecList *typeSpecListCopy(TypeSpecList *typeSpecList);
 
 DeclInit *declInitCreate(char *ident, const size_t pointerCount);
 void declInitDestroy(DeclInit *declInit);
 
-Declaration *declarationCreate(const size_t declInitSize);
-void declarationDestroy(Declaration *decl);
-void declarationResize(Declaration *decl, const size_t declInitSize);
-void declInitPush(Declaration *decl, DeclInit *declInit);
+Decl *declCreate(TypeSpecList *typeSpecList);
+void declDestroy(Decl *decl);
+
+DeclInitList *declInitListCreate(const size_t declInitListSize);
+void declInitListDestroy(DeclInitList *declInitList);
+void declInitListResize(DeclInitList *declInitList, const size_t declInitListSize);
+void declInitListPush(DeclInitList *declInitList, DeclInit *declInit);
 
 #endif

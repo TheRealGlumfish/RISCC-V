@@ -9,7 +9,7 @@
     #include "src/ast.h"
 
     // extern Node *g_root;
-    extern DeclarationList rootExpr;
+    extern Stmt* rootExpr;
     extern FILE *yyin;
     int yylex(void);
     void yyerror(const char *);
@@ -85,7 +85,7 @@
 %%
 
 ROOT
-  : declaration { // change back to translation_unit
+  : compound_statement { // change back to translation_unit
         rootExpr = $1;
     }
 
@@ -745,12 +745,15 @@ compound_statement
 
 declaration_list
 	: declaration {
-        declarationListInit(&$$, 1);
-        $$.decls[0] = $1;
+		$$ = $1;
         }
 	| declaration_list declaration {
         $$ = $1;
-        declarationListPush(&$$, $2);
+        for(size_t i = 0; i < $2.size; i++)
+        {
+            declarationListPush(&$$, $2.decls[i]);
+        }
+		free($2.decls);
         }
 	;
 

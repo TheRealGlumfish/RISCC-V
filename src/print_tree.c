@@ -4,7 +4,7 @@
 #include "ast.h"
 #include "parser.tab.h"
 
-DeclarationList rootExpr;
+Stmt* rootExpr;
 
 // will probably need this later...
 // typedef struct {
@@ -284,9 +284,93 @@ void displayExprStmt(ExprStmt *exprStmt, int indent)
     displayExpr(exprStmt->expr, indent);
 }
 
+
+void displayDecl(Decl *decl, int indent)
+{
+    // Do we need this for statements
+    if (decl == NULL)
+    {
+        // some expr operands aren't set
+        return;
+    }
+
+    
+    printIndent(indent);
+    if (indent > 0)
+    {
+        printf("└── ");
+    }
+    
+    printf("DECL \n");
+
+    // print type specifiers
+    printIndent(indent+4);
+    printf("└── ");
+    for (size_t i = 0 ; i < decl->typeSpecList->typeSpecSize; i++)
+    {
+        switch (decl->typeSpecList->typeSpecs[i])
+        {
+            case VOID_TYPE:
+                printf("VOID ");
+                break;
+            case CHAR_TYPE:
+                printf("CHAR ");
+                break;
+            case SHORT_TYPE:
+                printf("SHORT ");
+                break;
+            case INT_TYPE:
+                printf("INT ");
+                break;
+            case LONG_TYPE:
+                printf("LONG ");
+                break;
+            case FLOAT_TYPE:
+                printf("FLOAT ");
+                break;
+            case DOUBLE_TYPE:
+                printf("DOUBLE ");
+                break;
+            case SIGNED_TYPE:
+                printf("SIGNED ");
+                break;
+            case UNSIGNED_TYPE:
+                printf("UNSIGNED ");
+                break;
+        }
+    }
+
+    if(decl->declInit != NULL)
+    {
+        printf("\n");
+        printIndent(indent+4);
+        printf("└── ");
+        printf("%s \n", decl->declInit->ident);
+        if (decl->declInit->initExpr != NULL)
+        {
+            displayExpr(decl->declInit->initExpr, indent + 8);
+        }
+    }
+    
+}
+
 void displayCompoundStmt(CompoundStmt *compoundStmt, int indent)
 {
-    printf("UNFINISHED\n");
+    printf("CMPD STMT\n");
+    if(compoundStmt->stmtList.size != 0)
+    {
+        for(size_t i = 0; i < compoundStmt->stmtList.size; i++)
+        {
+            displayStmt(compoundStmt->stmtList.stmts[i], indent+4);
+        }
+    }
+    if(compoundStmt->declList.size != 0)
+    {
+        for(size_t i = 0; i < compoundStmt->declList.size; i++)
+        {
+            displayDecl(compoundStmt->declList.decls[i], indent+4);
+        }
+    }
 }
 
 void displayLabelStmt(LabelStmt *labelStmt, int indent)
@@ -378,74 +462,6 @@ void displayStmt(Stmt *stmt, int indent)
     }
 }
 
-void displayDecl(Decl *decl, int indent)
-{
-    // Do we need this for statements
-    if (decl == NULL)
-    {
-        // some expr operands aren't set
-        return;
-    }
-
-    
-    printIndent(indent);
-    if (indent > 0)
-    {
-        printf("└── ");
-    }
-    
-    printf("DECL \n");
-
-    // print type specifiers
-    printIndent(indent+4);
-    printf("└── ");
-    for (size_t i = 0 ; i < decl->typeSpecList->typeSpecSize; i++)
-    {
-        switch (decl->typeSpecList->typeSpecs[i])
-        {
-            case VOID_TYPE:
-                printf("VOID ");
-                break;
-            case CHAR_TYPE:
-                printf("CHAR ");
-                break;
-            case SHORT_TYPE:
-                printf("SHORT ");
-                break;
-            case INT_TYPE:
-                printf("INT ");
-                break;
-            case LONG_TYPE:
-                printf("LONG ");
-                break;
-            case FLOAT_TYPE:
-                printf("FLOAT ");
-                break;
-            case DOUBLE_TYPE:
-                printf("DOUBLE ");
-                break;
-            case SIGNED_TYPE:
-                printf("SIGNED ");
-                break;
-            case UNSIGNED_TYPE:
-                printf("UNSIGNED ");
-                break;
-        }
-    }
-
-    if(decl->declInit != NULL)
-    {
-        printf("\n");
-        printIndent(indent+4);
-        printf("└── ");
-        printf("%s \n", decl->declInit->ident);
-        if (decl->declInit->initExpr != NULL)
-        {
-            displayExpr(decl->declInit->initExpr, indent + 8);
-        }
-    }
-    
-}
 
 int main(int argc, char **argv)
 {
@@ -473,11 +489,9 @@ int main(int argc, char **argv)
     // {
     //     fprintf(stderr, "Error: parsing unsuccessful\n");
     // }
-    for(size_t i = 0; i < rootExpr.size; i++)
-    {
-        displayDecl(rootExpr.decls[i], 0);
-    }
-    declarationListDestroy(&rootExpr);
+
+    displayStmt(rootExpr, 0);
+    stmtDestroy(rootExpr);
     
 
     

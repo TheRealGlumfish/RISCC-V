@@ -31,7 +31,7 @@
 
     DeclInitList* decl_init_list;
     DeclInit* decl_init_node;
-    TypeSpecifier type_spec;
+    TypeSpecifier* type_spec;
     TypeSpecList* type_spec_list;
     size_t ptr_count;
 }
@@ -538,16 +538,46 @@ storage_class_specifier
 	;
 
 type_specifier
-	: VOID { $$ = VOID_TYPE; }
-	| CHAR { $$ = CHAR_TYPE; }
-	| SHORT { $$ = SHORT_TYPE; }
-	| INT { $$ = INT_TYPE; }
-	| LONG { $$ = LONG_TYPE; }
-	| FLOAT { $$ = FLOAT_TYPE; }
-	| DOUBLE { $$ = DOUBLE_TYPE; }
-	| SIGNED { $$ = SIGNED_TYPE; }
-	| UNSIGNED { $$ = UNSIGNED_TYPE; }
-        | struct_specifier // later
+	: VOID { 
+		$$ = typeSpecifierCreate(false);
+		$$->dataType = VOID_TYPE;
+	}
+	| CHAR { 
+		$$ = typeSpecifierCreate(false);
+		$$->dataType = CHAR_TYPE;
+	}
+	| SHORT {
+		$$ = typeSpecifierCreate(false);
+		$$->dataType = SHORT_TYPE;
+	}
+	| INT {
+		$$ = typeSpecifierCreate(false);
+		$$->dataType = INT_TYPE;
+	}
+	| LONG {
+		$$ = typeSpecifierCreate(false);
+		$$->dataType = LONG_TYPE;
+	}
+	| FLOAT {
+		$$ = typeSpecifierCreate(false);
+		$$->dataType = FLOAT_TYPE;
+	}
+	| DOUBLE {
+		$$ = typeSpecifierCreate(false);
+		$$->dataType = DOUBLE_TYPE;
+	}
+	| SIGNED {
+		$$ = typeSpecifierCreate(false);
+		$$->dataType = SIGNED_TYPE;
+	}
+	| UNSIGNED {
+		$$ = typeSpecifierCreate(false);
+		$$->dataType = UNSIGNED_TYPE;
+	}
+    | struct_specifier {
+		//$$ = typeSpecifierCreate(true);
+			
+	}// later
 	| enum_specifier // doesnt need to be implemented
 	| TYPE_NAME // Never returned by the lexer
 	;

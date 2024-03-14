@@ -70,7 +70,7 @@ void variableExprDestroy(VariableExpr *expr)
 }
 
 // Constant expression constructor
-ConstantExpr *constantExprCreate(const TypeSpecifier type, const bool isString)
+ConstantExpr *constantExprCreate(const DataType type, const bool isString)
 {
     ConstantExpr *expr = malloc(sizeof(ConstantExpr));
     if (expr == NULL)
@@ -621,7 +621,7 @@ TypeSpecList *typeSpecListCreate(const size_t typeSpecSize)
 
     if (typeSpecSize != 0)
     {
-        typeSpecList->typeSpecs = malloc(sizeof(TypeSpecifier) * typeSpecSize); 
+        typeSpecList->typeSpecs = malloc(sizeof(TypeSpecifier *) * typeSpecSize); 
         if (typeSpecList->typeSpecs == NULL)
         {
             abort();
@@ -640,9 +640,9 @@ TypeSpecList *typeSpecListCreate(const size_t typeSpecSize)
 // Type Qualifier List destructor
 void typeSpecListDestroy(TypeSpecList *typeSpecList)
 {
-    if (typeSpecList->typeSpecs != NULL) // don't free a NULL pointer
+    for(size_t i = 0; i < typeSpecList->typeSpecSize; i++)
     {
-        free(typeSpecList->typeSpecs);
+        typeSpecifierDestroy(typeSpecList->typeSpecs[i]);
     }
 
     free(typeSpecList);
@@ -660,7 +660,7 @@ void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize)
             {
                 typeSpecList->typeSpecCapacity *= 2;
             }
-            typeSpecList->typeSpecs = realloc(typeSpecList->typeSpecs, sizeof(TypeSpecifier) * typeSpecList->typeSpecCapacity);
+            typeSpecList->typeSpecs = realloc(typeSpecList->typeSpecs, sizeof(TypeSpecifier *) * typeSpecList->typeSpecCapacity);
             if (typeSpecList->typeSpecs == NULL)
             {
                 abort();
@@ -670,7 +670,7 @@ void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize)
     else
     {
         typeSpecList->typeSpecSize = typeSpecSize;
-        typeSpecList->typeSpecs = malloc(sizeof(TypeSpecifier) * typeSpecSize);
+        typeSpecList->typeSpecs = malloc(sizeof(TypeSpecifier *) * typeSpecSize);
         if (typeSpecList->typeSpecs == NULL)
         {
             abort();
@@ -680,7 +680,7 @@ void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize)
 }
 
 // Adds a type qualifier to a type qualifier list
-void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier typeSpec)
+void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier* typeSpec)
 {
     typeSpecListResize(typeSpecList, typeSpecList->typeSpecSize + 1);
     typeSpecList->typeSpecs[typeSpecList->typeSpecSize - 1] = typeSpec;
@@ -757,7 +757,8 @@ DeclInitList *declInitListCreate(const size_t declInitListSize)
 
     if (declInitListSize != 0)
     {
-        declInitList->declInits = malloc(sizeof(DeclInit) * declInitListSize); 
+        // recent change
+        declInitList->declInits = malloc(sizeof(DeclInit *) * declInitListSize); 
         if (declInitList->declInits == NULL)
         {
             abort();
@@ -820,3 +821,122 @@ void declInitListPush(DeclInitList *declInitList, DeclInit *declInit)
     declInitListResize(declInitList, declInitList->declInitListSize + 1);
     declInitList->declInits[declInitList->declInitListSize - 1] = declInit;
 }
+
+
+// Constructor for struct declaration
+StructDecl *structDeclCreate(TypeSpecList *typeSpecList, char *ident)
+{
+    StructDecl *structDecl = malloc(sizeof(StructDecl));
+    if (structDecl == NULL)
+    {
+        abort();
+    }
+
+    structDecl->typeSpecList = typeSpecList;
+    structDecl->ident = ident;
+    return structDecl;
+}
+
+// Destructor for struct declaration
+void structDeclDestroy(StructDecl *structDecl)
+{
+    typeSpecListDestroy(structDecl->typeSpecList);
+    free(structDecl->ident);
+    if(structDecl->bitField != NULL)
+    {
+        exprDestroy(structDecl->bitField);
+    }
+    free(structDecl);
+}
+
+// Constructor for struct specifier
+StructSpecifier *structSpecifierCreate()
+{
+    StructSpecifier *structSpec = malloc(sizeof(StructSpecifier));
+    if (structSpec == NULL)
+    {
+        abort();
+    }
+
+    structSpec->structDecls = NULL;
+    structSpec->structDeclSize = 0;
+    structSpec->structDeclCapacity = 0;
+    return structSpec;
+}
+
+// Destructor for struct specifier
+void structSpecifierDestroy(StructSpecifier *structSpec)
+{
+    if(structSpec->ident != NULL)
+    {
+        free(structSpec->ident);
+    }
+
+    for(size_t i = 0; i < structSpec->structDeclSize; i++)
+    {
+        structDeclDestroy(structSpec->structDecls[i]);
+    }
+    free(structSpec->structDecls);
+    free(structSpec);
+}
+
+// Resize the array inside struct specifier types
+void structSpecifierResize(StructSpecifier *structSpecifier, const size_t structDeclSize)
+{
+    if (structSpecifier->structDeclSize != 0)
+    {
+        structSpecifier->structDeclSize = structDeclSize;
+        if (structSpecifier->structDeclSize > structSpecifier->structDeclCapacity)
+        {
+            while (structSpecifier->structDeclSize > structSpecifier->structDeclCapacity)
+            {
+                structSpecifier->structDeclCapacity *= 2;
+            }
+            structSpecifier->structDecls = realloc(structSpecifier->structDecls, sizeof(StructDecl *) * structSpecifier->structDeclCapacity);
+            if (structSpecifier->structDecls == NULL)
+            {
+                abort();
+            }
+        }
+    }
+    else
+    {
+        structSpecifier->structDeclSize = structDeclSize;
+        structSpecifier->structDecls = malloc(sizeof(StructDecl *) * structDeclSize);
+        if (structSpecifier->structDecls == NULL)
+        {
+            abort();
+        }
+        structSpecifier->structDeclCapacity = structDeclSize;
+    }
+}
+
+// Adds a declaration to a struct specifier
+void structSpecifierPush(StructSpecifier *structSpecifier, StructDecl *structDecl)
+{
+    structSpecifierResize(structSpecifier, structSpecifier->structDeclSize + 1);
+    structSpecifier->structDecls[structSpecifier->structDeclSize - 1] = structDecl;
+}
+
+// Constructor for type specifiers
+TypeSpecifier *typeSpecifierCreate(bool isStruct)
+{
+    TypeSpecifier *typeSpecifier = malloc(sizeof(TypeSpecifier));
+    if (typeSpecifier == NULL)
+    {
+        abort();
+    }
+    typeSpecifier->isStruct = isStruct;
+    return typeSpecifier;
+}
+
+// Destructor for type specifiers
+void typeSpecifierDestroy(TypeSpecifier *typeSpecifier)
+{
+    if(typeSpecifier->isStruct != false)
+    {
+        structSpecifierDestroy(typeSpecifier->structSpecifier);
+    }
+    free(typeSpecifier);
+}
+

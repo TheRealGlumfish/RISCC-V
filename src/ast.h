@@ -49,7 +49,7 @@ typedef enum
     DOUBLE_TYPE,
     SIGNED_TYPE,
     UNSIGNED_TYPE
-} TypeSpecifier; // TODO: Add full list of types and deal with unsigned and void
+} DataType; // TODO: Add full list of types and deal with unsigned and void
 
 typedef enum
 {
@@ -96,7 +96,7 @@ typedef struct Expr
 typedef struct VariableExpr
 {
     char *ident;
-    TypeSpecifier type;
+    DataType type;
 } VariableExpr;
 
 typedef struct ConstantExpr
@@ -108,7 +108,7 @@ typedef struct ConstantExpr
         char char_const;
         char *string_const;
     };
-    TypeSpecifier type;
+    DataType type;
     bool isString;
 } ConstantExpr;
 
@@ -118,7 +118,7 @@ typedef struct OperationExpr
     Expr *op2;
     Expr *op3;
     Operator operator;
-    TypeSpecifier type;
+    DataType type;
 } OperationExpr;
 
 typedef struct AssignExpr
@@ -127,7 +127,7 @@ typedef struct AssignExpr
     Expr *op;
     Expr *lvalue;
     Operator operator;  // Info: when set to NOT, regular assignment
-    TypeSpecifier type; // TODO: Replace, could accept compound types
+    DataType type; // TODO: Replace, could accept compound types
 } AssignExpr;
 
 typedef struct FuncExpr
@@ -136,7 +136,7 @@ typedef struct FuncExpr
     size_t argsSize;
     size_t argsCapacity;
     Expr **args;
-    TypeSpecifier type; // TODO: Replace, functions may not retrun primative types only
+    DataType type; // TODO: Replace, functions may not retrun primative types only
 } FuncExpr;
 
 typedef struct Stmt
@@ -188,14 +188,41 @@ typedef struct ExprStmt
     Expr *expr; // can be NULL
 } ExprStmt;
 
+typedef struct StructSpecifier
+{
+    char* ident; // can be null for anonymous structs
+    
+    struct StructDecl **structDecls;
+    size_t structDeclSize;
+    size_t structDeclCapacity;
+} StructSpecifier;
+
+// holds either a data type or a struct specifier
+typedef struct TypeSpecifier
+{
+    bool isStruct;
+    union
+    {
+        DataType dataType; // either of these can be NULL
+        StructSpecifier* structSpecifier;
+    };
+    
+} TypeSpecifier;
 
 typedef struct TypeSpecList
 {
-    TypeSpecifier *typeSpecs;
+    TypeSpecifier **typeSpecs;
     size_t typeSpecSize;
     size_t typeSpecCapacity;
 } TypeSpecList;
 
+typedef struct StructDecl{
+    TypeSpecList *typeSpecList;
+    char* ident;
+    Expr* bitField; // can be NULL
+} StructDecl;
+
+// intermediary class used for building the AST
 typedef struct DeclInit // holds declarator and sometimes an initializer
 { 
     size_t pointerCount;
@@ -212,7 +239,7 @@ typedef struct Decl
     // Try just one declInit for split
     DeclInit *declInit;
 } Decl;
-
+  
 typedef struct DeclInitList
 {
     DeclInit **declInits;
@@ -264,7 +291,7 @@ void exprDestroy(Expr *expr);
 VariableExpr *variableExprCreate(char *ident);
 void variableExprDestroy(VariableExpr *expr);
 
-ConstantExpr *constantExprCreate(TypeSpecifier type, bool isString);
+ConstantExpr *constantExprCreate(DataType type, bool isString);
 void constantExprDestroy(ConstantExpr *expr);
 
 OperationExpr *operationExprCreate(const Operator operator);
@@ -319,7 +346,7 @@ void jumpStmtDestroy(JumpStmt *jumpStmt);
 TypeSpecList *typeSpecListCreate(const size_t typeSpecSize);
 void typeSpecListDestroy(TypeSpecList *typeSpecList);
 void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize);
-void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier typeSpec);
+void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier* typeSpec);
 TypeSpecList *typeSpecListCopy(TypeSpecList *typeSpecList);
 
 DeclInit *declInitCreate(char *ident, const size_t pointerCount);
@@ -332,5 +359,16 @@ DeclInitList *declInitListCreate(const size_t declInitListSize);
 void declInitListDestroy(DeclInitList *declInitList);
 void declInitListResize(DeclInitList *declInitList, const size_t declInitListSize);
 void declInitListPush(DeclInitList *declInitList, DeclInit *declInit);
+
+StructDecl *structDeclCreate(TypeSpecList *typeSpecList, char *ident);
+void structDeclDestroy(StructDecl *structDecl);
+
+StructSpecifier *structSpecifierCreate();
+void structSpecifierDestroy(StructSpecifier *structSpec);
+void structSpecifierResize(StructSpecifier *structSpecifier, const size_t structDeclSize);
+void structSpecifierPush(StructSpecifier *structSpecifier, StructDecl *structDecl);
+
+TypeSpecifier *typeSpecifierCreate(bool isStruct);
+void typeSpecifierDestroy(TypeSpecifier *typeSpecifier);
 
 #endif

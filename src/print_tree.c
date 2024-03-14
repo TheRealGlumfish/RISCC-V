@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -308,8 +309,10 @@ void displayDecl(Decl *decl, int indent)
     printf("└── ");
     for (size_t i = 0 ; i < decl->typeSpecList->typeSpecSize; i++)
     {
-        switch (decl->typeSpecList->typeSpecs[i])
+        if(decl->typeSpecList->typeSpecs[i]->isStruct == false)
         {
+            switch (decl->typeSpecList->typeSpecs[i]->dataType)
+            {
             case VOID_TYPE:
                 printf("VOID ");
                 break;
@@ -337,7 +340,9 @@ void displayDecl(Decl *decl, int indent)
             case UNSIGNED_TYPE:
                 printf("UNSIGNED ");
                 break;
+            }
         }
+        
     }
 
     if(decl->declInit != NULL)
@@ -492,8 +497,6 @@ int main(int argc, char **argv)
 
     displayStmt(rootExpr, 0);
     stmtDestroy(rootExpr);
-    
-
     
     return EXIT_SUCCESS;
 }

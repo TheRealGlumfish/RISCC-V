@@ -33,6 +33,12 @@
     DeclInit* decl_init_node;
     TypeSpecifier* type_spec;
     TypeSpecList* type_spec_list;
+
+        Declarator* declarator_node;
+        StructSpecifier* struct_spec_node;
+        StructDeclList* struct_decl_list;
+        StructDecl* struct_decl_node;
+
     size_t ptr_count;
 }
 
@@ -54,26 +60,29 @@
 %type <expr_node> equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
 %type <expr_node> conditional_expression assignment_expression expression constant_expression
 
-%type <node> struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list
-%type <node> struct_declarator enum_specifier enumerator_list enumerator  parameter_list parameter_declaration
-%type <ptr_count> pointer
+%type <node>  enum_specifier enumerator_list enumerator  parameter_list parameter_declaration
 %type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer_list  
 
+%type <struct_spec_node> struct_specifier
+%type <struct_decl_list> struct_declaration_list struct_declaration struct_declarator_list
+%type <struct_decl_node> struct_declarator 
 
+%type <ptr_count> pointer
 
 %type <stmt_node> compound_statement labeled_statement expression_statement selection_statement iteration_statement jump_statement statement
 
 %type <operator> unary_operator assignment_operator
 %type <type_spec> type_specifier
 
-%type <type_spec_list> declaration_specifiers 
+%type <type_spec_list> declaration_specifiers specifier_qualifier_list
 
 %type <string> storage_class_specifier 
 
 %type <stmt_list> statement_list
 %type <decl_list> declaration declaration_list  
 %type <decl_init_list> init_declarator_list 
-%type <decl_init_node> init_declarator declarator direct_declarator
+%type <decl_init_node> init_declarator
+%type <declarator_node> declarator direct_declarator
 
 %type <expr_node> initializer
 
@@ -496,13 +505,13 @@ declaration_specifiers
 	: storage_class_specifier
 	| storage_class_specifier declaration_specifiers
 	| type_specifier {
-        $$ = typeSpecListCreate(1);
-        $$->typeSpecs[0] = $1; 
+                $$ = typeSpecListCreate(1);
+                $$->typeSpecs[0] = $1; 
         }
         // these are in a weird order - could cause issues
 	| type_specifier declaration_specifiers {
-        $$ = $2;
-        typeSpecListPush($$, $1);
+                $$ = $2;
+                typeSpecListPush($$, $1);
         }
 	;
 
@@ -520,11 +529,11 @@ init_declarator_list
 
 init_declarator
 	: declarator {
-        $$ = $1;
+        $$ = declInitCreate($1);
         }
 	| declarator ASSIGN initializer {
-        $1->initExpr = $3;
-        $$ = $1;
+		$$ = declInitCreate($1);
+		$$->initExpr = $3;
         }
 	;
 
@@ -554,16 +563,17 @@ type_specifier
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = INT_TYPE;
 	}
-	| LONG {
-		$$ = typeSpecifierCreate(false);
-		$$->dataType = LONG_TYPE;
-	}
 	| FLOAT {
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = FLOAT_TYPE;
 	}
 	| DOUBLE {
 		$$ = typeSpecifierCreate(false);
+		$$->dataType = INT_TYPE;
+	}
+	| LONG {
+		$$ = typeSpecifierCreate(false);
+		$$->dataType = (false);
 		$$->dataType = DOUBLE_TYPE;
 	}
 	| SIGNED {
@@ -574,43 +584,109 @@ type_specifier
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = UNSIGNED_TYPE;
 	}
-    | struct_specifier {
-		//$$ = typeSpecifierCreate(true);
-			
-	}// later
+        | struct_specifier {
+		$$ = typeSpecifierCreate(true);
+		$$->structSpecifier = $1;
+	} // later
 	| enum_specifier // doesnt need to be implemented
 	| TYPE_NAME // Never returned by the lexer
 	;
 
 struct_specifier
 	: STRUCT IDENTIFIER OPEN_BRACE struct_declaration_list CLOSE_BRACE
+	{
+		$$ = structSpecifierCreate();
+		$$->ident = $2;
+		$$->structDeclList = $4;
+	}
 	| STRUCT OPEN_BRACE struct_declaration_list CLOSE_BRACE
-	| STRUCT IDENTIFIER
+	{
+		$$ = structSpecifierCreate();
+		$$->structDeclList = $3;
+	}
+	| STRUCT IDENTIFIER{
+		$$ = structSpecifierCreate();
+		$$->ident = $2;
+	}
 	;
 
+// struct declaration is also a struct decl list
 struct_declaration_list
 	: struct_declaration
+	{
+		$$ = $1;
+	}
 	| struct_declaration_list struct_declaration
+	{
+		$$ = $1;
+                for(size_t i = 0; i < $2->structDeclListSize; i++)
+                {
+                        structDeclListPush($$, $2->structDecls[i]);
+                }
+                free($2->structDecls);
+                free($2);
+        }
 	;
 
+// assume struct declarator returns a list of structDecl
 struct_declaration
 	: specifier_qualifier_list struct_declarator_list SEMI_COLON
+	{
+		for(size_t i = 0; i < $2->structDeclListSize; i++)
+                {
+                        if(i == 0)
+                        {
+                                $2->structDecls[i]->typeSpecList = $1;
+                        }
+                        else
+                        {
+                                $2->structDecls[i]->typeSpecList = typeSpecListCopy($1);
+                        }
+                        
+                }
+                $$ = $2;
+	}
 	;
 
 specifier_qualifier_list
-	: type_specifier specifier_qualifier_list
-	| type_specifier
+	: type_specifier specifier_qualifier_list{
+                $$ = $2;
+                typeSpecListPush($$, $1);
+        }
+	| type_specifier{
+                $$ = typeSpecListCreate(1);
+                $$->typeSpecs[0] = $1; 
+        }
 	;
 
+// returns a list of declarations
 struct_declarator_list
-	: struct_declarator
-	| struct_declarator_list COMMA struct_declarator
+	: struct_declarator{
+                $$ = structDeclListCreate(0);
+                structDeclListPush($$, $1);
+        }
+	| struct_declarator_list COMMA struct_declarator{
+                $$ = $1;
+                structDeclListPush($$, $3);
+        }
 	;
 
+// make declarations here
 struct_declarator
-	: declarator
-	| COLON constant_expression
-	| declarator COLON constant_expression
+	: declarator{
+                $$ = structDeclCreate();
+                $$->declarator = $1;
+        }
+	| COLON constant_expression{
+                $$ = structDeclCreate();
+                $$->bitField = $2;
+
+        }
+	| declarator COLON constant_expression{
+                $$ = structDeclCreate();
+                $$->declarator = $1;
+                $$->bitField = $3;
+        }
 	;
 
 enum_specifier
@@ -642,7 +718,8 @@ declarator
 
 direct_declarator
 	: IDENTIFIER {
-		$$ = declInitCreate($1, 0);
+		$$ = declaratorCreate();
+		$$->ident = $1;
 	    }
 	| OPEN_BRACKET declarator CLOSE_BRACKET
 	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE

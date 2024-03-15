@@ -188,24 +188,29 @@ typedef struct ExprStmt
     Expr *expr; // can be NULL
 } ExprStmt;
 
+// forward definition required
+typedef struct StructDecl StructDecl;
+
+typedef struct StructDeclList
+{
+    StructDecl **structDecls;
+    size_t structDeclListSize;
+    size_t structDeclListCapacity;
+} StructDeclList;
+
 typedef struct StructSpecifier
 {
-    char* ident; // can be null for anonymous structs
-    
-    struct StructDecl **structDecls;
-    size_t structDeclSize;
-    size_t structDeclCapacity;
+    char *ident; // can be null for anonymous structs
+    StructDeclList *structDeclList;
+
 } StructSpecifier;
 
 // holds either a data type or a struct specifier
 typedef struct TypeSpecifier
 {
     bool isStruct;
-    union
-    {
-        DataType dataType; // either of these can be NULL
-        StructSpecifier* structSpecifier;
-    };
+    DataType dataType; // either of these can be NULL
+    StructSpecifier* structSpecifier;
     
 } TypeSpecifier;
 
@@ -216,17 +221,23 @@ typedef struct TypeSpecList
     size_t typeSpecCapacity;
 } TypeSpecList;
 
-typedef struct StructDecl{
+typedef struct Declarator
+{
+    size_t pointerCount;
+    char *ident; // needs array and function definitions too
+} Declarator;
+
+typedef struct StructDecl
+{
     TypeSpecList *typeSpecList;
-    char* ident;
+    Declarator* declarator;
     Expr* bitField; // can be NULL
 } StructDecl;
 
 // intermediary class used for building the AST
 typedef struct DeclInit // holds declarator and sometimes an initializer
 { 
-    size_t pointerCount;
-    char *ident; // needs array and function definitions too
+    Declarator *declarator;
     Expr *initExpr; // both initExpr and initArray can be NULL when defining a struct
     // array initializer defined here
 } DeclInit;
@@ -349,7 +360,7 @@ void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize);
 void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier* typeSpec);
 TypeSpecList *typeSpecListCopy(TypeSpecList *typeSpecList);
 
-DeclInit *declInitCreate(char *ident, const size_t pointerCount);
+DeclInit *declInitCreate(Declarator* declarator);
 void declInitDestroy(DeclInit *declInit);
 
 Decl *declCreate(TypeSpecList *typeSpecList);
@@ -360,15 +371,24 @@ void declInitListDestroy(DeclInitList *declInitList);
 void declInitListResize(DeclInitList *declInitList, const size_t declInitListSize);
 void declInitListPush(DeclInitList *declInitList, DeclInit *declInit);
 
-StructDecl *structDeclCreate(TypeSpecList *typeSpecList, char *ident);
+StructDecl *structDeclCreate();
 void structDeclDestroy(StructDecl *structDecl);
+
+StructDeclList *structDeclListCreate(size_t structDeclListSize);
+void structDeclListDestroy(StructDeclList *structDeclList);
+void structDeclListResize(StructDeclList *structDeclList, const size_t structDeclListSize);
+void structDeclListPush(StructDeclList *structDeclList, StructDecl *structDecl);
 
 StructSpecifier *structSpecifierCreate();
 void structSpecifierDestroy(StructSpecifier *structSpec);
-void structSpecifierResize(StructSpecifier *structSpecifier, const size_t structDeclSize);
-void structSpecifierPush(StructSpecifier *structSpecifier, StructDecl *structDecl);
 
 TypeSpecifier *typeSpecifierCreate(bool isStruct);
 void typeSpecifierDestroy(TypeSpecifier *typeSpecifier);
+TypeSpecifier *typeSpecifierCopy(TypeSpecifier *typeSpec);
+
+Declarator *declaratorCreate();
+void declaratorDestroy(Declarator *declarator);
+
+
 
 #endif

@@ -285,6 +285,68 @@ void displayExprStmt(ExprStmt *exprStmt, int indent)
     displayExpr(exprStmt->expr, indent);
 }
 
+void displayStructSpec(StructSpecifier* structSpec, int indent)
+{
+    printf("STRUCT (%s)\n", structSpec->ident);
+    for(size_t i = 0; i < structSpec->structDeclList->structDeclListSize; i++)
+        {
+            printIndent(indent+4);
+            printf("└── ");
+            StructDecl *currStructDecl = structSpec->structDeclList->structDecls[i];
+            // display types:
+            for(size_t i = 0; i < currStructDecl->typeSpecList->typeSpecSize; i++)
+            {
+                switch (currStructDecl->typeSpecList->typeSpecs[i]->dataType)
+                {
+                case VOID_TYPE:
+                    printf("VOID ");
+                    break;
+                case CHAR_TYPE:
+                    printf("CHAR ");
+                    break;
+                case SHORT_TYPE:
+                    printf("SHORT ");
+                    break;
+                case INT_TYPE:
+                    printf("INT ");
+                    break;
+                case LONG_TYPE:
+                    printf("LONG ");
+                    break;
+                case FLOAT_TYPE:
+                    printf("FLOAT ");
+                    break;
+                case DOUBLE_TYPE:
+                    printf("DOUBLE ");
+                    break;
+                case SIGNED_TYPE:
+                    printf("SIGNED ");
+                    break;
+                case UNSIGNED_TYPE:
+                    printf("UNSIGNED ");
+                    break;
+                }
+            }
+            
+            //display identifier
+            printf("\n");
+            printIndent(indent+8);
+            printf("└── ");
+            printf("%s\n", currStructDecl->declarator->ident);
+
+            // print bitfield
+            if(currStructDecl->bitField != NULL)
+            {
+                printIndent(indent+8);
+                printf("└── BITFIELD\n");
+                displayExpr(currStructDecl->bitField, indent + 12);
+            }
+            
+        }
+
+
+}
+
 
 void displayDecl(Decl *decl, int indent)
 {
@@ -342,6 +404,10 @@ void displayDecl(Decl *decl, int indent)
                 break;
             }
         }
+        else {
+            displayStructSpec(decl->typeSpecList->typeSpecs[i]->structSpecifier, indent + 4);
+        }
+            
         
     }
 
@@ -350,7 +416,7 @@ void displayDecl(Decl *decl, int indent)
         printf("\n");
         printIndent(indent+4);
         printf("└── ");
-        printf("%s \n", decl->declInit->ident);
+        printf("%s \n", decl->declInit->declarator->ident);
         if (decl->declInit->initExpr != NULL)
         {
             displayExpr(decl->declInit->initExpr, indent + 8);

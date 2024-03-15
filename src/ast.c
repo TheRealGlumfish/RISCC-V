@@ -405,10 +405,17 @@ void exprStmtDestroy(ExprStmt *stmt)
 // Statement List initializer
 void statementListInit(StatementList *stmtList, const size_t size)
 {
-    stmtList->stmts = malloc(sizeof(Stmt *) * size);
-    if (stmtList->stmts == NULL)
+    if (size != 0)
     {
-        abort();
+        stmtList->stmts = malloc(sizeof(Stmt *) * size);
+        if (stmtList->stmts == NULL)
+        {
+            abort();
+        }
+    }
+    else
+    {
+        stmtList->stmts = NULL;
     }
     stmtList->size = size;
     stmtList->capacity = size;
@@ -492,7 +499,7 @@ void declarationListDestroy(DeclarationList *declList)
     {
         declDestroy(declList->decls[i]);
     }
-    free(declList->decls); // TODO: Need to add logic to go through all the elements and call the destructor
+    free(declList->decls);
     declList->decls = NULL;
     declList->size = 0;
     declList->capacity = 0;
@@ -511,7 +518,7 @@ void declarationListResize(DeclarationList *declList, const size_t size)
             {
                 declList->capacity *= 2;
             }
-            declList->decls = realloc(declList->decls, sizeof(Decl *) * declList->capacity); // TODO: Change to declaration type
+            declList->decls = realloc(declList->decls, sizeof(Decl *) * declList->capacity);
             if (declList->decls == NULL)
             {
                 abort();
@@ -780,9 +787,9 @@ Decl *declCreate(TypeSpecList *typeSpecList)
 
 // Declaration destructor
 void declDestroy(Decl *decl)
-{   
+{
     typeSpecListDestroy(decl->typeSpecList);
-    if(decl->declInit != NULL)
+    if (decl->declInit != NULL)
     {
         declInitDestroy(decl->declInit);
     }
@@ -818,13 +825,14 @@ DeclInitList *declInitListCreate(const size_t declInitListSize)
     return declInitList;
 }
 
-// Declaration Initializer List Constructor
+// Declaration Initializer List Destructor
 void declInitListDestroy(DeclInitList *declInitList)
-{   
-    for(size_t i = 0; i < declInitList->declInitListSize; i++)
+{
+    for (size_t i = 0; i < declInitList->declInitListSize; i++)
     {
         declInitDestroy(declInitList->declInits[i]);
     }
+    free(declInitList->declInits);
     free(declInitList);
 }
 

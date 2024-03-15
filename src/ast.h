@@ -130,8 +130,7 @@ typedef struct AssignExpr
     DataType type; // TODO: Replace, could accept compound types
 } AssignExpr;
 
-typedef struct FuncExpr
-{
+typedef struct FuncExpr {
     char *ident;
     size_t argsSize;
     size_t argsCapacity;
@@ -274,7 +273,6 @@ typedef struct DeclarationList
 
 typedef struct CompoundStmt
 {
-    // declarations are not expressions - need to fix.
     StatementList stmtList;
     DeclarationList declList;
 } CompoundStmt;
@@ -294,7 +292,12 @@ typedef struct JumpStmt
     Expr *expr;  // can be NULL
 } JumpStmt;
 
-
+typedef struct FuncDef
+{
+    char *ident;
+    DeclarationList args;
+    CompoundStmt body;
+} FuncDef;
 
 Expr *exprCreate(ExprType type);
 void exprDestroy(Expr *expr);
@@ -354,7 +357,7 @@ void labelStmtDestroy(LabelStmt *labelStmt);
 JumpStmt *jumpStmtCreate(JumpType type);
 void jumpStmtDestroy(JumpStmt *jumpStmt);
 
-TypeSpecList *typeSpecListCreate(const size_t typeSpecSize);
+TypeSpecList *typeSpecListCreate(size_t typeSpecSize);
 void typeSpecListDestroy(TypeSpecList *typeSpecList);
 void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize);
 void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier* typeSpec);
@@ -366,9 +369,9 @@ void declInitDestroy(DeclInit *declInit);
 Decl *declCreate(TypeSpecList *typeSpecList);
 void declDestroy(Decl *decl);
 
-DeclInitList *declInitListCreate(const size_t declInitListSize);
+DeclInitList *declInitListCreate(size_t declInitListSize);
 void declInitListDestroy(DeclInitList *declInitList);
-void declInitListResize(DeclInitList *declInitList, const size_t declInitListSize);
+void declInitListResize(DeclInitList *declInitList, size_t declInitListSize);
 void declInitListPush(DeclInitList *declInitList, DeclInit *declInit);
 
 StructDecl *structDeclCreate();

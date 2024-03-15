@@ -128,7 +128,7 @@ primary_expression
 		$$->constant = constantExprCreate(INT_TYPE, false);
         $$->constant->int_const = $1;
 	    }
-        | FLOAT_CONSTANT {
+    | FLOAT_CONSTANT {
         $$ = exprCreate(CONSTANT_EXPR);
 		$$->constant = constantExprCreate(FLOAT_TYPE, false);
         $$->constant->float_const = $1;
@@ -249,8 +249,8 @@ unary_operator
 cast_expression
 	: unary_expression { $$ = $1; }
 	| OPEN_BRACKET type_name CLOSE_BRACKET cast_expression {
-            $$ = $4;
-            fprintf(stderr, "Casts not implemented, ignoring...");
+        $$ = $4;
+        fprintf(stderr, "Casts not implemented, ignoring...");
         } // Casts out of spec
 	;
 
@@ -471,30 +471,30 @@ constant_expression
 // returns a list of declarations
 declaration
 	: declaration_specifiers SEMI_COLON{
-                declarationListInit(&$$, 0);
-                declarationListPush(&$$, declCreate($1));
+        declarationListInit(&$$, 0);
+        declarationListPush(&$$, declCreate($1));
         }
 	| declaration_specifiers init_declarator_list SEMI_COLON{
-                declarationListInit(&$$, 0);
-                // assuming init_declarator_list is a list of decl_inits
-                for (size_t i = 0; i < $2->declInitListSize; i++)
-                {
-                        TypeSpecList * typeSpecList;
-                        if (i == 0)
-                        {
-                                typeSpecList  = $1;
-                        }
-                        else
-                        {
-                                typeSpecList = typeSpecListCopy($1);
-                        }
-                        
-                        Decl* decl = declCreate(typeSpecList);
-                        decl->declInit =  $2->declInits[i];
-                        declarationListPush(&$$, decl);
-                }
-                free($2->declInits);
-                free($2);
+        declarationListInit(&$$, 0);
+        // assuming init_declarator_list is a list of decl_inits
+        for (size_t i = 0; i < $2->declInitListSize; i++)
+        {
+            TypeSpecList * typeSpecList;
+            if (i == 0)
+            {
+                typeSpecList = $1;
+            }
+            else
+            {
+                typeSpecList = typeSpecListCopy($1);
+            }
+            
+            Decl* decl = declCreate(typeSpecList);
+            decl->declInit = $2->declInits[i];
+            declarationListPush(&$$, decl);
+        }
+        free($2->declInits);
+        free($2);
         }
 	;
 
@@ -518,12 +518,12 @@ declaration_specifiers
 // returns a list of declaration inits
 init_declarator_list
 	: init_declarator{
-                $$ = declInitListCreate(1);
-                $$->declInits[0] = $1;
+        $$ = declInitListCreate(1);
+        $$->declInits[0] = $1;
         }
 	| init_declarator_list COMMA init_declarator{
-                $$ = $1;
-                declInitListPush($$, $3);
+        $$ = $1;
+        declInitListPush($$, $3);
         }
 	;
 

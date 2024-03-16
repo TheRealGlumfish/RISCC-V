@@ -3,8 +3,6 @@
 
 #include "parser.tab.h"
 
-FuncDef* rootExpr;
-
 // Convert a token into a string representation
 const char *token_to_string(yytoken_kind_t token)
 {

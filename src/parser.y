@@ -8,7 +8,6 @@
 
     #include "src/ast.h"
 
-    // extern Node *g_root;
     extern FuncDef* rootExpr;
     extern FILE *yyin;
     int yylex(void);
@@ -36,10 +35,10 @@
 
     FuncDef* func_def_node;
 
-        Declarator* declarator_node;
-        StructSpecifier* struct_spec_node;
-        StructDeclList* struct_decl_list;
-        StructDecl* struct_decl_node;
+    Declarator* declarator_node;
+    StructSpecifier* struct_spec_node;
+    StructDeclList* struct_decl_list;
+    StructDecl* struct_decl_node;
 
     size_t ptr_count;
 }
@@ -520,13 +519,13 @@ declaration_specifiers
 	: storage_class_specifier
 	| storage_class_specifier declaration_specifiers
 	| type_specifier {
-                $$ = typeSpecListCreate(1);
-                $$->typeSpecs[0] = $1; 
+        $$ = typeSpecListCreate(1);
+        $$->typeSpecs[0] = $1; 
         }
         // these are in a weird order - could cause issues
 	| type_specifier declaration_specifiers {
-                $$ = $2;
-                typeSpecListPush($$, $1);
+        $$ = $2;
+        typeSpecListPush($$, $1);
         }
 	;
 
@@ -565,142 +564,135 @@ type_specifier
 	: VOID { 
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = VOID_TYPE;
-	}
+	    }
 	| CHAR { 
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = CHAR_TYPE;
-	}
+	    }
 	| SHORT {
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = SHORT_TYPE;
-	}
+	    }
 	| INT {
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = INT_TYPE;
-	}
+	    }
 	| FLOAT {
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = FLOAT_TYPE;
-	}
+	    }
 	| DOUBLE {
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = INT_TYPE;
-	}
+	    }
 	| LONG {
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = (false);
 		$$->dataType = DOUBLE_TYPE;
-	}
+	    }
 	| SIGNED {
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = SIGNED_TYPE;
-	}
+	    }
 	| UNSIGNED {
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = UNSIGNED_TYPE;
-	}
-        | struct_specifier {
+	    }
+    | struct_specifier {
 		$$ = typeSpecifierCreate(true);
 		$$->structSpecifier = $1;
-	} // later
+	    } // later
 	| enum_specifier // doesnt need to be implemented
 	| TYPE_NAME // Never returned by the lexer
 	;
 
 struct_specifier
-	: STRUCT IDENTIFIER OPEN_BRACE struct_declaration_list CLOSE_BRACE
-	{
+	: STRUCT IDENTIFIER OPEN_BRACE struct_declaration_list CLOSE_BRACE {
 		$$ = structSpecifierCreate();
 		$$->ident = $2;
 		$$->structDeclList = $4;
-	}
-	| STRUCT OPEN_BRACE struct_declaration_list CLOSE_BRACE
-	{
+	    }
+	| STRUCT OPEN_BRACE struct_declaration_list CLOSE_BRACE {
 		$$ = structSpecifierCreate();
 		$$->structDeclList = $3;
-	}
-	| STRUCT IDENTIFIER{
+	    }
+	| STRUCT IDENTIFIER {
 		$$ = structSpecifierCreate();
 		$$->ident = $2;
-	}
+	    }
 	;
 
 // struct declaration is also a struct decl list
 struct_declaration_list
-	: struct_declaration
-	{
+	: struct_declaration {
 		$$ = $1;
-	}
-	| struct_declaration_list struct_declaration
-	{
+	    }
+	| struct_declaration_list struct_declaration {
 		$$ = $1;
-                for(size_t i = 0; i < $2->structDeclListSize; i++)
-                {
-                        structDeclListPush($$, $2->structDecls[i]);
-                }
-                free($2->structDecls);
-                free($2);
+        for(size_t i = 0; i < $2->structDeclListSize; i++)
+        {
+            structDeclListPush($$, $2->structDecls[i]);
+        }
+        free($2->structDecls);
+        free($2);
         }
 	;
 
 // assume struct declarator returns a list of structDecl
 struct_declaration
-	: specifier_qualifier_list struct_declarator_list SEMI_COLON
-	{
-		for(size_t i = 0; i < $2->structDeclListSize; i++)
-                {
-                        if(i == 0)
-                        {
-                                $2->structDecls[i]->typeSpecList = $1;
-                        }
-                        else
-                        {
-                                $2->structDecls[i]->typeSpecList = typeSpecListCopy($1);
-                        }
-                        
-                }
-                $$ = $2;
+	: specifier_qualifier_list struct_declarator_list SEMI_COLON {
+	    for(size_t i = 0; i < $2->structDeclListSize; i++)
+        {
+            if(i == 0)
+            {
+                $2->structDecls[i]->typeSpecList = $1;
+            }
+            else
+            {
+                $2->structDecls[i]->typeSpecList = typeSpecListCopy($1);
+            }
+        }
+        $$ = $2;
 	}
 	;
 
 specifier_qualifier_list
-	: type_specifier specifier_qualifier_list{
-                $$ = $2;
-                typeSpecListPush($$, $1);
+	: type_specifier specifier_qualifier_list {
+        $$ = $2;
+        typeSpecListPush($$, $1);
         }
-	| type_specifier{
-                $$ = typeSpecListCreate(1);
-                $$->typeSpecs[0] = $1; 
+	| type_specifier {
+        $$ = typeSpecListCreate(1);
+        $$->typeSpecs[0] = $1; 
         }
 	;
 
 // returns a list of declarations
 struct_declarator_list
-	: struct_declarator{
-                $$ = structDeclListCreate(0);
-                structDeclListPush($$, $1);
+	: struct_declarator {
+        $$ = structDeclListCreate(0);
+        structDeclListPush($$, $1);
         }
-	| struct_declarator_list COMMA struct_declarator{
-                $$ = $1;
-                structDeclListPush($$, $3);
+	| struct_declarator_list COMMA struct_declarator {
+        $$ = $1;
+        structDeclListPush($$, $3);
         }
 	;
 
 // make declarations here
 struct_declarator
-	: declarator{
-                $$ = structDeclCreate();
-                $$->declarator = $1;
+	: declarator {
+        $$ = structDeclCreate();
+        $$->declarator = $1;
         }
-	| COLON constant_expression{
-                $$ = structDeclCreate();
-                $$->bitField = $2;
-
+	| COLON constant_expression {
+        $$ = structDeclCreate();
+        $$->bitField = $2;
         }
-	| declarator COLON constant_expression{
-                $$ = structDeclCreate();
-                $$->declarator = $1;
-                $$->bitField = $3;
+	| declarator COLON constant_expression {
+        $$ = structDeclCreate();
+        $$->declarator = $1;
+        $$->bitField = $3;
         }
 	;
 
@@ -739,12 +731,11 @@ direct_declarator
 	| OPEN_BRACKET declarator CLOSE_BRACKET
 	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE
 	| direct_declarator OPEN_SQUARE CLOSE_SQUARE
-	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET
-        {
-                $$ = declaratorCreate();
-                $$->ident = $1->ident;
-                $$->parameterList = &$3;
-                free($1);
+	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET {
+        $$ = declaratorCreate();
+        $$->ident = $1->ident;
+        $$->parameterList = &$3;
+        free($1);
         }
 	| direct_declarator OPEN_BRACKET identifier_list  CLOSE_BRACKET // just for K&R style
 	| direct_declarator OPEN_BRACKET CLOSE_BRACKET {
@@ -759,29 +750,25 @@ pointer
 
 // declaration list
 parameter_list
-	: parameter_declaration
-        {
-                declarationListInit(&$$, 1);
-                $$.decls[0] = $1;
+	: parameter_declaration {
+        declarationListInit(&$$, 1);
+        $$.decls[0] = $1;
         }
-	| parameter_list COMMA parameter_declaration
-        {
-                $$ = $1;
-                declarationListPush(&$$, $3);
+	| parameter_list COMMA parameter_declaration {
+        $$ = $1;
+        declarationListPush(&$$, $3);
         }
 	;
 
 // declaration (not list)
 parameter_declaration
-	: declaration_specifiers declarator
-        {
-                $$ = declCreate($1);
-                $$->declInit = declInitCreate($2);
+	: declaration_specifiers declarator {
+        $$ = declCreate($1);
+        $$->declInit = declInitCreate($2);
         }
 	| declaration_specifiers abstract_declarator // not implementing atm
-	| declaration_specifiers
-        {
-                $$ = declCreate($1);
+	| declaration_specifiers {
+        $$ = declCreate($1);
         }
 	;
 
@@ -990,6 +977,7 @@ jump_statement
 
 %%
 
+FuncDef* rootExpr;
 // Node *g_root;
 
 // Node *ParseAST(std::string file_name)

@@ -126,11 +126,12 @@ typedef struct AssignExpr
     char *ident;
     Expr *op;
     Expr *lvalue;
-    Operator operator;  // Info: when set to NOT, regular assignment
-    DataType type; // TODO: Replace, could accept compound types
+    Operator operator; // Info: when set to NOT, regular assignment
+    DataType type;     // TODO: Replace, could accept compound types
 } AssignExpr;
 
-typedef struct FuncExpr {
+typedef struct FuncExpr
+{
     char *ident;
     size_t argsSize;
     size_t argsCapacity;
@@ -209,8 +210,8 @@ typedef struct TypeSpecifier
 {
     bool isStruct;
     DataType dataType; // either of these can be NULL
-    StructSpecifier* structSpecifier;
-    
+    StructSpecifier *structSpecifier;
+
 } TypeSpecifier;
 
 typedef struct TypeSpecList
@@ -234,8 +235,8 @@ typedef struct Declarator
 typedef struct StructDecl
 {
     TypeSpecList *typeSpecList;
-    Declarator* declarator;
-    Expr* bitField; // can be NULL
+    Declarator *declarator;
+    Expr *bitField; // can be NULL
 } StructDecl;
 
 typedef struct Initializer Initializer;
@@ -263,7 +264,7 @@ typedef struct Decl
     // Try just one declInit for split
     DeclInit *declInit;
 } Decl;
-  
+
 typedef struct DeclInitList
 {
     DeclInit **declInits;
@@ -313,7 +314,6 @@ typedef struct FuncDef
     char *ident;
     DeclarationList *args;
     Stmt *body;
-
 } FuncDef;
 
 typedef struct Initializer
@@ -383,10 +383,10 @@ void jumpStmtDestroy(JumpStmt *jumpStmt);
 TypeSpecList *typeSpecListCreate(size_t typeSpecSize);
 void typeSpecListDestroy(TypeSpecList *typeSpecList);
 void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize);
-void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier* typeSpec);
+void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier *typeSpec);
 TypeSpecList *typeSpecListCopy(TypeSpecList *typeSpecList);
 
-DeclInit *declInitCreate(Declarator* declarator);
+DeclInit *declInitCreate(Declarator *declarator);
 void declInitDestroy(DeclInit *declInit);
 
 Decl *declCreate(TypeSpecList *typeSpecList);

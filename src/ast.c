@@ -476,7 +476,7 @@ void statementListPush(StatementList *stmtList, Stmt *stmt)
 // Declaration List initializer
 void declarationListInit(DeclarationList *declList, const size_t size)
 {
-    if(size != 0)
+    if (size != 0)
     {
         declList->decls = malloc(sizeof(Decl *) * size);
         if (declList->decls == NULL)
@@ -484,7 +484,8 @@ void declarationListInit(DeclarationList *declList, const size_t size)
             abort();
         }
     }
-    else {
+    else
+    {
         declList->decls = NULL;
     }
 
@@ -635,7 +636,7 @@ TypeSpecList *typeSpecListCreate(const size_t typeSpecSize)
 
     if (typeSpecSize != 0)
     {
-        typeSpecList->typeSpecs = malloc(sizeof(TypeSpecifier *) * typeSpecSize); 
+        typeSpecList->typeSpecs = malloc(sizeof(TypeSpecifier *) * typeSpecSize);
         if (typeSpecList->typeSpecs == NULL)
         {
             abort();
@@ -654,7 +655,7 @@ TypeSpecList *typeSpecListCreate(const size_t typeSpecSize)
 // Type Qualifier List destructor
 void typeSpecListDestroy(TypeSpecList *typeSpecList)
 {
-    for(size_t i = 0; i < typeSpecList->typeSpecSize; i++)
+    for (size_t i = 0; i < typeSpecList->typeSpecSize; i++)
     {
         typeSpecifierDestroy(typeSpecList->typeSpecs[i]);
     }
@@ -694,7 +695,7 @@ void typeSpecListResize(TypeSpecList *typeSpecList, const size_t typeSpecSize)
 }
 
 // Adds a type qualifier to a type qualifier list
-void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier* typeSpec)
+void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier *typeSpec)
 {
     typeSpecListResize(typeSpecList, typeSpecList->typeSpecSize + 1);
     typeSpecList->typeSpecs[typeSpecList->typeSpecSize - 1] = typeSpec;
@@ -704,7 +705,7 @@ void typeSpecListPush(TypeSpecList *typeSpecList, TypeSpecifier* typeSpec)
 TypeSpecifier *typeSpecifierCopy(TypeSpecifier *typeSpec)
 {
     TypeSpecifier *newTypeSpec = typeSpecifierCreate(typeSpec->isStruct);
-    if(newTypeSpec->isStruct)
+    if (newTypeSpec->isStruct)
     {
         // fatal flaw: needs to be implemented
     }
@@ -715,20 +716,19 @@ TypeSpecifier *typeSpecifierCopy(TypeSpecifier *typeSpec)
     return newTypeSpec;
 }
 
-
 // Type Specifier List Copy Constructor
 TypeSpecList *typeSpecListCopy(TypeSpecList *typeSpecList)
 {
     TypeSpecList *newTypeSpecList = typeSpecListCreate(0);
     for (size_t i = 0; i < typeSpecList->typeSpecSize; i++)
     {
-        TypeSpecifier *typeSpecCopy = typeSpecifierCopy(typeSpecList->typeSpecs[i]); 
+        TypeSpecifier *typeSpecCopy = typeSpecifierCopy(typeSpecList->typeSpecs[i]);
         typeSpecListPush(newTypeSpecList, typeSpecCopy);
     }
     return newTypeSpecList;
 }
 
-Declarator *declaratorCreate()
+Declarator *declaratorCreate(void)
 {
     Declarator *declarator = malloc(sizeof(Declarator));
     if (declarator == NULL)
@@ -743,11 +743,11 @@ Declarator *declaratorCreate()
 
 void declaratorDestroy(Declarator *declarator)
 {
-    if(declarator->ident != NULL)
+    if (declarator->ident != NULL)
     {
         free(declarator->ident);
     }
-    if(declarator->parameterList != NULL)
+    if (declarator->parameterList != NULL)
     {
         declarationListDestroy(declarator->parameterList);
     }
@@ -759,7 +759,7 @@ void declaratorDestroy(Declarator *declarator)
 }
 
 // Declaration-Initializer constructor
-DeclInit *declInitCreate(Declarator* declarator)
+DeclInit *declInitCreate(Declarator *declarator)
 {
     DeclInit *declInit = malloc(sizeof(DeclInit));
     if (declInit == NULL)
@@ -812,8 +812,6 @@ void declDestroy(Decl *decl)
     free(decl);
 }
 
-
-
 DeclInitList *declInitListCreate(const size_t declInitListSize)
 {
     DeclInitList *declInitList = malloc(sizeof(DeclInitList));
@@ -825,7 +823,7 @@ DeclInitList *declInitListCreate(const size_t declInitListSize)
     if (declInitListSize != 0)
     {
         // recent change
-        declInitList->declInits = malloc(sizeof(DeclInit *) * declInitListSize); 
+        declInitList->declInits = malloc(sizeof(DeclInit *) * declInitListSize);
         if (declInitList->declInits == NULL)
         {
             abort();
@@ -890,9 +888,8 @@ void declInitListPush(DeclInitList *declInitList, DeclInit *declInit)
     declInitList->declInits[declInitList->declInitListSize - 1] = declInit;
 }
 
-
 // Constructor for struct declaration
-StructDecl *structDeclCreate()
+StructDecl *structDeclCreate(void)
 {
     StructDecl *structDecl = malloc(sizeof(StructDecl));
     if (structDecl == NULL)
@@ -907,17 +904,17 @@ StructDecl *structDeclCreate()
 void structDeclDestroy(StructDecl *structDecl)
 {
     typeSpecListDestroy(structDecl->typeSpecList);
-    
-    if(structDecl->declarator != NULL){
+
+    if (structDecl->declarator != NULL)
+    {
         declaratorDestroy(structDecl->declarator);
     }
-    if(structDecl->bitField != NULL)
+    if (structDecl->bitField != NULL)
     {
         exprDestroy(structDecl->bitField);
     }
     free(structDecl);
 }
-
 
 // Constructor for struct declaration list
 StructDeclList *structDeclListCreate(size_t structDeclListSize)
@@ -928,7 +925,7 @@ StructDeclList *structDeclListCreate(size_t structDeclListSize)
         abort();
     }
 
-    if(structDeclListSize != 0)
+    if (structDeclListSize != 0)
     {
         structDeclList->structDecls = malloc(sizeof(StructDecl *) * structDeclListSize);
         if (structDeclList->structDecls == NULL)
@@ -936,7 +933,8 @@ StructDeclList *structDeclListCreate(size_t structDeclListSize)
             abort();
         }
     }
-    else {
+    else
+    {
         structDeclList->structDecls = NULL;
     }
 
@@ -948,7 +946,7 @@ StructDeclList *structDeclListCreate(size_t structDeclListSize)
 // Destructor for struct declaration list
 void structDeclListDestroy(StructDeclList *structDeclList)
 {
-    for(size_t i = 0; i < structDeclList->structDeclListSize; i++)
+    for (size_t i = 0; i < structDeclList->structDeclListSize; i++)
     {
         structDeclDestroy(structDeclList->structDecls[i]);
     }
@@ -994,10 +992,8 @@ void structDeclListPush(StructDeclList *structDeclList, StructDecl *structDecl)
     structDeclList->structDecls[structDeclList->structDeclListSize - 1] = structDecl;
 }
 
-
-
 // Constructor for struct specifier
-StructSpecifier *structSpecifierCreate()
+StructSpecifier *structSpecifierCreate(void)
 {
     StructSpecifier *structSpec = malloc(sizeof(StructSpecifier));
     if (structSpec == NULL)
@@ -1010,7 +1006,7 @@ StructSpecifier *structSpecifierCreate()
 // Destructor for struct specifier
 void structSpecifierDestroy(StructSpecifier *structSpec)
 {
-    if(structSpec->ident != NULL)
+    if (structSpec->ident != NULL)
     {
         free(structSpec->ident);
     }
@@ -1033,7 +1029,7 @@ TypeSpecifier *typeSpecifierCreate(bool isStruct)
 // Destructor for type specifiers
 void typeSpecifierDestroy(TypeSpecifier *typeSpecifier)
 {
-    if(typeSpecifier->isStruct == true)
+    if (typeSpecifier->isStruct == true)
     {
         structSpecifierDestroy(typeSpecifier->structSpecifier);
     }
@@ -1061,7 +1057,7 @@ void funcDefDestroy(FuncDef *funcDef)
 {
     typeSpecListDestroy(funcDef->retType);
     free(funcDef->ident);
-    if(funcDef->args != NULL)
+    if (funcDef->args != NULL)
     {
         declarationListDestroy(funcDef->args);
     }

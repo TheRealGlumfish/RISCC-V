@@ -5,8 +5,6 @@
 #include "ast.h"
 #include "parser.tab.h"
 
-FuncDef* rootExpr;
-
 // will probably need this later...
 // typedef struct {
 //     ExprType type;
@@ -285,76 +283,18 @@ void displayExprStmt(ExprStmt *exprStmt, int indent)
     displayExpr(exprStmt->expr, indent);
 }
 
-void displayStructSpec(StructSpecifier* structSpec, int indent)
+void displayStructSpec(StructSpecifier *structSpec, int indent)
 {
     printf("STRUCT (%s)\n", structSpec->ident);
-    for(size_t i = 0; i < structSpec->structDeclList->structDeclListSize; i++)
+    for (size_t i = 0; i < structSpec->structDeclList->structDeclListSize; i++)
+    {
+        printIndent(indent + 4);
+        printf("└── ");
+        StructDecl *currStructDecl = structSpec->structDeclList->structDecls[i];
+        // display types:
+        for (size_t i = 0; i < currStructDecl->typeSpecList->typeSpecSize; i++)
         {
-            printIndent(indent+4);
-            printf("└── ");
-            StructDecl *currStructDecl = structSpec->structDeclList->structDecls[i];
-            // display types:
-            for(size_t i = 0; i < currStructDecl->typeSpecList->typeSpecSize; i++)
-            {
-                switch (currStructDecl->typeSpecList->typeSpecs[i]->dataType)
-                {
-                case VOID_TYPE:
-                    printf("VOID ");
-                    break;
-                case CHAR_TYPE:
-                    printf("CHAR ");
-                    break;
-                case SHORT_TYPE:
-                    printf("SHORT ");
-                    break;
-                case INT_TYPE:
-                    printf("INT ");
-                    break;
-                case LONG_TYPE:
-                    printf("LONG ");
-                    break;
-                case FLOAT_TYPE:
-                    printf("FLOAT ");
-                    break;
-                case DOUBLE_TYPE:
-                    printf("DOUBLE ");
-                    break;
-                case SIGNED_TYPE:
-                    printf("SIGNED ");
-                    break;
-                case UNSIGNED_TYPE:
-                    printf("UNSIGNED ");
-                    break;
-                }
-            }
-            
-            //display identifier
-            printf("\n");
-            printIndent(indent+8);
-            printf("└── ");
-            printf("%s\n", currStructDecl->declarator->ident);
-
-            // print bitfield
-            if(currStructDecl->bitField != NULL)
-            {
-                printIndent(indent+8);
-                printf("└── BITFIELD\n");
-                displayExpr(currStructDecl->bitField, indent + 12);
-            }
-            
-        }
-
-
-}
-
-
-void displayTypeSpec(TypeSpecifier* typeSpec, int indent)
-{
-    printIndent(indent);
-    printf("└── ");
-    if(typeSpec->isStruct == false)
-        {
-            switch (typeSpec->dataType)
+            switch (currStructDecl->typeSpecList->typeSpecs[i]->dataType)
             {
             case VOID_TYPE:
                 printf("VOID ");
@@ -384,14 +324,67 @@ void displayTypeSpec(TypeSpecifier* typeSpec, int indent)
                 printf("UNSIGNED ");
                 break;
             }
-            printf("\n");
         }
+
+        // display identifier
+        printf("\n");
+        printIndent(indent + 8);
+        printf("└── ");
+        printf("%s\n", currStructDecl->declarator->ident);
+
+        // print bitfield
+        if (currStructDecl->bitField != NULL)
+        {
+            printIndent(indent + 8);
+            printf("└── BITFIELD\n");
+            displayExpr(currStructDecl->bitField, indent + 12);
+        }
+    }
+}
+
+void displayTypeSpec(TypeSpecifier *typeSpec, int indent)
+{
+    printIndent(indent);
+    printf("└── ");
+    if (typeSpec->isStruct == false)
+    {
+        switch (typeSpec->dataType)
+        {
+        case VOID_TYPE:
+            printf("VOID ");
+            break;
+        case CHAR_TYPE:
+            printf("CHAR ");
+            break;
+        case SHORT_TYPE:
+            printf("SHORT ");
+            break;
+        case INT_TYPE:
+            printf("INT ");
+            break;
+        case LONG_TYPE:
+            printf("LONG ");
+            break;
+        case FLOAT_TYPE:
+            printf("FLOAT ");
+            break;
+        case DOUBLE_TYPE:
+            printf("DOUBLE ");
+            break;
+        case SIGNED_TYPE:
+            printf("SIGNED ");
+            break;
+        case UNSIGNED_TYPE:
+            printf("UNSIGNED ");
+            break;
+        }
+        printf("\n");
+    }
     else
     {
         displayStructSpec(typeSpec->structSpecifier, indent);
     }
 }
-
 
 void displayDecl(Decl *decl, int indent)
 {
@@ -402,22 +395,21 @@ void displayDecl(Decl *decl, int indent)
         return;
     }
 
-    
     printIndent(indent);
     if (indent > 0)
     {
         printf("└── ");
     }
-    
+
     printf("DECL \n");
 
     // print type specifiers
-    for (size_t i = 0 ; i < decl->typeSpecList->typeSpecSize; i++)
+    for (size_t i = 0; i < decl->typeSpecList->typeSpecSize; i++)
     {
-        displayTypeSpec(decl->typeSpecList->typeSpecs[i], indent+4);
+        displayTypeSpec(decl->typeSpecList->typeSpecs[i], indent + 4);
     }
 
-    if(decl->declInit != NULL)
+    if (decl->declInit != NULL)
     {
         printIndent(indent+4);
         printf("└── ");
@@ -442,24 +434,23 @@ void displayDecl(Decl *decl, int indent)
             displayExpr(decl->declInit->initExpr, indent + 8);
         }
     }
-    
 }
 
 void displayCompoundStmt(CompoundStmt *compoundStmt, int indent)
 {
     printf("CMPD STMT\n");
-    if(compoundStmt->stmtList.size != 0)
+    if (compoundStmt->stmtList.size != 0)
     {
-        for(size_t i = 0; i < compoundStmt->stmtList.size; i++)
+        for (size_t i = 0; i < compoundStmt->stmtList.size; i++)
         {
-            displayStmt(compoundStmt->stmtList.stmts[i], indent+4);
+            displayStmt(compoundStmt->stmtList.stmts[i], indent + 4);
         }
     }
-    if(compoundStmt->declList.size != 0)
+    if (compoundStmt->declList.size != 0)
     {
-        for(size_t i = 0; i < compoundStmt->declList.size; i++)
+        for (size_t i = 0; i < compoundStmt->declList.size; i++)
         {
-            displayDecl(compoundStmt->declList.decls[i], indent+4);
+            displayDecl(compoundStmt->declList.decls[i], indent + 4);
         }
     }
 }
@@ -563,26 +554,25 @@ void displayFuncDef(FuncDef *funcDef, int indent)
     printf("FUNC DEF (%s)\n", funcDef->ident);
 
     // print return type
-    printIndent(indent+4);
-    for(size_t i = 0; i < funcDef->retType->typeSpecSize; i++)
+    printIndent(indent + 4);
+    for (size_t i = 0; i < funcDef->retType->typeSpecSize; i++)
     {
         displayTypeSpec(funcDef->retType->typeSpecs[i], indent);
     }
 
-    if(funcDef->args != NULL)
+    if (funcDef->args != NULL)
     {
-        for(size_t i = 0; i < funcDef->args->size; i++)
+        for (size_t i = 0; i < funcDef->args->size; i++)
         {
-            displayDecl(funcDef->args->decls[i], indent+4);
+            displayDecl(funcDef->args->decls[i], indent + 4);
         }
     }
 
-    if(funcDef->body != NULL)
+    if (funcDef->body != NULL)
     {
-        displayStmt(funcDef->body, indent+4);
+        displayStmt(funcDef->body, indent + 4);
     }
 }
-
 
 int main(int argc, char **argv)
 {
@@ -613,6 +603,10 @@ int main(int argc, char **argv)
 
     displayFuncDef(rootExpr, 0);
     funcDefDestroy(rootExpr);
-    
+
+    if (yyin != NULL)
+    {
+        fclose(yyin);
+    }
     return EXIT_SUCCESS;
 }

@@ -5,7 +5,7 @@
 #include "ast.h"
 #include "parser.tab.h"
 
-Stmt* rootExpr;
+FuncDef* rootExpr;
 
 // will probably need this later...
 // typedef struct {
@@ -348,32 +348,13 @@ void displayStructSpec(StructSpecifier* structSpec, int indent)
 }
 
 
-void displayDecl(Decl *decl, int indent)
+void displayTypeSpec(TypeSpecifier* typeSpec, int indent)
 {
-    // Do we need this for statements
-    if (decl == NULL)
-    {
-        // some expr operands aren't set
-        return;
-    }
-
-    
     printIndent(indent);
-    if (indent > 0)
-    {
-        printf("└── ");
-    }
-    
-    printf("DECL \n");
-
-    // print type specifiers
-    printIndent(indent+4);
     printf("└── ");
-    for (size_t i = 0 ; i < decl->typeSpecList->typeSpecSize; i++)
-    {
-        if(decl->typeSpecList->typeSpecs[i]->isStruct == false)
+    if(typeSpec->isStruct == false)
         {
-            switch (decl->typeSpecList->typeSpecs[i]->dataType)
+            switch (typeSpec->dataType)
             {
             case VOID_TYPE:
                 printf("VOID ");
@@ -403,12 +384,37 @@ void displayDecl(Decl *decl, int indent)
                 printf("UNSIGNED ");
                 break;
             }
+            printf("\n");
         }
-        else {
-            displayStructSpec(decl->typeSpecList->typeSpecs[i]->structSpecifier, indent + 4);
-        }
-            
-        
+    else
+    {
+        displayStructSpec(typeSpec->structSpecifier, indent);
+    }
+}
+
+
+void displayDecl(Decl *decl, int indent)
+{
+    // Do we need this for statements
+    if (decl == NULL)
+    {
+        // some expr operands aren't set
+        return;
+    }
+
+    
+    printIndent(indent);
+    if (indent > 0)
+    {
+        printf("└── ");
+    }
+    
+    printf("DECL \n");
+
+    // print type specifiers
+    for (size_t i = 0 ; i < decl->typeSpecList->typeSpecSize; i++)
+    {
+        displayTypeSpec(decl->typeSpecList->typeSpecs[i], indent+4);
     }
 
     if(decl->declInit != NULL)
@@ -533,6 +539,36 @@ void displayStmt(Stmt *stmt, int indent)
     }
 }
 
+void displayFuncDef(FuncDef *funcDef, int indent)
+{
+    printIndent(indent);
+    if (indent > 0)
+    {
+        printf("└── ");
+    }
+    printf("FUNC DEF (%s)\n", funcDef->ident);
+
+    // print return type
+    printIndent(indent+4);
+    for(size_t i = 0; i < funcDef->retType->typeSpecSize; i++)
+    {
+        displayTypeSpec(funcDef->retType->typeSpecs[i], indent);
+    }
+
+    if(funcDef->args != NULL)
+    {
+        for(size_t i = 0; i < funcDef->args->size; i++)
+        {
+            displayDecl(funcDef->args->decls[i], indent+4);
+        }
+    }
+
+    if(funcDef->body != NULL)
+    {
+        displayStmt(funcDef->body, indent+4);
+    }
+}
+
 
 int main(int argc, char **argv)
 {
@@ -561,8 +597,8 @@ int main(int argc, char **argv)
     //     fprintf(stderr, "Error: parsing unsuccessful\n");
     // }
 
-    displayStmt(rootExpr, 0);
-    stmtDestroy(rootExpr);
+    displayFuncDef(rootExpr, 0);
+    funcDefDestroy(rootExpr);
     
     return EXIT_SUCCESS;
 }

@@ -220,10 +220,13 @@ typedef struct TypeSpecList
     size_t typeSpecCapacity;
 } TypeSpecList;
 
+typedef struct DeclarationList DeclarationList;
+
 typedef struct Declarator
 {
     size_t pointerCount;
     char *ident; // needs array and function definitions too
+    DeclarationList *parameterList;
 } Declarator;
 
 typedef struct StructDecl
@@ -294,9 +297,12 @@ typedef struct JumpStmt
 
 typedef struct FuncDef
 {
+    TypeSpecList *retType;
+    size_t ptrCount;
     char *ident;
-    DeclarationList args;
-    CompoundStmt body;
+    DeclarationList *args;
+    Stmt *body;
+
 } FuncDef;
 
 Expr *exprCreate(ExprType type);
@@ -374,7 +380,7 @@ void declInitListDestroy(DeclInitList *declInitList);
 void declInitListResize(DeclInitList *declInitList, size_t declInitListSize);
 void declInitListPush(DeclInitList *declInitList, DeclInit *declInit);
 
-StructDecl *structDeclCreate();
+StructDecl *structDeclCreate(void);
 void structDeclDestroy(StructDecl *structDecl);
 
 StructDeclList *structDeclListCreate(size_t structDeclListSize);
@@ -382,16 +388,17 @@ void structDeclListDestroy(StructDeclList *structDeclList);
 void structDeclListResize(StructDeclList *structDeclList, const size_t structDeclListSize);
 void structDeclListPush(StructDeclList *structDeclList, StructDecl *structDecl);
 
-StructSpecifier *structSpecifierCreate();
+StructSpecifier *structSpecifierCreate(void);
 void structSpecifierDestroy(StructSpecifier *structSpec);
 
 TypeSpecifier *typeSpecifierCreate(bool isStruct);
 void typeSpecifierDestroy(TypeSpecifier *typeSpecifier);
 TypeSpecifier *typeSpecifierCopy(TypeSpecifier *typeSpec);
 
-Declarator *declaratorCreate();
+Declarator *declaratorCreate(void);
 void declaratorDestroy(Declarator *declarator);
 
-
+FuncDef *funcDefCreate(TypeSpecList *retType, size_t ptrCount, char *ident, Stmt *body);
+void funcDefDestroy(FuncDef *funcDef);
 
 #endif

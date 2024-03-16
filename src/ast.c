@@ -735,6 +735,8 @@ Declarator *declaratorCreate()
     {
         abort();
     }
+    declarator->pointerCount = 0;
+    declarator->parameterList = NULL;
     return declarator;
 }
 
@@ -743,6 +745,10 @@ void declaratorDestroy(Declarator *declarator)
     if(declarator->ident != NULL)
     {
         free(declarator->ident);
+    }
+    if(declarator->parameterList != NULL)
+    {
+        declarationListDestroy(declarator->parameterList);
     }
     free(declarator);
 }
@@ -1002,8 +1008,6 @@ void structSpecifierDestroy(StructSpecifier *structSpec)
     free(structSpec);
 }
 
-
-
 // Constructor for type specifiers
 TypeSpecifier *typeSpecifierCreate(bool isStruct)
 {
@@ -1024,6 +1028,35 @@ void typeSpecifierDestroy(TypeSpecifier *typeSpecifier)
         structSpecifierDestroy(typeSpecifier->structSpecifier);
     }
     free(typeSpecifier);
+}
+
+// Constructor for function definition
+FuncDef *funcDefCreate(TypeSpecList *retType, size_t ptrCount, char *ident, Stmt *body)
+{
+    FuncDef *funcDef = malloc(sizeof(FuncDef));
+    if (funcDef == NULL)
+    {
+        abort();
+    }
+    funcDef->retType = retType;
+    funcDef->ptrCount = ptrCount;
+    funcDef->ident = ident;
+    funcDef->args = NULL;
+    funcDef->body = body;
+    return funcDef;
+}
+
+// Destructor for function definition
+void funcDefDestroy(FuncDef *funcDef)
+{
+    typeSpecListDestroy(funcDef->retType);
+    free(funcDef->ident);
+    if(funcDef->args != NULL)
+    {
+        declarationListDestroy(funcDef->args);
+    }
+    stmtDestroy(funcDef->body);
+    free(funcDef);
 }
 
 

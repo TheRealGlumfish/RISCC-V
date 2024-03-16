@@ -9,7 +9,7 @@
     #include "src/ast.h"
 
     // extern Node *g_root;
-    extern Stmt* rootExpr;
+    extern FuncDef* rootExpr;
     extern FILE *yyin;
     int yylex(void);
     void yyerror(const char *);
@@ -34,6 +34,8 @@
     TypeSpecifier* type_spec;
     TypeSpecList* type_spec_list;
 
+    FuncDef* func_def_node;
+
         Declarator* declarator_node;
         StructSpecifier* struct_spec_node;
         StructDeclList* struct_decl_list;
@@ -54,13 +56,16 @@
 %token PERIOD AND_LOGIC NOT_LOGIC NOT_OP SUB_OP ADD_OP MUL_OP DIV_OP MOD_OP
 %token LT_OP GT_OP XOR_OP OR_LOGIC TERN_OP
 
-%type <expr_node> translation_unit external_declaration function_definition primary_expression postfix_expression
+%type <expr_node> translation_unit external_declaration primary_expression postfix_expression
 %type <func_node> argument_expression_list
 %type <expr_node> unary_expression cast_expression multiplicative_expression additive_expression shift_expression relational_expression
 %type <expr_node> equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
 %type <expr_node> conditional_expression assignment_expression expression constant_expression
 
-%type <node>  enum_specifier enumerator_list enumerator  parameter_list parameter_declaration
+
+%type <func_def_node> function_definition
+
+%type <node>  enum_specifier enumerator_list enumerator  
 %type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer_list  
 
 %type <struct_spec_node> struct_specifier
@@ -79,12 +84,14 @@
 %type <string> storage_class_specifier 
 
 %type <stmt_list> statement_list
-%type <decl_list> declaration declaration_list  
+%type <decl_list> declaration declaration_list  parameter_list 
 %type <decl_init_list> init_declarator_list 
 %type <decl_init_node> init_declarator
 %type <declarator_node> declarator direct_declarator
 
 %type <expr_node> initializer
+
+%type <decl_node> parameter_declaration
 
 %type <number_int> INT_CONSTANT
 %type <number_float> FLOAT_CONSTANT
@@ -94,7 +101,7 @@
 %%
 
 ROOT
-  : compound_statement { // change back to translation_unit
+  : function_definition { // change back to translation_unit
         rootExpr = $1;
     }
 
@@ -110,11 +117,19 @@ external_declaration
 
 function_definition
 	: declaration_specifiers declarator declaration_list compound_statement
+                // TODO: Add error message "out of spec".
 	| declaration_specifiers declarator compound_statement {
-		// $$ = new FunctionDefinition($1, $2, $3);
+		$$ = funcDefCreate($1, $2->pointerCount, $2->ident, $3);
+                if($2->parameterList != NULL)
+                {
+                        $$->args = $2->parameterList; 
+                }
+                free($2);
 	}
 	| declarator declaration_list compound_statement
+                //TODO: Add error message "out of spec"
 	| declarator compound_statement
+                // provides backwards compatibility (idk what)
 	;
 
 
@@ -725,7 +740,13 @@ direct_declarator
 	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE
 	| direct_declarator OPEN_SQUARE CLOSE_SQUARE
 	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET
-	| direct_declarator OPEN_BRACKET identifier_list CLOSE_BRACKET
+        {
+                $$ = declaratorCreate();
+                $$->ident = $1->ident;
+                $$->parameterList = &$3;
+                free($1);
+        }
+	| direct_declarator OPEN_BRACKET identifier_list  CLOSE_BRACKET // just for K&R style
 	| direct_declarator OPEN_BRACKET CLOSE_BRACKET {
 		// $$ = new DirectDeclarator($1);
 	    }
@@ -736,15 +757,32 @@ pointer
 	| MUL_OP pointer { $$ = $2 + 1; }
 	;
 
+// declaration list
 parameter_list
 	: parameter_declaration
+        {
+                declarationListInit(&$$, 1);
+                $$.decls[0] = $1;
+        }
 	| parameter_list COMMA parameter_declaration
+        {
+                $$ = $1;
+                declarationListPush(&$$, $3);
+        }
 	;
 
+// declaration (not list)
 parameter_declaration
 	: declaration_specifiers declarator
-	| declaration_specifiers abstract_declarator
+        {
+                $$ = declCreate($1);
+                $$->declInit = declInitCreate($2);
+        }
+	| declaration_specifiers abstract_declarator // not implementing atm
 	| declaration_specifiers
+        {
+                $$ = declCreate($1);
+        }
 	;
 
 identifier_list

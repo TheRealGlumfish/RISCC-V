@@ -1,6 +1,7 @@
 #ifndef AST_H
 #define AST_H
 
+#include "src/symbol.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -97,6 +98,7 @@ typedef struct VariableExpr
 {
     char *ident;
     DataType type;
+    SymbolEntry symbolEntry;
 } VariableExpr;
 
 typedef struct ConstantExpr
@@ -137,6 +139,7 @@ typedef struct FuncExpr
     size_t argsCapacity;
     Expr **args;
     DataType type; // TODO: Replace, functions may not retrun primative types only
+    SymbolEntry symbolEntry;
 } FuncExpr;
 
 typedef struct Stmt

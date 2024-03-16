@@ -7,6 +7,7 @@
     #include <stdbool.h>
 
     #include "src/ast.h"
+    #include "src/symbol.h"
 
     extern FuncDef* rootExpr;
     extern FILE *yyin;
@@ -652,16 +653,16 @@ struct_declaration
 	: specifier_qualifier_list struct_declarator_list SEMI_COLON {
 	    for(size_t i = 0; i < $2->structDeclListSize; i++)
         {
-            if(i == 0)
-            {
-                $2->structDecls[i]->typeSpecList = $1;
-            }
-            else
-            {
-                $2->structDecls[i]->typeSpecList = typeSpecListCopy($1);
-            }
+                if(i == 0)
+                {
+                        $2->structDecls[i]->typeSpecList = $1;
+                }
+                else
+                {
+                        $2->structDecls[i]->typeSpecList = typeSpecListCopy($1);
+                }
         }
-        $$ = $2;
+                $$ = $2;
 	}
 	;
 
@@ -913,11 +914,11 @@ declaration_list
 		$$ = $1;
         }
 	| declaration_list declaration {
-        $$ = $1;
-        for(size_t i = 0; i < $2.size; i++)
-        {
-            declarationListPush(&$$, $2.decls[i]);
-        }
+                $$ = $1;
+                for(size_t i = 0; i < $2.size; i++)
+                {
+                declarationListPush(&$$, $2.decls[i]);
+                }
 		free($2.decls);
         }
 	;

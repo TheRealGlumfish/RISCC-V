@@ -21,3 +21,4 @@ bisonfiles = bisongen.process('src/parser.y')
 
 executable('print_tokens', ['src/ast.c', 'src/print_tokens.c'], lexfiles, bisonfiles)
 executable('print_tree', ['src/ast.c', 'src/print_tree.c'], lexfiles, bisonfiles)
+executable('c_compiler', ['src/c_compiler.c', 'src/ast.c', 'src/codegen.c'], lexfiles, bisonfiles)

@@ -1174,3 +1174,167 @@ void initDestroy(Initializer *init)
 
 
 
+
+// Returns the type field stored in an expression node
+DataType returnType(Expr *expr)
+{
+    switch(expr->type)
+    {
+    case VARIABLE_EXPR:
+    {
+        return expr->variable->type;
+    }
+    case CONSTANT_EXPR:
+    {
+        return expr->constant->type;
+    }
+    case OPERATION_EXPR:
+    {
+        return expr->operation->type;
+    }
+    case ASSIGN_EXPR:
+    {
+        return expr->assignment->type;
+    }
+    case FUNC_EXPR:
+    {
+        return expr->function->type;
+    }
+    }
+}
+
+// Crawls the tree and resolves the types of expressions
+void resolveType(Expr *expr)
+{
+    switch(expr->type)
+    {
+        case CONSTANT_EXPR:
+        {
+            return;
+        }
+        case VARIABLE_EXPR:
+        {
+            // TODO: Do symbol table lookup
+            return;
+        }
+        case OPERATION_EXPR:
+        {
+            switch(expr->operation->operator)
+            {
+                // TODO: Add type checking code
+                case ADD:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case SUB:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case MUL:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case DIV:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case MOD:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case OR:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case AND:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case AND_BIT:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case OR_BIT:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case XOR:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case EQ:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case NE:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case LT:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case GT:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case LE:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+                case GE:
+                {
+                    resolveType(expr->operation->op1);
+                    resolveType(expr->operation->op2);
+                    expr->operation->type = returnType(expr->operation->op1);
+                    return;
+                }
+            }
+        }
+    }
+}

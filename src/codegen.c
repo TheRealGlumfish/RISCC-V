@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "ast.h"
 #include "codegen.h"
@@ -8,6 +9,7 @@
 FILE *outFile;
 
 uint64_t LCLabelId;
+bool regs[32] = { 0 };
 
 const char *regStr(Reg reg)
 {
@@ -80,6 +82,30 @@ const char *regStr(Reg reg)
     }
 }
 
+// Returns a temporary register
+Reg getTmpReg(void)
+{
+    for (size_t i = 0; i < 32; i++)
+    {
+        if(i == T0 || i == T1 || i == T2 || i == T3 || i == T4 || i == T5 || i == T6)
+        {
+            if (!regs[i]) 
+            {
+                regs[i] = true;
+                return i;
+            }
+        }
+    }
+    fprintf(stderr, "All registers filled, exitting...\n");
+    exit(-1);
+}
+
+// Free a register
+void freeReg(Reg reg)
+{
+    regs[reg] = false; 
+}
+
 // Gets a "unique" number, aborts if we run out of numbers
 uint64_t getId(uint64_t *num)
 {
@@ -146,48 +172,72 @@ void compileOperationExpr(OperationExpr *expr, Reg dest)
         case ADD:
         {
             // TODO: Deal with non-long types 
-            compileExpr(expr->op1, T1);
-            compileExpr(expr->op2, T2);
-            fprintf(outFile, "\tadd %s, %s, %s\n", regStr(dest), regStr(T1), regStr(T2));
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tadd %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
             break;
         }
         case SUB:
         {
             // TODO: Deal with non-long types 
-            compileExpr(expr->op1, T1);
-            compileExpr(expr->op2, T2);
-            fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(T1), regStr(T2));
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
             break;
         }
         case MUL:
         {
             // TODO: Deal with non-long types 
-            compileExpr(expr->op1, T1);
-            compileExpr(expr->op2, T2);
-            fprintf(outFile, "\tmul %s, %s, %s\n", regStr(dest), regStr(T1), regStr(T2));
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tmul %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
             break;
         }
         case DIV:
         {
             // TODO: Deal with non-long types
             // TODO: Deal with unsigned division
-            compileExpr(expr->op1, T1);
-            compileExpr(expr->op2, T2);
-            fprintf(outFile, "\tdiv %s, %s, %s\n", regStr(dest), regStr(T1), regStr(T2));
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tdiv %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
             break;
         }
         case NOT:
         {
-            compileExpr(expr->op1, T1); 
-            fprintf(outFile, "\tnot %s, %s\n", regStr(dest), regStr(T1));
+            Reg op1 = getTmpReg();
+            compileExpr(expr->op1, op1); 
+            fprintf(outFile, "\tnot %s, %s\n", regStr(dest), regStr(op1));
+            freeReg(op1); // TODO: Test register eviction
+            break;
         }
         case EQ:
         {
             // TODO: Deal with signs
-            compileExpr(expr->op1, T1);
-            compileExpr(expr->op2, T2);
-            fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(T1), regStr(T2));
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
             fprintf(outFile, "\tseqz %s, %s\n", regStr(dest), regStr(dest));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
         }
         default:
         {

@@ -34,6 +34,9 @@
     TypeSpecifier* type_spec;
     TypeSpecList* type_spec_list;
 
+    InitList *init_list;
+    Initializer *init_node;
+
     FuncDef* func_def_node;
 
         Declarator* declarator_node;
@@ -62,11 +65,13 @@
 %type <expr_node> equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
 %type <expr_node> conditional_expression assignment_expression expression constant_expression
 
+%type <init_node> initializer
+%type <init_list> initializer_list
 
 %type <func_def_node> function_definition
 
 %type <node>  enum_specifier enumerator_list enumerator  
-%type <node> identifier_list type_name abstract_declarator direct_abstract_declarator initializer_list  
+%type <node> identifier_list type_name abstract_declarator direct_abstract_declarator   
 
 %type <struct_spec_node> struct_specifier
 %type <struct_decl_list> struct_declaration_list struct_declaration struct_declarator_list
@@ -88,8 +93,6 @@
 %type <decl_init_list> init_declarator_list 
 %type <decl_init_node> init_declarator
 %type <declarator_node> declarator direct_declarator
-
-%type <expr_node> initializer
 
 %type <decl_node> parameter_declaration
 
@@ -120,10 +123,7 @@ function_definition
                 // TODO: Add error message "out of spec".
 	| declaration_specifiers declarator compound_statement {
 		$$ = funcDefCreate($1, $2->pointerCount, $2->ident, $3);
-                if($2->parameterList != NULL)
-                {
-                        $$->args = $2->parameterList; 
-                }
+                $$->args = $2->parameterList; 
                 free($2);
 	}
 	| declarator declaration_list compound_statement
@@ -533,12 +533,12 @@ declaration_specifiers
 // returns a list of declaration inits
 init_declarator_list
 	: init_declarator{
-        $$ = declInitListCreate(1);
-        $$->declInits[0] = $1;
+                $$ = declInitListCreate(1);
+                $$->declInits[0] = $1;
         }
 	| init_declarator_list COMMA init_declarator{
-        $$ = $1;
-        declInitListPush($$, $3);
+                $$ = $1;
+                declInitListPush($$, $3);
         }
 	;
 
@@ -548,7 +548,16 @@ init_declarator
         }
 	| declarator ASSIGN initializer {
 		$$ = declInitCreate($1);
-		$$->initExpr = $3;
+
+                if($3->initList != NULL)
+                {
+                        $$->initList = $3->initList;
+                }
+                if($3->expr != NULL)
+                {
+                        $$->initExpr = $3->expr;
+                }
+                free($3);
         }
 	;
 
@@ -738,17 +747,22 @@ direct_declarator
 	    }
 	| OPEN_BRACKET declarator CLOSE_BRACKET
 	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE
-	| direct_declarator OPEN_SQUARE CLOSE_SQUARE
+        {
+                $1->isArray = true;
+                $1->arraySize = $3;
+                $$ = $1;
+        }
+	| direct_declarator OPEN_SQUARE CLOSE_SQUARE // array of unspecified size
 	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET
         {
-                $$ = declaratorCreate();
-                $$->ident = $1->ident;
-                $$->parameterList = &$3;
-                free($1);
+                $1->parameterList = &$3;
+                $$ = $1;
         }
 	| direct_declarator OPEN_BRACKET identifier_list  CLOSE_BRACKET // just for K&R style
-	| direct_declarator OPEN_BRACKET CLOSE_BRACKET {
-		// $$ = new DirectDeclarator($1);
+	| direct_declarator OPEN_BRACKET CLOSE_BRACKET { 
+		$$ = declaratorCreate();
+                $$->ident = $1->ident;
+                free($1);
 	    }
 	;
 
@@ -813,18 +827,36 @@ direct_abstract_declarator
 	| direct_abstract_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET
 	;
 
-// returns an expresson
+// returns an initialiser union type 
 initializer
 	: assignment_expression {
-        $$ = $1;
+                $$ = initCreate();
+                $$->expr = $1;
         }
 	| OPEN_BRACE initializer_list CLOSE_BRACE
+        {
+                $$ = initCreate();
+                $$->initList = $2;
+        }    
 	| OPEN_BRACE initializer_list COMMA CLOSE_BRACE
+        {
+                $$ = initCreate();
+                $$->initList = $2;
+        }
 	;
 
+// returns an initialiser list
 initializer_list
 	: initializer
+        {
+                $$ = initListCreate(0);
+                initListPush($$, $1);
+        }
 	| initializer_list COMMA initializer
+        {
+                initListPush($1, $3);
+                $$ = $1;
+        }
 	;
 
 statement

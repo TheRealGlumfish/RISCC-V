@@ -419,10 +419,24 @@ void displayDecl(Decl *decl, int indent)
 
     if(decl->declInit != NULL)
     {
-        printf("\n");
         printIndent(indent+4);
         printf("└── ");
         printf("%s \n", decl->declInit->declarator->ident);
+        if(decl->declInit->declarator->isArray)
+        {   
+            printIndent(indent+4);
+            printf("└── ");
+            printf("ARRAY SIZE\n");
+            displayExpr(decl->declInit->declarator->arraySize, indent+8);
+        }
+
+
+        if(decl->declInit->initList != NULL)
+        {
+            printIndent(indent+4);
+            printf("└── ");
+            printf("ARRAY INIT\n");
+        }
         if (decl->declInit->initExpr != NULL)
         {
             displayExpr(decl->declInit->initExpr, indent + 8);

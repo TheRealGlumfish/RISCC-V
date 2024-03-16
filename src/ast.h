@@ -227,6 +227,8 @@ typedef struct Declarator
     size_t pointerCount;
     char *ident; // needs array and function definitions too
     DeclarationList *parameterList;
+    bool isArray;
+    Expr* arraySize; // constant expression
 } Declarator;
 
 typedef struct StructDecl
@@ -236,12 +238,21 @@ typedef struct StructDecl
     Expr* bitField; // can be NULL
 } StructDecl;
 
-// intermediary class used for building the AST
-typedef struct DeclInit // holds declarator and sometimes an initializer
+typedef struct Initializer Initializer;
+
+typedef struct InitList
+{
+    Initializer **inits;
+    size_t size;
+    size_t capacity;
+} InitList;
+
+typedef struct DeclInit // holds declarator and sometimes initializers
 { 
     Declarator *declarator;
-    Expr *initExpr; // both initExpr and initArray can be NULL when defining a struct
-    // array initializer defined here
+    bool isArray;
+    Expr *initExpr;
+    InitList *initList;
 } DeclInit;
 
 typedef struct Decl
@@ -304,6 +315,12 @@ typedef struct FuncDef
     Stmt *body;
 
 } FuncDef;
+
+typedef struct Initializer
+{
+    Expr *expr;
+    InitList *initList;
+} Initializer;
 
 Expr *exprCreate(ExprType type);
 void exprDestroy(Expr *expr);
@@ -400,5 +417,13 @@ void declaratorDestroy(Declarator *declarator);
 
 FuncDef *funcDefCreate(TypeSpecList *retType, size_t ptrCount, char *ident, Stmt *body);
 void funcDefDestroy(FuncDef *funcDef);
+
+InitList *initListCreate(size_t initListSize);
+void initListDestroy(InitList *initList);
+void initListResize(InitList *initList, const size_t initListSize);
+void initListPush(InitList *initList, Initializer *init);
+
+Initializer *initCreate();
+void initDestroy(Initializer *init);
 
 #endif

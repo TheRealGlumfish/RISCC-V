@@ -737,6 +737,7 @@ Declarator *declaratorCreate()
     }
     declarator->pointerCount = 0;
     declarator->parameterList = NULL;
+    declarator->isArray = false;
     return declarator;
 }
 
@@ -749,6 +750,10 @@ void declaratorDestroy(Declarator *declarator)
     if(declarator->parameterList != NULL)
     {
         declarationListDestroy(declarator->parameterList);
+    }
+    if(declarator->isArray)
+    {
+        exprDestroy(declarator->arraySize);
     }
     free(declarator);
 }
@@ -763,13 +768,18 @@ DeclInit *declInitCreate(Declarator* declarator)
     }
     declInit->declarator = declarator;
     declInit->initExpr = NULL;
+    declInit->initList = NULL;
     return declInit;
 }
 
 // Declaration-Initializer destructor
 void declInitDestroy(DeclInit *declInit)
 {
-    if (declInit->initExpr != NULL)
+    if(declInit->initList != NULL) // may not be initialized
+    {
+        initListDestroy(declInit->initList);
+    }
+    if (declInit->initExpr != NULL) // may not be initialized
     {
         exprDestroy(declInit->initExpr);
     }
@@ -1058,6 +1068,109 @@ void funcDefDestroy(FuncDef *funcDef)
     stmtDestroy(funcDef->body);
     free(funcDef);
 }
+
+// constructor for initializer list
+InitList *initListCreate(size_t initListSize)
+{
+    InitList *initList = malloc(sizeof(InitList));
+    if (initList == NULL)
+    {
+        abort();
+    }
+
+    if(initListSize != 0)
+    {
+        initList->inits = malloc(sizeof(Expr *) * initListSize);
+        if (initList->inits == NULL)
+        {
+            abort();
+        }
+    }
+    else {
+        initList->inits = NULL;
+    }
+
+    initList->size = initListSize;
+    initList->size = initListSize;
+    return initList;
+}
+
+
+// Destructor for initialiser list
+void initListDestroy(InitList *initList)
+{
+    for(size_t i = 0; i < initList->size; i++)
+    {
+        initDestroy(initList->inits[i]);
+    }
+    free(initList->inits);
+    free(initList);
+}
+
+// Resize the initialiser list
+void initListResize(InitList *initList, const size_t initListSize)
+{
+    if (initList->size != 0)
+    {
+        initList->size = initListSize;
+        if (initList->size > initList->capacity)
+        {
+            while (initList->size > initList->capacity)
+            {
+                initList->capacity *= 2;
+            }
+            initList->inits = realloc(initList->inits, sizeof(Expr *) * initList->capacity);
+            if (initList->inits == NULL)
+            {
+                abort();
+            }
+        }
+    }
+    else
+    {
+        initList->size = initListSize;
+        initList->inits = malloc(sizeof(Expr *) * initListSize);
+        if (initList->inits == NULL)
+        {
+            abort();
+        }
+        initList->capacity = initListSize;
+    }
+}
+
+// Adds an expression to an initializer list
+void initListPush(InitList *initList, Initializer *init)
+{
+    initListResize(initList, initList->size + 1);
+    initList->inits[initList->size - 1] = init;
+}
+
+// constructor for an initializer
+Initializer *initCreate()
+{
+    Initializer *initializer = malloc(sizeof(Initializer));
+    if (initializer == NULL)
+    {
+        abort();
+    }
+    initializer->initList = NULL;
+    initializer->expr = NULL;
+    return initializer;
+}
+
+// destructor for an initializer
+void initDestroy(Initializer *init)
+{
+    if(init->initList != NULL)
+    {
+        initListDestroy(init->initList);
+    }
+    if(init->expr != NULL) {
+        exprDestroy(init->expr);
+    }
+    free(init);
+}
+
 
 
 

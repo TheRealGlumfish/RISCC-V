@@ -38,19 +38,6 @@ void symbolTableDestroy(SymbolTable *symbolTable);
 
 SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+SymbolTable* populateSymbolTable(FuncDef* rootExpr);
 
 #endif

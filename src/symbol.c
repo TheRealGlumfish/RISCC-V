@@ -26,7 +26,6 @@ SymbolEntry *symbolEntryCreate(char* ident, TypeSpecifier type, size_t size, boo
 // destructor for symbol entry
 SymbolEntry *symbolEntryDestroy(SymbolEntry *symbolEntry)
 {
-    free(symbolEntry->ident);
     free(symbolEntry);
 }
 
@@ -107,7 +106,10 @@ void symbolTableDestroy(SymbolTable *symbolTable)
         symbolEntryDestroy(symbolTable->entries[i]);
     }
     free(symbolTable->entries);
-    symbolTableDestroy(symbolTable->childTable);
+    if(symbolTable->childTable != NULL)
+    {
+        symbolTableDestroy(symbolTable->childTable);
+    }
     free(symbolTable);
 }
 
@@ -134,8 +136,6 @@ SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident)
 
 void scanStmt(Stmt *stmt, SymbolTable *parentTable);
 void scanExpr(Expr* expr, SymbolTable *parentTable);
-
-
 
 void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
 {
@@ -297,6 +297,7 @@ SymbolTable* populateSymbolTable(FuncDef* rootExpr)
 {
     SymbolTable *globalTable = symbolTableCreate(0, NULL); // global scop
     scanFuncDef(rootExpr, globalTable);
+    return globalTable;
 }
 
 

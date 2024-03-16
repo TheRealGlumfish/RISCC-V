@@ -4,6 +4,7 @@
 
 #include "ast.h"
 #include "parser.tab.h"
+#include "symbol.h"
 
 // will probably need this later...
 // typedef struct {
@@ -602,7 +603,11 @@ int main(int argc, char **argv)
     // }
 
     displayFuncDef(rootExpr, 0);
+
+
+    SymbolTable *globalTable = populateSymbolTable(rootExpr);
     funcDefDestroy(rootExpr);
+    symbolTableDestroy(globalTable);
 
     if (yyin != NULL)
     {

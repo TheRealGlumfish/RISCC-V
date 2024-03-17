@@ -1,10 +1,9 @@
 #ifndef SYMBOL_H
 #define SYMBOL_H
 
+#include "ast.h"
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
-#include "ast.h"
 
 typedef struct SymbolEntry
 {
@@ -28,16 +27,16 @@ typedef struct SymbolTable
     size_t capacity;
 } SymbolTable;
 
-SymbolEntry *symbolEntryCreate(char* ident, TypeSpecifier type, size_t size, bool isFunc);
-SymbolEntry *symbolEntryDestroy(SymbolEntry *symbolEntry);
+SymbolEntry *symbolEntryCreate(char *ident, TypeSpecifier type, size_t size, bool isFunc);
+void symbolEntryDestroy(SymbolEntry *symbolEntry);
 
 SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable);
-void symbolTableResize(SymbolTable *symbolTable, const size_t symbolTableSize);
+void symbolTableResize(SymbolTable *symbolTable, size_t symbolTableSize);
 void symbolTablePush(SymbolTable *symbolTable, SymbolEntry *symbolEntry);
 void symbolTableDestroy(SymbolTable *symbolTable);
 
 SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident);
 
-SymbolTable* populateSymbolTable(FuncDef* rootExpr);
+SymbolTable *populateSymbolTable(FuncDef *rootExpr);
 
 #endif

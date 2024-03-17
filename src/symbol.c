@@ -2,13 +2,12 @@
 #include <stdlib.h>
 
 #include "ast.h"
-#include <stdio.h>
 #include "symbol.h"
+#include <stdio.h>
 #include <string.h>
 
-
-// constructor for symbol entry
-SymbolEntry *symbolEntryCreate(char* ident, TypeSpecifier type, size_t size, bool isFunc)
+// Constructor for symbol entry
+SymbolEntry *symbolEntryCreate(char *ident, TypeSpecifier type, size_t size, bool isFunc)
 {
     SymbolEntry *symbolEntry = malloc(sizeof(SymbolEntry));
     if (symbolEntry == NULL)
@@ -23,13 +22,13 @@ SymbolEntry *symbolEntryCreate(char* ident, TypeSpecifier type, size_t size, boo
     return symbolEntry;
 }
 
-// destructor for symbol entry
-SymbolEntry *symbolEntryDestroy(SymbolEntry *symbolEntry)
+// Destructor for symbol entry
+void symbolEntryDestroy(SymbolEntry *symbolEntry)
 {
     free(symbolEntry);
 }
 
-// create symbol table
+// Create symbol table
 SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable)
 {
     SymbolTable *symbolTable = malloc(sizeof(SymbolTable));
@@ -58,7 +57,7 @@ SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable)
     return symbolTable;
 }
 
-// resize a symbol table
+// Resizes a symbol table
 void symbolTableResize(SymbolTable *symbolTable, const size_t symbolTableSize)
 {
     if (symbolTable->size != 0)
@@ -98,15 +97,15 @@ void symbolTablePush(SymbolTable *symbolTable, SymbolEntry *symbolEntry)
     symbolTable->currFrameOffset += symbolEntry->size;
 }
 
-// destructor for symbol table
+// Symbol table destructor
 void symbolTableDestroy(SymbolTable *symbolTable)
 {
-    for(size_t i = 0; i < symbolTable->size; i++)
+    for (size_t i = 0; i < symbolTable->size; i++)
     {
         symbolEntryDestroy(symbolTable->entries[i]);
     }
     free(symbolTable->entries);
-    if(symbolTable->childTable != NULL)
+    if (symbolTable->childTable != NULL)
     {
         symbolTableDestroy(symbolTable->childTable);
     }
@@ -117,14 +116,14 @@ void symbolTableDestroy(SymbolTable *symbolTable)
 SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident)
 {
     // base case
-    if(symbolTable->parentTable == NULL)
+    if (symbolTable->parentTable == NULL)
     {
         return NULL;
     }
     // search current table
-    for(size_t i = 0; i < symbolTable->size; i++)
+    for (size_t i = 0; i < symbolTable->size; i++)
     {
-        if(strcmp(symbolTable->entries[i]->ident, ident) == 0)
+        if (strcmp(symbolTable->entries[i]->ident, ident) == 0)
         {
             return symbolTable->entries[i];
         }
@@ -134,7 +133,7 @@ SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident)
 }
 
 void scanStmt(Stmt *stmt, SymbolTable *parentTable);
-void scanExpr(Expr* expr, SymbolTable *parentTable);
+void scanExpr(Expr *expr, SymbolTable *parentTable);
 
 void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
 {
@@ -155,17 +154,17 @@ void scanVariable(VariableExpr *variable, SymbolTable *parentTable)
 void scanOperationExpr(OperationExpr *opExpr, SymbolTable *parentTable)
 {
     scanExpr(opExpr->op1, parentTable);
-    if(opExpr->op2 != NULL)
+    if (opExpr->op2 != NULL)
     {
         scanExpr(opExpr->op2, parentTable);
     }
-    if(opExpr->op3 != NULL)
+    if (opExpr->op3 != NULL)
     {
         scanExpr(opExpr->op3, parentTable);
     }
 }
 
-void scanExpr(Expr* expr, SymbolTable *parentTable)
+void scanExpr(Expr *expr, SymbolTable *parentTable)
 {
     switch (expr->type)
     {
@@ -177,6 +176,7 @@ void scanExpr(Expr* expr, SymbolTable *parentTable)
     case CONSTANT_EXPR:
     {
         // not scanned atm
+        break;
     }
     case OPERATION_EXPR:
     {
@@ -226,19 +226,19 @@ void scanWhileStmt(WhileStmt *whileStmt, SymbolTable *parentTable)
 void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
 {
     // enter a new scope
-    SymbolTable* childTable = symbolTableCreate(0, parentTable);
+    SymbolTable *childTable = symbolTableCreate(0, parentTable);
     parentTable->childTable = childTable;
 
-    for(size_t i = 0; i < compoundStmt->stmtList.size; i++)
+    for (size_t i = 0; i < compoundStmt->stmtList.size; i++)
     {
         scanStmt(compoundStmt->stmtList.stmts[i], childTable);
     }
 
-    for(size_t i = 0; i < compoundStmt->declList.size; i++)
+    for (size_t i = 0; i < compoundStmt->declList.size; i++)
     {
-        char* ident = compoundStmt->declList.decls[i]->declInit->declarator->ident;
+        char *ident = compoundStmt->declList.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-        size_t size = 8; // everything has default 64 bit size at the moment
+        size_t size = 8;                                                                     // everything has default 64 bit size at the moment
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
         symbolTablePush(childTable, symbolEntry);
         compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
@@ -290,12 +290,12 @@ void scanStmt(Stmt *stmt, SymbolTable *parentTable)
 void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
 {
     symbolTablePush(parentTable, symbolEntryCreate(funcDef->ident, *(funcDef->retType->typeSpecs[0]), 32, true));
-    
-    for(size_t i = 0; i < funcDef->args.size; i++)
+
+    for (size_t i = 0; i < funcDef->args.size; i++)
     {
-        char* ident = funcDef->args.decls[i]->declInit->declarator->ident;
+        char *ident = funcDef->args.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-        size_t size = 8; // everything has default 64 bit size at the moment
+        size_t size = 8;                                                            // everything has default 64 bit size at the moment
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
         symbolTablePush(parentTable, symbolEntry);
         funcDef->args.decls[i]->symbolEntry = symbolEntry;
@@ -304,11 +304,9 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     scanStmt(funcDef->body, parentTable);
 }
 
-SymbolTable* populateSymbolTable(FuncDef* rootExpr)
+SymbolTable *populateSymbolTable(FuncDef *rootExpr)
 {
     SymbolTable *globalTable = symbolTableCreate(0, NULL); // global scop
     scanFuncDef(rootExpr, globalTable);
     return globalTable;
 }
-
-

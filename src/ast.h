@@ -259,11 +259,11 @@ typedef struct Declarator
     char *ident; // needs array and function definitions too
     DeclarationList parameterList;
     bool isArray;
-    Expr* arraySize; // constant expression
+    Expr *arraySize; // constant expression
 } Declarator;
 
 typedef struct DeclInit // holds declarator and sometimes initializers
-{ 
+{
     Declarator *declarator;
     bool isArray;
     Expr *initExpr;

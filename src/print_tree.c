@@ -604,6 +604,7 @@ int main(int argc, char **argv)
     displayFuncDef(root, 0);
 
     SymbolTable *globalTable = populateSymbolTable(root);
+    displaySymbolTable(globalTable);
     funcDefDestroy(root);
     symbolTableDestroy(globalTable);
 

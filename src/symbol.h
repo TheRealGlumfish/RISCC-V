@@ -37,6 +37,9 @@ SymbolTable *symbolTableCreate(size_t entryLength, size_t childrenLength, Symbol
 void entryListResize(SymbolTable *symbolTable, const size_t symbolTableSize);
 void childrenListResize(SymbolTable *symbolTable, const size_t childrenLength);
 
+void displaySymbolTable(SymbolTable *symbolTable);
+void displaySymbolEntry(SymbolEntry *symbolEntry);
+
 void entryPush(SymbolTable *symbolTable, SymbolEntry *symbolEntry);
 void symbolTableDestroy(SymbolTable *symbolTable);
 void childTablePush(SymbolTable *symbolTable, SymbolTable *childTable);

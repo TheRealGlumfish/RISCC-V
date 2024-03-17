@@ -321,6 +321,7 @@ void compileFunc(FuncDef *func)
     fprintf(outFile, ".globl %s\n", func->ident);
     fprintf(outFile, ".type %s, @function\n", func->ident);
     fprintf(outFile, "%s:\n", func->ident);
+    fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
     for (size_t i = 0; i < func->args.size; i++)
     {
         compileArg(func->args.decls[i], i + A0);

@@ -42,6 +42,7 @@ int main(int argc, char **argv)
     
     yyparse();
     SymbolTable *globalTable = populateSymbolTable(root);
+    displaySymbolTable(globalTable);
     compileFunc(root);
     funcDefDestroy(root);
     symbolTableDestroy(globalTable);

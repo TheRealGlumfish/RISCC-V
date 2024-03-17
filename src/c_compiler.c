@@ -3,10 +3,12 @@
 
 #include "parser.tab.h"
 #include "codegen.h"
+#include "symbol.h"
+#include "ast.h"
 
 int main(int argc, char **argv)
 {
-    if (argc != 5 && argc != 2)
+    if (argc != 5 && argc != 3)
     {
         fprintf(stderr, "Incorrect usage, exitting...\n");
         return EXIT_FAILURE;
@@ -28,10 +30,21 @@ int main(int argc, char **argv)
     }
     else
     {
+        yyin = fopen(argv[2], "r");
+        if (yyin == NULL)
+        {
+            fprintf(stderr, "Unable to open source file, exitting...\n");
+            return EXIT_FAILURE;
+        }
         fprintf(stderr, "No output file specified, outputing to STDOUT...\n");
+        outFile = stdout;
     }
-
-
+    
+    yyparse();
+    SymbolTable *globalTable = populateSymbolTable(root);
+    compileFunc(root);
+    funcDefDestroy(root);
+    symbolTableDestroy(globalTable);
 
     fclose(yyin);
     if (argc == 5)

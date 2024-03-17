@@ -262,7 +262,7 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
     {
     case INT_TYPE:
     {
-        fprintf(outFile, "\tlw %s, -%lu(sp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        fprintf(outFile, "\tlw %s, %lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
         break;
     }
     default:
@@ -303,6 +303,7 @@ void compileJumpStmt(JumpStmt *stmt)
         {
             // TODO: Add code to deal with types
             compileExpr(stmt->expr, A0);
+            fprintf(outFile, "\tmv sp, fp\n");
             fprintf(outFile, "\tret\n");
         }
     }
@@ -311,9 +312,7 @@ void compileJumpStmt(JumpStmt *stmt)
 
 void compileArg(Decl *decl, Reg dest)
 {
-    // TODO: Get size from symbol table
-    fprintf(outFile, "\taddi sp, sp, %lu\n", 4);
-    fprintf(outFile, "\tsw %s, sp\n", regStr(dest));
+    fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(dest), decl->symbolEntry->stackOffset);
 }
 
 void compileFunc(FuncDef *func)
@@ -321,13 +320,24 @@ void compileFunc(FuncDef *func)
     fprintf(outFile, ".globl %s\n", func->ident);
     fprintf(outFile, ".type %s, @function\n", func->ident);
     fprintf(outFile, "%s:\n", func->ident);
+    fprintf(outFile, "\tmv fp, sp\n");
+    fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
     for (size_t i = 0; i < func->args.size; i++)
     {
         compileArg(func->args.decls[i], i + A0);
+    }
+    for (size_t i = 0; i < func->body->compoundStmt->declList.size; i++)
+    {
+        if (func->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
+        {
+            compileExpr(func->body->compoundStmt->declList.decls[i]->declInit->initExpr, A0);
+            fprintf(outFile, "\tsw %s %lu(fp)\n", regStr(A0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
+        }
     }
     for (size_t i = 0; i < func->body->compoundStmt->stmtList.size; i++)
     {
         compileStmt(func->body->compoundStmt->stmtList.stmts[i]);
     }
+    fprintf(outFile, "\tmv sp, fp\n");
     fprintf(outFile, "\tret\n");
 }

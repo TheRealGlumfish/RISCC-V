@@ -363,6 +363,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     // new function def symbol entry
     SymbolEntry *funcDefEntry = symbolEntryCreate(funcDef->ident, *(funcDef->retType->typeSpecs[0]), 0, true);
     entryPush(parentTable, funcDefEntry);
+    funcDef->symbolEntry = funcDefEntry;
 
     // new scope and new stack frame
     SymbolTable *childTable = symbolTableCreate(0, 0, parentTable, funcDefEntry);

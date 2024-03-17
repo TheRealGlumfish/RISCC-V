@@ -6,8 +6,8 @@
     #include <stdint.h>
     #include <stdbool.h>
 
-    #include "src/ast.h"
-    #include "src/symbol.h"
+    #include "../src/ast.h"
+    #include "../src/symbol.h"
 
     extern FuncDef* root;
     extern FILE *yyin;

@@ -30,7 +30,7 @@ SymbolEntry *symbolEntryDestroy(SymbolEntry *symbolEntry)
 }
 
 // create symbol table
-SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable)
+SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable, bool newStackFrame)
 {
     SymbolTable *symbolTable = malloc(sizeof(SymbolTable));
     if (symbolTable == NULL)
@@ -50,7 +50,16 @@ SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable)
         symbolTable->entries = NULL;
     }
 
-    symbolTable->currFrameOffset = 0;
+    if (newStackFrame)
+    {
+        symbolTable->currFrameOffset = 0;
+    }
+    else
+    {
+        symbolTable->currFrameOffset = parentTable->currFrameOffset;
+    }
+
+    
     symbolTable->size = symbolTableSize;
     symbolTable->capacity = symbolTableSize;
     symbolTable->parentTable = parentTable;
@@ -223,10 +232,11 @@ void scanWhileStmt(WhileStmt *whileStmt, SymbolTable *parentTable)
     scanStmt(whileStmt->body, parentTable);
 }
 
+// compound statements (not in function defs) create a new scope table but not a new stack frame
 void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
 {
-    // enter a new scope
-    SymbolTable* childTable = symbolTableCreate(0, parentTable);
+    // enter a new scope but not a new stack frame
+    SymbolTable* childTable = symbolTableCreate(0, parentTable, false);
     parentTable->childTable = childTable;
 
     for(size_t i = 0; i < compoundStmt->stmtList.size; i++)
@@ -289,24 +299,43 @@ void scanStmt(Stmt *stmt, SymbolTable *parentTable)
 
 void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
 {
+    // new scope and new stack frame
+    SymbolTable *childTable = symbolTableCreate(0, parentTable, true);
+    parentTable->childTable = childTable;
+
+    // function def added to the parent scope
     symbolTablePush(parentTable, symbolEntryCreate(funcDef->ident, *(funcDef->retType->typeSpecs[0]), 32, true));
     
+    // arguments added to child scope
     for(size_t i = 0; i < funcDef->args.size; i++)
     {
         char* ident = funcDef->args.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
         size_t size = 8; // everything has default 64 bit size at the moment
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
-        symbolTablePush(parentTable, symbolEntry);
+        symbolTablePush(childTable, symbolEntry);
         funcDef->args.decls[i]->symbolEntry = symbolEntry;
     }
 
-    scanStmt(funcDef->body, parentTable);
+    // add body to child table
+    for(size_t i = 0; i < funcDef->body->compoundStmt->stmtList.size; i++)
+    {
+        scanStmt(funcDef->body->compoundStmt->stmtList.stmts[i], childTable);
+    }
+
+    for(size_t i = 0; i < funcDef->body->compoundStmt->declList.size; i++)
+    {
+        char* ident = funcDef->body->compoundStmt->declList.decls[i]->declInit->declarator->ident;
+        TypeSpecifier type = *(funcDef->body->compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
+        size_t size = 8; // everything has default 64 bit size at the moment
+        SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
+        symbolTablePush(childTable, symbolEntry);
+    }
 }
 
 SymbolTable* populateSymbolTable(FuncDef* rootExpr)
 {
-    SymbolTable *globalTable = symbolTableCreate(0, NULL); // global scop
+    SymbolTable *globalTable = symbolTableCreate(0, NULL, true); // global scope
     scanFuncDef(rootExpr, globalTable);
     return globalTable;
 }

@@ -31,7 +31,7 @@ typedef struct SymbolTable
 SymbolEntry *symbolEntryCreate(char* ident, TypeSpecifier type, size_t size, bool isFunc);
 SymbolEntry *symbolEntryDestroy(SymbolEntry *symbolEntry);
 
-SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable);
+SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable, bool newStackFrame);
 void symbolTableResize(SymbolTable *symbolTable, const size_t symbolTableSize);
 void symbolTablePush(SymbolTable *symbolTable, SymbolEntry *symbolEntry);
 void symbolTableDestroy(SymbolTable *symbolTable);

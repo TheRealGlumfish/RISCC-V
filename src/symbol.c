@@ -421,11 +421,6 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     }
 
     // add body to child table
-    for(size_t i = 0; i < funcDef->body->compoundStmt->stmtList.size; i++)
-    {
-        scanStmt(funcDef->body->compoundStmt->stmtList.stmts[i], childTable);
-    }
-
     for(size_t i = 0; i < funcDef->body->compoundStmt->declList.size; i++)
     {
         char* ident = funcDef->body->compoundStmt->declList.decls[i]->declInit->declarator->ident;
@@ -434,6 +429,11 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
         entryPush(childTable, symbolEntry);
         funcDef->body->compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
+    }
+
+    for(size_t i = 0; i < funcDef->body->compoundStmt->stmtList.size; i++)
+    {
+        scanStmt(funcDef->body->compoundStmt->stmtList.stmts[i], childTable);
     }
 }
 

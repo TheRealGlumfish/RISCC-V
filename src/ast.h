@@ -127,6 +127,7 @@ typedef struct OperationExpr
 typedef struct AssignExpr
 {
     char *ident;
+    SymbolEntry *symbolEntry;
     Expr *op;
     Expr *lvalue;
     Operator operator; // Info: when set to NOT, regular assignment

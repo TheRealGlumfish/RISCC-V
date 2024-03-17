@@ -245,7 +245,11 @@ void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
 
 void scanAssignment(AssignExpr *assignExpr, SymbolTable *parentTable)
 {
-    scanExpr(assignExpr->lvalue, parentTable);
+    assignExpr->symbolEntry = getSymbolEntry(parentTable, assignExpr->ident);
+    if(assignExpr->lvalue != NULL)
+    {
+        scanExpr(assignExpr->lvalue, parentTable);
+    }
     scanExpr(assignExpr->op, parentTable);
 }
 
@@ -279,6 +283,7 @@ void scanExpr(Expr* expr, SymbolTable *parentTable)
     case CONSTANT_EXPR:
     {
         // not scanned atm
+        break;
     }
     case OPERATION_EXPR:
     {
@@ -356,7 +361,10 @@ void scanLabelStmt(LabelStmt *labelStmt, SymbolTable *parentTable)
 
 void scanJumpStmt(JumpStmt *jumpStmt, SymbolTable *parentTable)
 {
-    scanExpr(jumpStmt->expr, parentTable);
+    if(jumpStmt->expr != NULL)
+    {
+        scanExpr(jumpStmt->expr, parentTable);
+    }
 }
 
 void scanStmt(Stmt *stmt, SymbolTable *parentTable)

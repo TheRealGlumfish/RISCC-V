@@ -239,8 +239,9 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
         char* ident = compoundStmt->declList.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
         size_t size = 8; // everything has default 64 bit size at the moment
-
-        symbolTablePush(childTable, symbolEntryCreate(ident, type, size, false));
+        SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
+        symbolTablePush(childTable, symbolEntry);
+        compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
     }
 }
 

@@ -277,6 +277,7 @@ typedef struct Decl
 
     // Try just one declInit for split
     DeclInit *declInit;
+    SymbolEntry *symbolEntry;
 } Decl;
 
 typedef struct DeclInitList

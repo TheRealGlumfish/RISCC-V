@@ -290,6 +290,17 @@ void scanStmt(Stmt *stmt, SymbolTable *parentTable)
 void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
 {
     symbolTablePush(parentTable, symbolEntryCreate(funcDef->ident, *(funcDef->retType->typeSpecs[0]), 32, true));
+    
+    for(size_t i = 0; i < funcDef->args.size; i++)
+    {
+        char* ident = funcDef->args.decls[i]->declInit->declarator->ident;
+        TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
+        size_t size = 8; // everything has default 64 bit size at the moment
+        SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
+        symbolTablePush(parentTable, symbolEntry);
+        funcDef->args.decls[i]->symbolEntry = symbolEntry;
+    }
+
     scanStmt(funcDef->body, parentTable);
 }
 

@@ -317,6 +317,7 @@ typedef struct FuncDef
     char *ident;
     DeclarationList *args;
     Stmt *body;
+    SymbolEntry *symbolEntry;
 } FuncDef;
 
 typedef struct Initializer

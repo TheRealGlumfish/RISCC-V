@@ -133,7 +133,6 @@ SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident)
     return getSymbolEntry(symbolTable->parentTable, ident);
 }
 
-
 void scanStmt(Stmt *stmt, SymbolTable *parentTable);
 void scanExpr(Expr* expr, SymbolTable *parentTable);
 
@@ -289,7 +288,7 @@ void scanStmt(Stmt *stmt, SymbolTable *parentTable)
 
 void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
 {
-    // TODO: add function to symbol table
+    symbolTablePush(parentTable, symbolEntryCreate(funcDef->ident, *(funcDef->retType->typeSpecs[0]), 32, true));
     scanStmt(funcDef->body, parentTable);
 }
 

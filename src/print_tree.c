@@ -185,6 +185,7 @@ void displayAssignExpr(AssignExpr *assignExpr)
     default:
         printf("unknown assignment");
     }
+    printf("\n");
 }
 
 void displayFuncExpr(FuncExpr *funcExpr, int indent)
@@ -439,18 +440,20 @@ void displayDecl(Decl *decl, int indent)
 void displayCompoundStmt(CompoundStmt *compoundStmt, int indent)
 {
     printf("CMPD STMT\n");
-    if (compoundStmt->stmtList.size != 0)
-    {
-        for (size_t i = 0; i < compoundStmt->stmtList.size; i++)
-        {
-            displayStmt(compoundStmt->stmtList.stmts[i], indent + 4);
-        }
-    }
+
     if (compoundStmt->declList.size != 0)
     {
         for (size_t i = 0; i < compoundStmt->declList.size; i++)
         {
             displayDecl(compoundStmt->declList.decls[i], indent + 4);
+        }
+    }
+
+    if (compoundStmt->stmtList.size != 0)
+    {
+        for (size_t i = 0; i < compoundStmt->stmtList.size; i++)
+        {
+            displayStmt(compoundStmt->stmtList.stmts[i], indent + 4);
         }
     }
 }

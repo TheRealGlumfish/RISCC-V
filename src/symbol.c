@@ -24,7 +24,7 @@ SymbolEntry *symbolEntryCreate(char* ident, TypeSpecifier type, size_t size, boo
 }
 
 // destructor for symbol entry
-void *symbolEntryDestroy(SymbolEntry *symbolEntry)
+void symbolEntryDestroy(SymbolEntry *symbolEntry)
 {
     free(symbolEntry);
 }
@@ -346,7 +346,7 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
     {
         char* ident = compoundStmt->declList.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-        size_t size = 8; // everything has default 64 bit size at the moment
+        size_t size = 4; // everything has default 32 bit size at the moment
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
         entryPush(childTable, symbolEntry);
         compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
@@ -414,7 +414,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     {
         char* ident = funcDef->args.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-        size_t size = 8; // everything has default 64 bit size at the moment
+        size_t size = 4; // everything has default 32 bit size at the moment
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
         entryPush(childTable, symbolEntry);
         funcDef->args.decls[i]->symbolEntry = symbolEntry;
@@ -425,7 +425,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     {
         char* ident = funcDef->body->compoundStmt->declList.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(funcDef->body->compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-        size_t size = 8; // everything has default 64 bit size at the moment
+        size_t size = 4; // everything has default 32 bit size at the moment
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
         entryPush(childTable, symbolEntry);
         funcDef->body->compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;

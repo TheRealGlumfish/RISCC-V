@@ -49,6 +49,7 @@ void compileExpr(Expr *expr, Reg dest);
 void compileOperationExpr(OperationExpr *expr, Reg dest);
 void compileConstantExpr(ConstantExpr *expr, Reg dest);
 void compileVariableExpr(VariableExpr *expr, Reg dest);
+void compileAssignExpr(AssignExpr *expr, Reg dest);
 
 void compileStmt(Stmt *stmt);
 void compileJumpStmt(JumpStmt *stmt);

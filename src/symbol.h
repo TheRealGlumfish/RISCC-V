@@ -31,11 +31,11 @@ typedef struct SymbolTable
 } SymbolTable;
 
 SymbolEntry *symbolEntryCreate(char* ident, TypeSpecifier type, size_t size, bool isFunc);
-void *symbolEntryDestroy(SymbolEntry *symbolEntry);
+void symbolEntryDestroy(SymbolEntry *symbolEntry);
 
 SymbolTable *symbolTableCreate(size_t entryLength, size_t childrenLength, SymbolTable *parentTable, SymbolEntry *masterFunc);
-void entryListResize(SymbolTable *symbolTable, const size_t symbolTableSize);
-void childrenListResize(SymbolTable *symbolTable, const size_t childrenLength);
+void entryListResize(SymbolTable *symbolTable, size_t symbolTableSize);
+void childrenListResize(SymbolTable *symbolTable, size_t childrenLength);
 
 void displaySymbolTable(SymbolTable *symbolTable);
 void displaySymbolEntry(SymbolEntry *symbolEntry);

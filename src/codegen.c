@@ -137,6 +137,11 @@ void compileExpr(Expr *expr, Reg dest)
         compileVariableExpr(expr->variable, dest);
         break;
     }
+    case ASSIGN_EXPR:
+    {
+        compileAssignExpr(expr->assignment, dest);
+        break;
+    }
     }
 }
 
@@ -227,8 +232,32 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         freeReg(op2);
         break;
     }
+    case MOD:
+    {
+        // TODO: Deal with non-long types
+        // TODO: Deal with unsigned division
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\trem %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
+    }
     case NOT:
     {
+        // TODO: Deal with unsigned
+        Reg op1 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        fprintf(outFile, "\tsgtz %s, %s\n", regStr(op1), regStr(op1));
+        fprintf(outFile, "\tnot %s, %s\n", regStr(dest), regStr(op1));
+        freeReg(op1); // TODO: Test register eviction
+        break;
+    }
+    case NOT_BIT:
+    {
+        // TODO: Deal with unsigned
         Reg op1 = getTmpReg();
         compileExpr(expr->op1, op1);
         fprintf(outFile, "\tnot %s, %s\n", regStr(dest), regStr(op1));
@@ -248,11 +277,138 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         freeReg(op2);
         break;
     }
-    default:
+    case NE:
     {
-        fprintf(stderr, "Operation not supported, exitting...");
-        exit(EXIT_FAILURE);
+        // TODO: Deal with signs
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+        fprintf(outFile, "\tsnez %s, %s\n", regStr(dest), regStr(dest));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
     }
+    case LT:
+    {
+        // TODO: Deal with signs
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
+    }
+    case GT:
+    {
+        // TODO: Deal with signs
+        // TODO: Test the damn code
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op2), regStr(op1));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
+    }
+    case LE:
+    {
+        // TODO: Deal with signs
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op2), regStr(op1));
+        fprintf(outFile, "\txori %s, %s, 1\n", regStr(dest), regStr(dest));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
+    }
+    case GE:
+    {
+        // TODO: Deal with signs
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+        fprintf(outFile, "\txori %s, %s, 1\n", regStr(dest), regStr(dest));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
+    }
+    case OR:
+    {
+        // TODO: Deal with signs
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\tor %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+        fprintf(outFile, "\tsgtz %s, %s\n", regStr(dest), regStr(dest));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
+    }
+    case AND:
+    {
+        // TODO: Deal with signs
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\tsgtz %s, %s\n", regStr(op1), regStr(op1));
+        fprintf(outFile, "\tsgtz %s, %s\n", regStr(op2), regStr(op2));
+        fprintf(outFile, "\tand %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
+    }
+    case OR_BIT:
+    {
+        // TODO: Deal with signs
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\tor %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
+    }
+    case AND_BIT:
+    {
+        // TODO: Deal with signs
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\tand %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
+    }
+    case XOR:
+    {
+        // TODO: Deal with signs
+        Reg op1 = getTmpReg();
+        Reg op2 = getTmpReg();
+        compileExpr(expr->op1, op1);
+        compileExpr(expr->op2, op2);
+        fprintf(outFile, "\txor %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+        freeReg(op1); // TODO: Test register eviction
+        freeReg(op2);
+        break;
+    }
+        // default:
+        // {
+        //     fprintf(stderr, "Operation not supported, exitting...");
+        //     exit(EXIT_FAILURE);
+        // }
     }
 }
 
@@ -274,18 +430,44 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
     }
 }
 
+void compileAssignExpr(AssignExpr *expr, Reg dest)
+{
+    compileExpr(expr->op, dest);
+    switch (expr->type)
+    {
+    case INT_TYPE:
+    {
+        fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        break;
+    }
+    default:
+    {
+        fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        fprintf(stderr, "Type not supported\n");
+        // exit(EXIT_FAILURE);
+        break;
+    }
+    }
+}
+
 void compileStmt(Stmt *stmt)
 {
     switch (stmt->type)
     {
     case EXPR_STMT:
     {
-        compileExpr(stmt->exprStmt->expr, ZERO);
+        compileExpr(stmt->exprStmt->expr, A0);
         break;
     }
     case JUMP_STMT:
     {
         compileJumpStmt(stmt->jumpStmt);
+        break;
+    }
+    default:
+    {
+        fprintf(stderr, "Statement type: %iu, not supported...\n", stmt->type);
+        exit(EXIT_FAILURE);
     }
     }
 }
@@ -335,7 +517,7 @@ void compileFunc(FuncDef *func)
         if (func->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
         {
             compileExpr(func->body->compoundStmt->declList.decls[i]->declInit->initExpr, A0);
-            fprintf(outFile, "\tsw %s %lu(fp)\n", regStr(A0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
+            fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(A0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
         }
     }
     for (size_t i = 0; i < func->body->compoundStmt->stmtList.size; i++)

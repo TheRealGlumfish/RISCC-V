@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "parser.tab.h"
-#include "codegen.h"
-#include "symbol.h"
 #include "ast.h"
+#include "codegen.h"
+#include "parser.tab.h"
+#include "symbol.h"
 
 int main(int argc, char **argv)
 {
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "No output file specified, outputing to STDOUT...\n");
         outFile = stdout;
     }
-    
+
     yyparse();
     SymbolTable *globalTable = populateSymbolTable(root);
     displaySymbolTable(globalTable);

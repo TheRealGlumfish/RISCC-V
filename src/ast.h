@@ -432,7 +432,7 @@ void initListDestroy(InitList *initList);
 void initListResize(InitList *initList, const size_t initListSize);
 void initListPush(InitList *initList, Initializer *init);
 
-Initializer *initCreate();
+Initializer *initCreate(void);
 void initDestroy(Initializer *init);
 
 #endif

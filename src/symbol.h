@@ -1,10 +1,9 @@
 #ifndef SYMBOL_H
 #define SYMBOL_H
 
+#include "ast.h"
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
-#include "ast.h"
 
 typedef struct SymbolEntry
 {
@@ -44,6 +43,6 @@ void childTablePush(SymbolTable *symbolTable, SymbolTable *childTable);
 
 SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident);
 
-SymbolTable* populateSymbolTable(FuncDef* rootExpr);
+SymbolTable *populateSymbolTable(FuncDef *rootExpr);
 
 #endif

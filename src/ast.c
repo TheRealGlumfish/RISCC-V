@@ -1136,7 +1136,7 @@ void initListPush(InitList *initList, Initializer *init)
 }
 
 // constructor for an initializer
-Initializer *initCreate()
+Initializer *initCreate(void)
 {
     Initializer *initializer = malloc(sizeof(Initializer));
     if (initializer == NULL)
@@ -1160,14 +1160,6 @@ void initDestroy(Initializer *init)
     }
     free(init);
 }
-
-
-
-
-
-
-
-
 
 // Returns the type field stored in an expression node
 DataType returnType(Expr *expr)

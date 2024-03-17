@@ -7,7 +7,8 @@
 
 extern FILE *outFile;
 
-typedef enum {
+typedef enum
+{
     ZERO,
     RA,
     SP,
@@ -47,5 +48,11 @@ const char *regStr(Reg reg);
 void compileExpr(Expr *expr, Reg dest);
 void compileOperationExpr(OperationExpr *expr, Reg dest);
 void compileConstantExpr(ConstantExpr *expr, Reg dest);
+void compileVariableExpr(VariableExpr *expr, Reg dest);
+
+void compileStmt(Stmt *stmt);
+void compileJumpStmt(JumpStmt *stmt);
+
+void compileFunc(FuncDef *func);
 
 #endif

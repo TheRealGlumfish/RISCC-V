@@ -10,7 +10,7 @@ default: bin/c_compiler
 bin/c_compiler: $(SOURCES) $(HEADERS) build/parser.tab.c build/parser.tab.h build/lexer.yy.c
 	@mkdir -p build
 	@mkdir -p bin
-	gcc $(SOURCES) $(CFLAGS) build/parser.tab.c build/lexer.yy.c -o bin/c_compiler
+	gcc $(SOURCES) $(CFLAGS) -Ibuild build/parser.tab.c build/lexer.yy.c -o bin/c_compiler
 
 build/parser.tab.c build/parser.tab.h: src/parser.y
 	@mkdir -p build

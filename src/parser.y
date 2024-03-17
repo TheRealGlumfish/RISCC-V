@@ -9,7 +9,7 @@
     #include "src/ast.h"
     #include "src/symbol.h"
 
-    extern FuncDef* rootExpr;
+    extern FuncDef* root;
     extern FILE *yyin;
     int yylex(void);
     void yyerror(const char *);
@@ -105,7 +105,7 @@
 
 ROOT
   : function_definition { // change back to translation_unit
-        rootExpr = $1;
+        root = $1;
     }
 
 translation_unit
@@ -123,9 +123,9 @@ function_definition
                 // TODO: Add error message "out of spec".
 	| declaration_specifiers declarator compound_statement {
 		$$ = funcDefCreate($1, $2->pointerCount, $2->ident, $3);
-                $$->args = $2->parameterList; 
-                free($2);
-	}
+        $$->args = $2->parameterList; 
+        free($2);
+	    }
 	| declarator declaration_list compound_statement
                 //TODO: Add error message "out of spec"
 	| declarator compound_statement
@@ -533,12 +533,12 @@ declaration_specifiers
 // returns a list of declaration inits
 init_declarator_list
 	: init_declarator{
-                $$ = declInitListCreate(1);
-                $$->declInits[0] = $1;
+        $$ = declInitListCreate(1);
+        $$->declInits[0] = $1;
         }
 	| init_declarator_list COMMA init_declarator{
-                $$ = $1;
-                declInitListPush($$, $3);
+        $$ = $1;
+        declInitListPush($$, $3);
         }
 	;
 
@@ -548,16 +548,15 @@ init_declarator
         }
 	| declarator ASSIGN initializer {
 		$$ = declInitCreate($1);
-
-                if($3->initList != NULL)
-                {
-                        $$->initList = $3->initList;
-                }
-                if($3->expr != NULL)
-                {
-                        $$->initExpr = $3->expr;
-                }
-                free($3);
+        if($3->initList != NULL)
+        {
+            $$->initList = $3->initList;
+        }
+        if($3->expr != NULL)
+        {
+            $$->initExpr = $3->expr;
+        }
+        free($3);
         }
 	;
 
@@ -653,17 +652,17 @@ struct_declaration
 	: specifier_qualifier_list struct_declarator_list SEMI_COLON {
 	    for(size_t i = 0; i < $2->structDeclListSize; i++)
         {
-                if(i == 0)
-                {
-                        $2->structDecls[i]->typeSpecList = $1;
-                }
-                else
-                {
-                        $2->structDecls[i]->typeSpecList = typeSpecListCopy($1);
-                }
+            if(i == 0)
+            {
+                $2->structDecls[i]->typeSpecList = $1;
+            }
+            else
+            {
+                $2->structDecls[i]->typeSpecList = typeSpecListCopy($1);
+            }
         }
-                $$ = $2;
-	}
+        $$ = $2;
+	    }
 	;
 
 specifier_qualifier_list
@@ -739,23 +738,21 @@ direct_declarator
 		$$->ident = $1;
 	    }
 	| OPEN_BRACKET declarator CLOSE_BRACKET
-	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE
-        {
-                $1->isArray = true;
-                $1->arraySize = $3;
-                $$ = $1;
+	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE {
+        $1->isArray = true;
+        $1->arraySize = $3;
+        $$ = $1;
         }
 	| direct_declarator OPEN_SQUARE CLOSE_SQUARE // array of unspecified size
-	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET
-        {
-                $1->parameterList = $3;
-                $$ = $1;
+	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET {
+        $1->parameterList = $3;
+        $$ = $1;
         }
 	| direct_declarator OPEN_BRACKET identifier_list  CLOSE_BRACKET // just for K&R style
 	| direct_declarator OPEN_BRACKET CLOSE_BRACKET { 
 		$$ = declaratorCreate();
-                $$->ident = $1->ident;
-                free($1);
+        $$->ident = $1->ident;
+        free($1);
 	    }
 	;
 
@@ -819,32 +816,28 @@ direct_abstract_declarator
 // returns an initialiser union type 
 initializer
 	: assignment_expression {
-                $$ = initCreate();
-                $$->expr = $1;
+        $$ = initCreate();
+        $$->expr = $1;
         }
-	| OPEN_BRACE initializer_list CLOSE_BRACE
-        {
-                $$ = initCreate();
-                $$->initList = $2;
+	| OPEN_BRACE initializer_list CLOSE_BRACE {
+        $$ = initCreate();
+        $$->initList = $2;
         }    
-	| OPEN_BRACE initializer_list COMMA CLOSE_BRACE
-        {
-                $$ = initCreate();
-                $$->initList = $2;
+	| OPEN_BRACE initializer_list COMMA CLOSE_BRACE {
+        $$ = initCreate();
+        $$->initList = $2;
         }
 	;
 
 // returns an initialiser list
 initializer_list
-	: initializer
-        {
-                $$ = initListCreate(0);
-                initListPush($$, $1);
+	: initializer {
+        $$ = initListCreate(0);
+        initListPush($$, $1);
         }
-	| initializer_list COMMA initializer
-        {
-                initListPush($1, $3);
-                $$ = $1;
+	| initializer_list COMMA initializer {
+        initListPush($1, $3);
+        $$ = $1;
         }
 	;
 
@@ -914,11 +907,11 @@ declaration_list
 		$$ = $1;
         }
 	| declaration_list declaration {
-                $$ = $1;
-                for(size_t i = 0; i < $2.size; i++)
-                {
-                declarationListPush(&$$, $2.decls[i]);
-                }
+        $$ = $1;
+        for(size_t i = 0; i < $2.size; i++)
+        {
+            declarationListPush(&$$, $2.decls[i]);
+        }
 		free($2.decls);
         }
 	;
@@ -1011,7 +1004,7 @@ jump_statement
 
 %%
 
-FuncDef* rootExpr;
+FuncDef* root;
 // Node *g_root;
 
 // Node *ParseAST(std::string file_name)

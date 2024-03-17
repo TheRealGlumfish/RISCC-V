@@ -412,21 +412,20 @@ void displayDecl(Decl *decl, int indent)
 
     if (decl->declInit != NULL)
     {
-        printIndent(indent+4);
+        printIndent(indent + 4);
         printf("└── ");
         printf("%s \n", decl->declInit->declarator->ident);
-        if(decl->declInit->declarator->isArray)
-        {   
-            printIndent(indent+4);
+        if (decl->declInit->declarator->isArray)
+        {
+            printIndent(indent + 4);
             printf("└── ");
             printf("ARRAY SIZE\n");
-            displayExpr(decl->declInit->declarator->arraySize, indent+8);
+            displayExpr(decl->declInit->declarator->arraySize, indent + 8);
         }
 
-
-        if(decl->declInit->initList != NULL)
+        if (decl->declInit->initList != NULL)
         {
-            printIndent(indent+4);
+            printIndent(indent + 4);
             printf("└── ");
             printf("ARRAY INIT\n");
         }
@@ -602,11 +601,10 @@ int main(int argc, char **argv)
     //     fprintf(stderr, "Error: parsing unsuccessful\n");
     // }
 
-    displayFuncDef(rootExpr, 0);
+    displayFuncDef(root, 0);
 
-
-    SymbolTable *globalTable = populateSymbolTable(rootExpr);
-    funcDefDestroy(rootExpr);
+    SymbolTable *globalTable = populateSymbolTable(root);
+    funcDefDestroy(root);
     symbolTableDestroy(globalTable);
 
     if (yyin != NULL)

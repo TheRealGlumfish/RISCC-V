@@ -30,7 +30,7 @@ typedef struct SymbolTable
     size_t chldrenCapacity;
 } SymbolTable;
 
-SymbolEntry *symbolEntryCreate(char* ident, TypeSpecifier type, size_t size, bool isFunc);
+SymbolEntry *symbolEntryCreate(char *ident, TypeSpecifier type, size_t size, bool isFunc);
 void symbolEntryDestroy(SymbolEntry *symbolEntry);
 
 SymbolTable *symbolTableCreate(size_t entryLength, size_t childrenLength, SymbolTable *parentTable, SymbolEntry *masterFunc);

@@ -403,11 +403,11 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         freeReg(op2);
         break;
     }
-    // default:
-    // {
-    //     fprintf(stderr, "Operation not supported, exitting...");
-    //     exit(EXIT_FAILURE);
-    // }
+        // default:
+        // {
+        //     fprintf(stderr, "Operation not supported, exitting...");
+        //     exit(EXIT_FAILURE);
+        // }
     }
 }
 
@@ -432,20 +432,20 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
 void compileAssignExpr(AssignExpr *expr, Reg dest)
 {
     compileExpr(expr->op, dest);
-    switch(expr->type)
+    switch (expr->type)
     {
-        case INT_TYPE:
-        {
-            fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
-            break;
-        }
-        default:
-        {
-            fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
-            fprintf(stderr, "Type not supported\n");
-            // exit(EXIT_FAILURE);
-            break;
-        }
+    case INT_TYPE:
+    {
+        fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        break;
+    }
+    default:
+    {
+        fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        fprintf(stderr, "Type not supported\n");
+        // exit(EXIT_FAILURE);
+        break;
+    }
     }
 }
 

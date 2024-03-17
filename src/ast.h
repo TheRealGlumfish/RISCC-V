@@ -226,14 +226,7 @@ typedef struct TypeSpecList
 
 typedef struct DeclarationList DeclarationList;
 
-typedef struct Declarator
-{
-    size_t pointerCount;
-    char *ident; // needs array and function definitions too
-    DeclarationList *parameterList;
-    bool isArray;
-    Expr* arraySize; // constant expression
-} Declarator;
+typedef struct Declarator Declarator;
 
 typedef struct StructDecl
 {
@@ -250,6 +243,24 @@ typedef struct InitList
     size_t size;
     size_t capacity;
 } InitList;
+
+typedef struct Decl Decl;
+
+typedef struct DeclarationList
+{
+    size_t size;
+    size_t capacity;
+    Decl **decls;
+} DeclarationList;
+
+typedef struct Declarator
+{
+    size_t pointerCount;
+    char *ident; // needs array and function definitions too
+    DeclarationList parameterList;
+    bool isArray;
+    Expr* arraySize; // constant expression
+} Declarator;
 
 typedef struct DeclInit // holds declarator and sometimes initializers
 { 
@@ -282,13 +293,6 @@ typedef struct StatementList
     Stmt **stmts;
 } StatementList;
 
-typedef struct DeclarationList
-{
-    size_t size;
-    size_t capacity;
-    Decl **decls;
-} DeclarationList;
-
 typedef struct CompoundStmt
 {
     StatementList stmtList;
@@ -315,7 +319,7 @@ typedef struct FuncDef
     TypeSpecList *retType;
     size_t ptrCount;
     char *ident;
-    DeclarationList *args;
+    DeclarationList args;
     Stmt *body;
     SymbolEntry *symbolEntry;
 } FuncDef;

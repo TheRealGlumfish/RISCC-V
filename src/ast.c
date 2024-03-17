@@ -736,7 +736,6 @@ Declarator *declaratorCreate(void)
         abort();
     }
     declarator->pointerCount = 0;
-    declarator->parameterList = NULL;
     declarator->isArray = false;
     return declarator;
 }
@@ -746,10 +745,6 @@ void declaratorDestroy(Declarator *declarator)
     if (declarator->ident != NULL)
     {
         free(declarator->ident);
-    }
-    if (declarator->parameterList != NULL)
-    {
-        declarationListDestroy(declarator->parameterList);
     }
     if(declarator->isArray)
     {
@@ -1047,7 +1042,6 @@ FuncDef *funcDefCreate(TypeSpecList *retType, size_t ptrCount, char *ident, Stmt
     funcDef->retType = retType;
     funcDef->ptrCount = ptrCount;
     funcDef->ident = ident;
-    funcDef->args = NULL;
     funcDef->body = body;
     return funcDef;
 }
@@ -1057,9 +1051,9 @@ void funcDefDestroy(FuncDef *funcDef)
 {
     typeSpecListDestroy(funcDef->retType);
     free(funcDef->ident);
-    if (funcDef->args != NULL)
+    if (funcDef->args.size != 0)
     {
-        declarationListDestroy(funcDef->args);
+        declarationListDestroy(&(funcDef->args));
     }
     stmtDestroy(funcDef->body);
     free(funcDef);

@@ -748,7 +748,7 @@ direct_declarator
 	| direct_declarator OPEN_SQUARE CLOSE_SQUARE // array of unspecified size
 	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET
         {
-                $1->parameterList = &$3;
+                $1->parameterList = $3;
                 $$ = $1;
         }
 	| direct_declarator OPEN_BRACKET identifier_list  CLOSE_BRACKET // just for K&R style

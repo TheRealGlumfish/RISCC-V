@@ -561,11 +561,11 @@ void displayFuncDef(FuncDef *funcDef, int indent)
         displayTypeSpec(funcDef->retType->typeSpecs[i], indent);
     }
 
-    if (funcDef->args != NULL)
+    if (funcDef->args.size != 0)
     {
-        for (size_t i = 0; i < funcDef->args->size; i++)
+        for (size_t i = 0; i < funcDef->args.size; i++)
         {
-            displayDecl(funcDef->args->decls[i], indent + 4);
+            displayDecl(funcDef->args.decls[i], indent + 4);
         }
     }
 

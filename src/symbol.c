@@ -24,22 +24,24 @@ SymbolEntry *symbolEntryCreate(char* ident, TypeSpecifier type, size_t size, boo
 }
 
 // destructor for symbol entry
-SymbolEntry *symbolEntryDestroy(SymbolEntry *symbolEntry)
+void *symbolEntryDestroy(SymbolEntry *symbolEntry)
 {
     free(symbolEntry);
 }
 
 // create symbol table
-SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable, bool newStackFrame)
+SymbolTable *symbolTableCreate(size_t entryLength, size_t childrenLength, SymbolTable *parentTable, SymbolEntry *masterFunc)
 {
     SymbolTable *symbolTable = malloc(sizeof(SymbolTable));
     if (symbolTable == NULL)
     {
         abort();
     }
-    if (symbolTableSize != 0)
+
+    // entry list constructor
+    if (entryLength != 0)
     {
-        symbolTable->entries = malloc(sizeof(SymbolEntry) * symbolTableSize);
+        symbolTable->entries = malloc(sizeof(SymbolEntry) * entryLength);
         if (symbolTable->entries == NULL)
         {
             abort();
@@ -50,36 +52,45 @@ SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable,
         symbolTable->entries = NULL;
     }
 
-    if (newStackFrame)
+    // child table list constructor
+    if (childrenLength != 0)
     {
-        symbolTable->currFrameOffset = 0;
+        symbolTable->childrenTables = malloc(sizeof(SymbolTable) * childrenLength);
+        if (symbolTable->childrenTables == NULL)
+        {
+            abort();
+        }
     }
     else
     {
-        symbolTable->currFrameOffset = parentTable->currFrameOffset;
+        symbolTable->childrenTables = NULL;
     }
 
-    
-    symbolTable->size = symbolTableSize;
-    symbolTable->capacity = symbolTableSize;
+
     symbolTable->parentTable = parentTable;
-    symbolTable->childTable = NULL;
+    symbolTable->masterFunc = masterFunc; // NULL for global scope 
+
+    symbolTable->entrySize = entryLength;
+    symbolTable->entryCapacity = entryLength;
+    
+    symbolTable->childrenSize = childrenLength;
+    symbolTable->chldrenCapacity = childrenLength;
     return symbolTable;
 }
 
-// resize a symbol table
-void symbolTableResize(SymbolTable *symbolTable, const size_t symbolTableSize)
+// resize the list of entries in a table
+void entryListResize(SymbolTable *symbolTable, const size_t entryLength)
 {
-    if (symbolTable->size != 0)
+    if (symbolTable->entrySize != 0)
     {
-        symbolTable->size = symbolTableSize;
-        if (symbolTable->size > symbolTable->capacity)
+        symbolTable->entrySize = entryLength;
+        if (symbolTable->entrySize > symbolTable->entryCapacity)
         {
-            while (symbolTable->size > symbolTable->capacity)
+            while (symbolTable->entrySize > symbolTable->entryCapacity)
             {
-                symbolTable->capacity *= 2;
+                symbolTable->entryCapacity *= 2;
             }
-            symbolTable->entries = realloc(symbolTable->entries, sizeof(SymbolEntry *) * symbolTable->capacity);
+            symbolTable->entries = realloc(symbolTable->entries, sizeof(SymbolEntry *) * symbolTable->entryCapacity);
             if (symbolTable->entries == NULL)
             {
                 abort();
@@ -88,37 +99,87 @@ void symbolTableResize(SymbolTable *symbolTable, const size_t symbolTableSize)
     }
     else
     {
-        symbolTable->size = symbolTableSize;
-        symbolTable->entries = malloc(sizeof(SymbolEntry *) * symbolTableSize);
+        symbolTable->entrySize = entryLength;
+        symbolTable->entries = malloc(sizeof(SymbolEntry *) * entryLength);
         if (symbolTable->entries == NULL)
         {
             abort();
         }
-        symbolTable->capacity = symbolTableSize;
+        symbolTable->entryCapacity = entryLength;
+    }
+}
+
+// resize the list of children in a symbol table
+void childrenListResize(SymbolTable *symbolTable, const size_t childrenLength)
+{
+    if (symbolTable->childrenSize != 0)
+    {
+        symbolTable->childrenSize = childrenLength;
+        if (symbolTable->childrenSize > symbolTable->chldrenCapacity)
+        {
+            while (symbolTable->childrenSize > symbolTable->chldrenCapacity)
+            {
+                symbolTable->chldrenCapacity *= 2;
+            }
+            symbolTable->childrenTables = realloc(symbolTable->childrenTables, sizeof(SymbolTable *) * symbolTable->chldrenCapacity);
+            if (symbolTable->childrenTables == NULL)
+            {
+                abort();
+            }
+        }
+    }
+    else
+    {
+        symbolTable->childrenSize = childrenLength;
+        symbolTable->childrenTables = malloc(sizeof(SymbolTable *) * childrenLength);
+        if (symbolTable->childrenTables == NULL)
+        {
+            abort();
+        }
+        symbolTable->chldrenCapacity = childrenLength;
     }
 }
 
 // Adds a symbol table entry to a symbol table
-void symbolTablePush(SymbolTable *symbolTable, SymbolEntry *symbolEntry)
+void entryPush(SymbolTable *symbolTable, SymbolEntry *symbolEntry)
 {
-    symbolTableResize(symbolTable, symbolTable->size + 1);
-    symbolTable->entries[symbolTable->size - 1] = symbolEntry;
-    symbolEntry->stackOffset = symbolTable->currFrameOffset;
-    symbolTable->currFrameOffset += symbolEntry->size;
+    entryListResize(symbolTable, symbolTable->entrySize + 1);
+    symbolTable->entries[symbolTable->entrySize - 1] = symbolEntry;
+
+    // only update stack values of local decls, global is not on the stack
+    if(symbolTable->masterFunc != NULL)
+    {
+        // first element stored at sp + 0
+        symbolEntry->stackOffset = symbolTable->masterFunc->size;
+        symbolTable->masterFunc->size += symbolEntry->size;
+    }
+}
+
+// Adds a child symbol table to a symbol table
+void childTablePush(SymbolTable *symbolTable, SymbolTable *childTable)
+{
+    childrenListResize(symbolTable, symbolTable->childrenSize + 1);
+    symbolTable->childrenTables[symbolTable->childrenSize - 1] = childTable;
 }
 
 // destructor for symbol table
 void symbolTableDestroy(SymbolTable *symbolTable)
 {
-    for(size_t i = 0; i < symbolTable->size; i++)
+    for(size_t i = 0; i < symbolTable->entrySize; i++)
     {
         symbolEntryDestroy(symbolTable->entries[i]);
     }
     free(symbolTable->entries);
-    if(symbolTable->childTable != NULL)
+
+    if(symbolTable->childrenTables != NULL)
     {
-        symbolTableDestroy(symbolTable->childTable);
+        for(size_t i = 0; i < symbolTable->childrenSize; i++)
+        {
+            symbolTableDestroy(symbolTable->childrenTables[i]);
+        }
     }
+    free(symbolTable->childrenTables);
+    
     free(symbolTable);
 }
 
@@ -131,7 +192,7 @@ SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident)
         return NULL;
     }
     // search current table
-    for(size_t i = 0; i < symbolTable->size; i++)
+    for(size_t i = 0; i < symbolTable->entrySize; i++)
     {
         if(strcmp(symbolTable->entries[i]->ident, ident) == 0)
         {
@@ -236,8 +297,8 @@ void scanWhileStmt(WhileStmt *whileStmt, SymbolTable *parentTable)
 void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
 {
     // enter a new scope but not a new stack frame
-    SymbolTable* childTable = symbolTableCreate(0, parentTable, false);
-    parentTable->childTable = childTable;
+    SymbolTable* childTable = symbolTableCreate(0, 0, parentTable, parentTable->masterFunc);
+    childTablePush(parentTable, childTable);
 
     for(size_t i = 0; i < compoundStmt->stmtList.size; i++)
     {
@@ -250,7 +311,7 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
         TypeSpecifier type = *(compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
         size_t size = 8; // everything has default 64 bit size at the moment
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
-        symbolTablePush(childTable, symbolEntry);
+        entryPush(childTable, symbolEntry);
         compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
     }
 }
@@ -299,12 +360,13 @@ void scanStmt(Stmt *stmt, SymbolTable *parentTable)
 
 void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
 {
-    // new scope and new stack frame
-    SymbolTable *childTable = symbolTableCreate(0, parentTable, true);
-    parentTable->childTable = childTable;
+    // new function def symbol entry
+    SymbolEntry *funcDefEntry = symbolEntryCreate(funcDef->ident, *(funcDef->retType->typeSpecs[0]), 0, true);
+    entryPush(parentTable, funcDefEntry);
 
-    // function def added to the parent scope
-    symbolTablePush(parentTable, symbolEntryCreate(funcDef->ident, *(funcDef->retType->typeSpecs[0]), 32, true));
+    // new scope and new stack frame
+    SymbolTable *childTable = symbolTableCreate(0, 0, parentTable, funcDefEntry);
+    childTablePush(parentTable, childTable);
     
     // arguments added to child scope
     for(size_t i = 0; i < funcDef->args.size; i++)
@@ -313,7 +375,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
         TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
         size_t size = 8; // everything has default 64 bit size at the moment
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
-        symbolTablePush(childTable, symbolEntry);
+        entryPush(childTable, symbolEntry);
         funcDef->args.decls[i]->symbolEntry = symbolEntry;
     }
 
@@ -329,13 +391,13 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
         TypeSpecifier type = *(funcDef->body->compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
         size_t size = 8; // everything has default 64 bit size at the moment
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
-        symbolTablePush(childTable, symbolEntry);
+        entryPush(childTable, symbolEntry);
     }
 }
 
 SymbolTable* populateSymbolTable(FuncDef* rootExpr)
 {
-    SymbolTable *globalTable = symbolTableCreate(0, NULL, true); // global scope
+    SymbolTable *globalTable = symbolTableCreate(0, 0, NULL, NULL); // global scope
     scanFuncDef(rootExpr, globalTable);
     return globalTable;
 }

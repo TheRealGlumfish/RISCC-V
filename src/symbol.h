@@ -20,21 +20,27 @@ typedef struct SymbolTable SymbolTable;
 typedef struct SymbolTable
 {
     SymbolTable *parentTable;
-    SymbolTable *childTable;
-    size_t currFrameOffset;
+    SymbolEntry *masterFunc;
 
     SymbolEntry **entries;
-    size_t size;
-    size_t capacity;
+    size_t entrySize;
+    size_t entryCapacity;
+
+    SymbolTable **childrenTables;
+    size_t childrenSize;
+    size_t chldrenCapacity;
 } SymbolTable;
 
 SymbolEntry *symbolEntryCreate(char* ident, TypeSpecifier type, size_t size, bool isFunc);
-SymbolEntry *symbolEntryDestroy(SymbolEntry *symbolEntry);
+void *symbolEntryDestroy(SymbolEntry *symbolEntry);
 
-SymbolTable *symbolTableCreate(size_t symbolTableSize, SymbolTable *parentTable, bool newStackFrame);
-void symbolTableResize(SymbolTable *symbolTable, const size_t symbolTableSize);
-void symbolTablePush(SymbolTable *symbolTable, SymbolEntry *symbolEntry);
+SymbolTable *symbolTableCreate(size_t entryLength, size_t childrenLength, SymbolTable *parentTable, SymbolEntry *masterFunc);
+void entryListResize(SymbolTable *symbolTable, const size_t symbolTableSize);
+void childrenListResize(SymbolTable *symbolTable, const size_t childrenLength);
+
+void entryPush(SymbolTable *symbolTable, SymbolEntry *symbolEntry);
 void symbolTableDestroy(SymbolTable *symbolTable);
+void childTablePush(SymbolTable *symbolTable, SymbolTable *childTable);
 
 SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident);
 

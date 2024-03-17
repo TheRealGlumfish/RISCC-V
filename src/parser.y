@@ -592,12 +592,12 @@ type_specifier
 	    }
 	| DOUBLE {
 		$$ = typeSpecifierCreate(false);
-		$$->dataType = INT_TYPE;
+		$$->dataType = DOUBLE_TYPE;
 	    }
 	| LONG {
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = (false);
-		$$->dataType = DOUBLE_TYPE;
+		$$->dataType = LONG_TYPE;
 	    }
 	| SIGNED {
 		$$ = typeSpecifierCreate(false);

@@ -41,7 +41,21 @@ typedef enum
     T4,
     T5,
     T6,
+    FA0,
+    FA1,
+    FA2,
+    FA3,
+    FA4,
+    FA5,
+    FA6,
+    FA7
 } Reg;
+
+typedef struct ParamRegCounts
+{
+    size_t intRegs;
+    size_t floatRegs;
+} ParamRegCounts;
 
 const char *regStr(Reg reg);
 
@@ -54,5 +68,7 @@ void compileStmt(Stmt *stmt);
 void compileJumpStmt(JumpStmt *stmt);
 
 void compileFunc(FuncDef *func);
+
+void displayParameterLocations(DeclarationList declList);
 
 #endif

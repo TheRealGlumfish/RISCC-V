@@ -40,15 +40,19 @@ typedef enum
 
 typedef enum
 {
-    VOID_TYPE,
-    CHAR_TYPE,
-    SHORT_TYPE,
-    INT_TYPE,
-    LONG_TYPE,
-    FLOAT_TYPE,
-    DOUBLE_TYPE,
-    SIGNED_TYPE,
-    UNSIGNED_TYPE
+    VOID_TYPE, // 4 bytes
+    CHAR_TYPE, // 1 byte
+    SIGNED_CHAR_TYPE, // 1 byte
+    SHORT_TYPE, // 2 bytes
+    INT_TYPE, // 4 bytes
+    LONG_TYPE, // 8 bytes
+    UNSIGNED_SHORT_TYPE, // 2 bytes
+    UNSIGNED_INT_TYPE, // 4 bytes
+    UNSIGNED_LONG_TYPE, // 8 bytes
+    FLOAT_TYPE, // 4 bytes
+    DOUBLE_TYPE, // 8 bytes
+    SIGNED_TYPE, // only used in parsing
+    UNSIGNED_TYPE // only used in parsing
 } DataType; // TODO: Add full list of types and deal with unsigned and void
 
 typedef enum

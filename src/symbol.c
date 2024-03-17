@@ -205,7 +205,35 @@ SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident)
 
 void displaySymbolEntry(SymbolEntry *symbolEntry)
 {
-    printf("%s | %zu | %zu\n", symbolEntry->ident, symbolEntry->stackOffset, symbolEntry->size);
+    char* type;
+    switch(symbolEntry->type.dataType)
+    {
+        case INT_TYPE:
+        {
+            type = "INT";
+            break;
+        }
+        case FLOAT_TYPE:
+        {
+            type = "FLOAT";
+            break;
+        }
+        case CHAR_TYPE:
+        {
+            type = "CHAR";
+            break;
+        }
+        case LONG_TYPE:
+        {
+            type = "LONG";
+            break;
+        }
+        default:
+        {
+            type = "NULL";
+        }
+    }
+    printf("%s | %zu | %zu | %s\n", symbolEntry->ident, symbolEntry->stackOffset, symbolEntry->size, type);
 }
 
 void displaySymbolTable(SymbolTable *symbolTable)
@@ -346,7 +374,14 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
     {
         char* ident = compoundStmt->declList.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-        size_t size = 8; // everything has default 64 bit size at the moment
+        size_t size;
+        if(type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
+        {
+            size = 8;
+        }
+        else {
+            size = 4;
+        }
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
         entryPush(childTable, symbolEntry);
         compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
@@ -409,15 +444,26 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     SymbolTable *childTable = symbolTableCreate(0, 0, parentTable, funcDefEntry);
     childTablePush(parentTable, childTable);
     
-    // arguments added to child scope
-    for(size_t i = 0; i < funcDef->args.size; i++)
+    if(funcDef->args.size != 0)
     {
-        char* ident = funcDef->args.decls[i]->declInit->declarator->ident;
-        TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-        size_t size = 8; // everything has default 64 bit size at the moment
-        SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
-        entryPush(childTable, symbolEntry);
-        funcDef->args.decls[i]->symbolEntry = symbolEntry;
+        // arguments added to child scope
+        for(size_t i = 0; i < funcDef->args.size; i++)
+        {
+            char* ident = funcDef->args.decls[i]->declInit->declarator->ident;
+            TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
+            
+            size_t size;
+            if(type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
+            {
+                size = 8;
+            }
+            else {
+                size = 4;
+            }
+            SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
+            entryPush(childTable, symbolEntry);
+            funcDef->args.decls[i]->symbolEntry = symbolEntry;
+        }
     }
 
     // add body to child table
@@ -425,7 +471,15 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     {
         char* ident = funcDef->body->compoundStmt->declList.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(funcDef->body->compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-        size_t size = 8; // everything has default 64 bit size at the moment
+        
+        size_t size;
+        if(type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
+        {
+            size = 8;
+        }
+        else {
+            size = 4;
+        }
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
         entryPush(childTable, symbolEntry);
         funcDef->body->compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;

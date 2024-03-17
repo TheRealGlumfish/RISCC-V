@@ -5,6 +5,7 @@
 
 #include "ast.h"
 #include "codegen.h"
+#include "parser.tab.h"
 #include "symbol.h"
 
 FILE *outFile;
@@ -317,15 +318,18 @@ void compileArg(Decl *decl, Reg dest)
 
 void compileFunc(FuncDef *func)
 {
+    displayParameterLocations(func->args);
     fprintf(outFile, ".globl %s\n", func->ident);
     fprintf(outFile, ".type %s, @function\n", func->ident);
     fprintf(outFile, "%s:\n", func->ident);
     fprintf(outFile, "\tmv fp, sp\n");
     fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
+
     for (size_t i = 0; i < func->args.size; i++)
     {
         compileArg(func->args.decls[i], i + A0);
     }
+
     for (size_t i = 0; i < func->body->compoundStmt->declList.size; i++)
     {
         if (func->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
@@ -340,4 +344,101 @@ void compileFunc(FuncDef *func)
     }
     fprintf(outFile, "\tmv sp, fp\n");
     fprintf(outFile, "\tret\n");
+}
+
+
+// just return number
+// char = 1 byte
+// short = 2 bytes (half word)
+// long = int = float = 4 bytes (word)
+// long long = double = 8 bytes (2 words)
+// a0 - a7 are integer arg regs
+// fa0 - fa07 are float regs
+
+// floating point registers are 64 bit
+// a floating point is stored in half of this register
+// a double takes an entire register
+
+// longs have their high half stored in an even register and lower in an odd
+void displayParameterLocations(DeclarationList declList)
+{
+    Reg intRegs[8] = {A0, A1, A2, A3, A4, A5, A6, A7};
+    Reg floatRegs[8] = {FA0, FA1, FA2, FA3, FA4, FA5, FA6, FA7};
+    
+    size_t maxFloatRegs = 8;
+    size_t maxIntRegs = 8;
+
+    size_t usedFloatRegs = 0;
+    size_t usedIntRegs = 0;
+
+    for(size_t i = 0; i < declList.size; i++)
+    {
+        // for primitive types
+        DataType paramType = declList.decls[i]->symbolEntry->type.dataType;
+        char *ident = declList.decls[i]->symbolEntry->ident;
+        size_t stackOffset = declList.decls[i]->symbolEntry->stackOffset;
+
+        if(paramType == INT_TYPE || paramType == CHAR_TYPE || paramType == SHORT_TYPE)
+        {
+            if(usedIntRegs != maxIntRegs)
+            {
+                for(size_t i = 0; i < 8; i++)
+                {
+                    if(intRegs[i] != ZERO)
+                    {
+                        printf("%s : A%zu \n", ident, i);
+                        intRegs[i] = ZERO;
+                        usedIntRegs++;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                printf("%s : SP(%zu) \n", ident, stackOffset);
+
+            }
+        }
+        else if (paramType == FLOAT_TYPE || paramType == DOUBLE_TYPE)
+        {
+            if(usedFloatRegs != maxFloatRegs)
+            {
+                for(size_t i = 0; i < 8; i++)
+                {
+                    if(floatRegs[i] != ZERO)
+                    {
+                        printf("%s : FA%zu\n", ident, i);
+                        floatRegs[i] = ZERO;
+                        usedFloatRegs++;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                printf("%s : SP(%zu) \n", ident, stackOffset);
+
+            }
+        }
+        else if (paramType == LONG_TYPE )
+        {
+            // both halves stored in registers
+            if(usedFloatRegs < maxFloatRegs - 2)
+            {
+                // find next even register
+                for(size_t i = 0; i < 8; i++)
+                {
+                    if(i%2 == 0 && intRegs[i] != ZERO && intRegs[i+1] != ZERO)
+                    {
+                        printf("%s : A%zu \n", ident, i);
+                        printf("%s : A%zu \n", ident, i+1);
+                        intRegs[i] = ZERO;
+                        intRegs[i+1] = ZERO;
+                        usedIntRegs += 2;
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }

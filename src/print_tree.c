@@ -577,6 +577,18 @@ void displayFuncDef(FuncDef *funcDef, int indent)
     }
 }
 
+void displayTranslationUnit(TranslationUnit *transUnit, int indent)
+{
+    for(size_t i = 0; i < transUnit->size; i++)
+    {
+        if(transUnit->externDecls[i]->isFunc)
+        {
+            displayFuncDef(transUnit->externDecls[i]->funcDef, indent);
+        }
+    }
+}
+
+
 int main(int argc, char **argv)
 {
     if (argc < 2)
@@ -604,11 +616,11 @@ int main(int argc, char **argv)
     //     fprintf(stderr, "Error: parsing unsuccessful\n");
     // }
 
-    displayFuncDef(root, 0);
+    displayTranslationUnit(root, 0);
 
     SymbolTable *globalTable = populateSymbolTable(root);
     displaySymbolTable(globalTable);
-    funcDefDestroy(root);
+    transUnitDestroy(root);
     symbolTableDestroy(globalTable);
 
     if (yyin != NULL)

@@ -1039,3 +1039,15 @@ void compileFuncArgs(DeclarationList declList)
         }
     }
 }
+
+
+void compileTranslationUnit(TranslationUnit *transUnit)
+{
+    for(size_t i = 0; i < transUnit->size; i++)
+    {
+        if(transUnit->externDecls[i]->isFunc)
+        {
+            compileFunc(&(transUnit->externDecls[i]->funcDef));
+        }
+    }
+}

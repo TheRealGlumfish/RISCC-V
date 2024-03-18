@@ -46,6 +46,6 @@ void childTablePush(SymbolTable *symbolTable, SymbolTable *childTable);
 
 SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident);
 
-SymbolTable *populateSymbolTable(FuncDef *rootExpr);
+SymbolTable *populateSymbolTable(TranslationUnit *rootExpr);
 
 #endif

@@ -338,8 +338,9 @@ typedef struct Initializer
 
 typedef struct ExternDecl
 {
+    bool isFunc;
     FuncDef *funcDef;
-    DeclarationList *declList;
+    DeclarationList declList;
 } ExternDecl;
 
 typedef struct TranslationUnit
@@ -442,7 +443,7 @@ TypeSpecifier *typeSpecifierCopy(TypeSpecifier *typeSpec);
 Declarator *declaratorCreate(void);
 void declaratorDestroy(Declarator *declarator);
 
-FuncDef *funcDefCreate(TypeSpecList *retType, size_t ptrCount, char *ident, Stmt *body);
+FuncDef *funcDefCreate(TypeSpecList *retType, size_t ptrCount, char *ident);
 void funcDefDestroy(FuncDef *funcDef);
 
 InitList *initListCreate(size_t initListSize);
@@ -456,7 +457,7 @@ void initDestroy(Initializer *init);
 DataType returnType(Expr *expr);
 void resolveType(Expr *expr);
 
-ExternDecl externDeclCreate(void);
+ExternDecl *externDeclCreate(bool isFunc);
 void externDeclDestroy(ExternDecl *externDecl);
 
 TranslationUnit *transUnitCreate(size_t size);

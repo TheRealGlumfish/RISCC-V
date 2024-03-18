@@ -461,8 +461,34 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
         // arguments added to child scope
         for (size_t i = 0; i < funcDef->args.size; i++)
         {
-            char *ident = funcDef->args.decls[i]->declInit->declarator->ident;
-            TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
+            if(funcDef->args.decls[i]->declInit != NULL)
+            {
+                char *ident = funcDef->args.decls[i]->declInit->declarator->ident;
+                TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
+
+                size_t size;
+                if (type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
+                {
+                    size = 8;
+                }
+                else
+                {
+                    size = 4;
+                }
+                SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
+                entryPush(childTable, symbolEntry);
+                funcDef->args.decls[i]->symbolEntry = symbolEntry;
+            }
+        }
+    }
+
+    if(funcDef->body != NULL)
+    {
+        // add body to child table
+        for (size_t i = 0; i < funcDef->body->compoundStmt->declList.size; i++)
+        {
+            char *ident = funcDef->body->compoundStmt->declList.decls[i]->declInit->declarator->ident;
+            TypeSpecifier type = *(funcDef->body->compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
 
             size_t size;
             if (type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
@@ -475,39 +501,50 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
             }
             SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
             entryPush(childTable, symbolEntry);
-            funcDef->args.decls[i]->symbolEntry = symbolEntry;
+            funcDef->body->compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
+        }
+
+        for (size_t i = 0; i < funcDef->body->compoundStmt->stmtList.size; i++)
+        {
+            scanStmt(funcDef->body->compoundStmt->stmtList.stmts[i], childTable);
         }
     }
+    
+}
 
-    // add body to child table
-    for (size_t i = 0; i < funcDef->body->compoundStmt->declList.size; i++)
+void scanTransUnit(TranslationUnit *transUnit, SymbolTable *parentTable)
+{
+    for(size_t i = 0; i < transUnit->size; i++)
     {
-        char *ident = funcDef->body->compoundStmt->declList.decls[i]->declInit->declarator->ident;
-        TypeSpecifier type = *(funcDef->body->compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-
-        size_t size;
-        if (type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
+        if(transUnit->externDecls[i]->isFunc)
         {
-            size = 8;
+            scanFuncDef(transUnit->externDecls[i]->funcDef, parentTable);
         }
-        else
-        {
-            size = 4;
+        else {
+            for (size_t i = 0; i < transUnit->externDecls[i]->declList.size; i++)
+            {
+                char *ident = transUnit->externDecls[i]->declList.decls[i]->declInit->declarator->ident;
+                TypeSpecifier type = *(transUnit->externDecls[i]->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
+                size_t size;
+                if (type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
+                {
+                    size = 8;
+                }
+                else
+                {
+                    size = 4;
+                }
+                SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
+                entryPush(parentTable, symbolEntry);
+                transUnit->externDecls[i]->declList.decls[i]->symbolEntry = symbolEntry;
+            }
         }
-        SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
-        entryPush(childTable, symbolEntry);
-        funcDef->body->compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
-    }
-
-    for (size_t i = 0; i < funcDef->body->compoundStmt->stmtList.size; i++)
-    {
-        scanStmt(funcDef->body->compoundStmt->stmtList.stmts[i], childTable);
     }
 }
 
-SymbolTable *populateSymbolTable(FuncDef *rootExpr)
+SymbolTable *populateSymbolTable(TranslationUnit *rootExpr)
 {
     SymbolTable *globalTable = symbolTableCreate(0, 0, NULL, NULL); // global scope
-    scanFuncDef(rootExpr, globalTable);
+    scanTransUnit(rootExpr, globalTable);
     return globalTable;
 }

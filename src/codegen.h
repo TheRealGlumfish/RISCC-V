@@ -99,4 +99,6 @@ void compileFunc(FuncDef *func);
 void compileFuncArgs(DeclarationList declList);
 void compileCallArgs(FuncExpr *expr);
 
+void compileTranslationUnit(TranslationUnit *transUnit);
+
 #endif

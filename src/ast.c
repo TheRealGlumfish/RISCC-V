@@ -1033,7 +1033,7 @@ void typeSpecifierDestroy(TypeSpecifier *typeSpecifier)
 }
 
 // Constructor for function definition
-FuncDef *funcDefCreate(TypeSpecList *retType, size_t ptrCount, char *ident, Stmt *body)
+FuncDef *funcDefCreate(TypeSpecList *retType, size_t ptrCount, char *ident)
 {
     FuncDef *funcDef = malloc(sizeof(FuncDef));
     if (funcDef == NULL)
@@ -1043,7 +1043,7 @@ FuncDef *funcDefCreate(TypeSpecList *retType, size_t ptrCount, char *ident, Stmt
     funcDef->retType = retType;
     funcDef->ptrCount = ptrCount;
     funcDef->ident = ident;
-    funcDef->body = body;
+    funcDef->body = NULL;
     return funcDef;
 }
 
@@ -1363,27 +1363,28 @@ void resolveType(Expr *expr)
 }
 
 // Constructor for external declaration
-ExternDecl externDeclCreate(void)
+ExternDecl *externDeclCreate(bool isFunc)
 {
     ExternDecl *externDecl = malloc(sizeof(ExternDecl));
     if (externDecl == NULL)
     {
         abort();
     }
-    externDecl->declList = NULL;
-    externDecl->funcDef = NULL;
+    externDecl->isFunc = isFunc;
+    return externDecl;
 }
 
 // Destructor for external declaration
 void externDeclDestroy(ExternDecl *externDecl)
 {
-    if(externDecl->declList != NULL)
-    {
-        declarationListDestroy(externDecl->declList);
-    }
-    if(externDecl->funcDef != NULL)
+    if(externDecl->isFunc)
     {
         funcDefDestroy(externDecl->funcDef);
+        
+    }
+    else
+    {
+        declarationListDestroy(&(externDecl->declList));
     }
     free(externDecl);
 }

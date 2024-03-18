@@ -9,7 +9,7 @@
     #include "../src/ast.h"
     #include "../src/symbol.h"
 
-    extern FuncDef* root;
+    extern TranslationUnit* root;
     extern FILE *yyin;
     int yylex(void);
     void yyerror(const char *);
@@ -116,40 +116,41 @@ ROOT
 
 translation_unit
 	: external_declaration {
-        $$ = tranUnitCreate(1);
+        $$ = transUnitCreate(1);
         $$->externDecls[0] = $1;
         }
 	| translation_unit external_declaration
         {
-        tranUnitPush($1, $2);
+        transUnitPush($1, $2);
         $$ = $1;
         }
 	;
 
 external_declaration
 	: function_definition { 
-        $$ = externDeclCreate();
+        $$ = externDeclCreate(true);
         $$->funcDef = $1;
         }
 	| declaration{
-        $$ = externDeclCreate();
+        $$ = externDeclCreate(false);
         $$->declList = $1;     
         }
 	;
 
 function_definition
 	: declaration_specifiers declarator declaration_list compound_statement
-                // TODO: Add error message "out of spec".
+    // TODO: Add error message "out of spec".
 	| declaration_specifiers declarator compound_statement {
-	$$ = funcDefCreate($1, $2->pointerCount, $2->ident, $3);
-        $$->args = $2->parameterList; 
-        free($2);
+	$$ = funcDefCreate($1, $2->pointerCount, $2->ident);
+    $$->args = $2->parameterList;
+    $$->body = $3;
+    free($2);
 	}
-        | declaration_specifiers declarator{ // modification to original parser for function prototypes.
-        $$ = funcDefCreate($1, $2->pointerCount, $2->ident);
-        $$->args = $2->parameter_list;
-        free($2);
-        }
+    | declaration_specifiers declarator SEMI_COLON{ // modification to original parser for function prototypes.
+    $$ = funcDefCreate($1, $2->pointerCount, $2->ident);
+    $$->args = $2->parameterList;
+    free($2);
+    }
 	| declarator declaration_list compound_statement
                 //TODO: Add error message "out of spec"
 	| declarator compound_statement
@@ -773,7 +774,7 @@ direct_declarator
         $$ = $1;
         }
 	| direct_declarator OPEN_BRACKET identifier_list  CLOSE_BRACKET // just for K&R style
-	| direct_declarator OPEN_BRACKET CLOSE_BRACKET { 
+	| direct_declarator OPEN_BRACKET CLOSE_BRACKET { // TODO: MAKE FUNCTIONS WITHOUT PARAMETERS
 		$$ = declaratorCreate();
         $$->ident = $1->ident;
         free($1);

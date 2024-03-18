@@ -161,7 +161,7 @@ Reg getTmpReg(void)
             }
         }
     }
-    fprintf(stderr, "All registers filled, exitting...\n");
+    fprintf(stderr, "All registers filled, exiting...\n");
     exit(-1);
 }
 
@@ -170,7 +170,7 @@ Reg getTmpFltReg(void)
 {
     for (size_t i = 32; i < 64; i++)
     {
-        if (i == FT0 || i == FT1 || i == FT2 || i == FT3 || i == FT4 || i == FT5 || i == FT6 || i == FT7 | i == FT8 | i == FT9 || i == FT10 || i == FT11)
+        if (i == FT0 || i == FT1 || i == FT2 || i == FT3 || i == FT4 || i == FT5 || i == FT6 || i == FT7 || i == FT8 || i == FT9 || i == FT10 || i == FT11)
         {
             if (!regs[i])
             {
@@ -179,7 +179,7 @@ Reg getTmpFltReg(void)
             }
         }
     }
-    fprintf(stderr, "All floating-point registers filled, exitting...\n");
+    fprintf(stderr, "All floating-point registers filled, exiting...\n");
     exit(-1);
 }
 
@@ -261,10 +261,11 @@ void compileConstantExpr(ConstantExpr *expr, const Reg dest)
             Reg op1 = getTmpFltReg();
             fprintf(outFile, "\tli %s, %ui\n", regStr(op1), (unsigned int)expr->float_const);
             fprintf(outFile, "\tfmv.s %s, %s\n", regStr(dest), regStr(op1));
+            break;
         }
         default:
         {
-            fprintf(stderr, "Non-long types not supported, exitting...\n");
+            fprintf(stderr, "Non-long types not supported, exiting...\n");
             exit(EXIT_FAILURE);
         }
         }
@@ -619,9 +620,120 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         freeReg(op2);
         break;
     }
+    case LEFT_SHIFT:
+    {
+        switch (expr->type)
+        {
+        case FLOAT_TYPE:
+        {
+            fprintf(stderr, "Shift-operations cannot be done on floating-point types, exiting...\n");
+            exit(EXIT_FAILURE);
+            break;
+        }
+        case DOUBLE_TYPE:
+        {
+            fprintf(stderr, "Shift-operations cannot be done on floating-point types, exiting...\n");
+            exit(EXIT_FAILURE);
+            break;
+        }
+        default:
+        {
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tsll %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        }
+        break;
+    }
+    case RIGHT_SHIFT:
+    {
+        switch (expr->type)
+        {
+        case FLOAT_TYPE:
+        {
+            fprintf(stderr, "Shift-operations cannot be done on floating-point types, exiting...\n");
+            exit(EXIT_FAILURE);
+            break;
+        }
+        case DOUBLE_TYPE:
+        {
+            fprintf(stderr, "Shift-operations cannot be done on floating-point types, exiting...\n");
+            exit(EXIT_FAILURE);
+            break;
+        }
+        case INT_TYPE: // Signed shift
+        {
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tsra %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        default:
+        {
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tsrl %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        }
+        break;
+    }
+    case INC:
+    {
+        // TODO: Handle types (add float support)
+        if(expr->op1->type != VARIABLE_EXPR)
+        {
+            fprintf(stderr, "Expression is not assignable, exiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        Expr *one = exprCreate(CONSTANT_EXPR);
+        one->constant = constantExprCreate(expr->type, false);
+        one->constant->int_const = 1;
+        AssignExpr *assign = assignExprCreate(one, ADD);
+        assign->type = expr->type;
+        assign->lvalue = NULL;
+        assign->ident = expr->op1->variable->ident;
+        assign->symbolEntry = expr->op1->variable->symbolEntry;
+        compileAssignExpr(assign, dest);
+        exprDestroy(one);
+        break;
+    }
+    case DEC:
+    {
+        // TODO: Handle types (add float code)
+        if(expr->op1->type != VARIABLE_EXPR)
+        {
+            fprintf(stderr, "Expression is not assignable, exiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        Expr *one = exprCreate(CONSTANT_EXPR);
+        one->constant = constantExprCreate(expr->type, false);
+        one->constant->int_const = 1;
+        AssignExpr *assign = assignExprCreate(one, SUB);
+        assign->type = expr->type;
+        assign->lvalue = NULL;
+        assign->ident = expr->op1->variable->ident;
+        assign->symbolEntry = expr->op1->variable->symbolEntry;
+        compileAssignExpr(assign, dest);
+        exprDestroy(one);
+        break;
+    }
         // default:
         // {
-        //     fprintf(stderr, "Operation not supported, exitting...");
+        //     fprintf(stderr, "Operation not supported, exiting...");
         //     exit(EXIT_FAILURE);
         // }
     }
@@ -648,7 +760,7 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
     }
     default:
     {
-        fprintf(stderr, "Non-interger types not supported, exitting\n");
+        fprintf(stderr, "Non-interger types not supported, exiting\n");
         exit(EXIT_FAILURE);
     }
     }

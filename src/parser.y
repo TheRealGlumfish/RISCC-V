@@ -289,9 +289,10 @@ unary_expression
         $$->operation = operationExprCreate(SIZEOF_OP);
         //$$->operation->op1 = constantExprCreate(flattenTypeSpecs($3)->typeSpecs[0]->dataType, false);
         Expr *expr = exprCreate(CONSTANT_EXPR);
-        expr->constant = constantExprCreate($3->typeSpecs[0]->dataType, false);
+        TypeSpecList *flatList = flattenTypeSpecs($3);
+        expr->constant = constantExprCreate(flatList->typeSpecs[0]->dataType, false);
+        typeSpecListDestroy(flatList);
         $$->operation->op1 = expr;
-        typeSpecListDestroy($3);
         }
 	;
 

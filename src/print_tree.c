@@ -142,6 +142,9 @@ void displayConstExpr(ConstantExpr *constExpr)
     case FLOAT_TYPE:
         printf("FLOAT %f\n", constExpr->float_const);
         break;
+    case UNSIGNED_INT_TYPE:
+        printf("UNSIGNED INT %i\n", constExpr->int_const);
+        break;
     }
 }
 

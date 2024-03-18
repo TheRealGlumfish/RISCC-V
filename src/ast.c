@@ -1518,86 +1518,88 @@ TypeSpecList *flattenTypeSpecs(TypeSpecList *typeSpecList)
             case VOID_TYPE:
                 return typeSpecList;
         }
+    }
 
-        typeSpecListDestroy(typeSpecList);
-        TypeSpecList *flatList  = typeSpecListCreate(1);
+    typeSpecListDestroy(typeSpecList);
+    TypeSpecList *flatList  = typeSpecListCreate(1);
 
-        if(signedCount > 1 && unsignedCount > 1)
-        {
-            fprintf(stderr, "Cannot declare as both signed and unsigned, exiting...\n");
-            exit(EXIT_FAILURE);
-        }
+    if(signedCount > 1 && unsignedCount > 1)
+    {
+        fprintf(stderr, "Cannot declare as both signed and unsigned, exiting...\n");
+        exit(EXIT_FAILURE);
+    }
 
-        if(unsignedCount > 1)
-        {
-            if(charCount > 1)
-            {
-                flatList->typeSpecs[0] = typeSpecifierCreate(false);
-                flatList->typeSpecs[0]->dataType = CHAR_TYPE;
-            }
-            else if(shortCount > 1)
-            {
-                flatList->typeSpecs[0] = typeSpecifierCreate(false);
-                flatList->typeSpecs[0]->dataType = UNSIGNED_SHORT_TYPE;
-            }
-            else if(longCount == 1)
-            {
-                flatList->typeSpecs[0] = typeSpecifierCreate(false);
-                flatList->typeSpecs[0]->dataType = UNSIGNED_INT_TYPE;
-            }
-            else if(longCount > 1)
-            {
-                flatList->typeSpecs[0] = typeSpecifierCreate(false);
-                flatList->typeSpecs[0]->dataType = UNSIGNED_LONG_TYPE;
-            }
-            else if(intCount > 1)
-            {
-                flatList->typeSpecs[0] = typeSpecifierCreate(false);
-                flatList->typeSpecs[0]->dataType = UNSIGNED_INT_TYPE;
-            }  
-        }
-
-        if(signedCount >= 0)
-        {
-            if(charCount > 1)
-            {
-                flatList->typeSpecs[0] = typeSpecifierCreate(false);
-                flatList->typeSpecs[0]->dataType = SIGNED_CHAR_TYPE;
-            }
-            else if(shortCount > 1)
-            {
-                flatList->typeSpecs[0] = typeSpecifierCreate(false);
-                flatList->typeSpecs[0]->dataType = SHORT_TYPE;
-            }
-            else if(longCount == 1)
-            {
-                flatList->typeSpecs[0] = typeSpecifierCreate(false);
-                flatList->typeSpecs[0]->dataType = INT_TYPE;
-            }
-            else if(longCount > 1)
-            {
-                flatList->typeSpecs[0] = typeSpecifierCreate(false);
-                flatList->typeSpecs[0]->dataType = LONG_TYPE;
-            }
-            else if(intCount > 1)
-            {
-                flatList->typeSpecs[0] = typeSpecifierCreate(false);
-                flatList->typeSpecs[0]->dataType = INT_TYPE;
-            }
-        }
-
-        if(floatCount > 1)
+    if(unsignedCount >= 1)
+    {
+        if(charCount >= 1)
         {
             flatList->typeSpecs[0] = typeSpecifierCreate(false);
-            flatList->typeSpecs[0]->dataType = FLOAT_TYPE;
+            flatList->typeSpecs[0]->dataType = CHAR_TYPE;
         }
-
-        else if (doubleCount > 1)
+        else if(shortCount >= 1)
         {
             flatList->typeSpecs[0] = typeSpecifierCreate(false);
-            flatList->typeSpecs[0]->dataType = DOUBLE_TYPE;
+            flatList->typeSpecs[0]->dataType = UNSIGNED_SHORT_TYPE;
         }
-
+        else if(longCount == 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = UNSIGNED_INT_TYPE;
+        }
+        else if(longCount >= 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = UNSIGNED_LONG_TYPE;
+        }
+        else if(intCount >= 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = UNSIGNED_INT_TYPE;
+        }
         return flatList;
     }
+
+    if(signedCount >= 0)
+    {
+        if(charCount >= 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = SIGNED_CHAR_TYPE;
+        }
+        else if(shortCount >= 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = SHORT_TYPE;
+        }
+        else if(longCount == 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = INT_TYPE;
+        }
+        else if(longCount >= 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = LONG_TYPE;
+        }
+        else if(intCount >= 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = INT_TYPE;
+        }
+    }
+
+    if(floatCount >= 1)
+    {
+        flatList->typeSpecs[0] = typeSpecifierCreate(false);
+        flatList->typeSpecs[0]->dataType = FLOAT_TYPE;
+    }
+
+    else if (doubleCount >= 1)
+    {
+        flatList->typeSpecs[0] = typeSpecifierCreate(false);
+        flatList->typeSpecs[0]->dataType = DOUBLE_TYPE;
+    }
+
+    return flatList;
 }
+

@@ -262,6 +262,7 @@ typedef struct Declarator
 {
     size_t pointerCount;
     char *ident; // needs array and function definitions too
+    bool isParam;
     DeclarationList parameterList;
     bool isArray;
     Expr *arraySize; // constant expression
@@ -328,6 +329,7 @@ typedef struct FuncDef
     DeclarationList args;
     Stmt *body;
     SymbolEntry *symbolEntry;
+    bool isParam;
 } FuncDef;
 
 typedef struct Initializer

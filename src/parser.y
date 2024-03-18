@@ -142,13 +142,20 @@ function_definition
     // TODO: Add error message "out of spec".
 	| declaration_specifiers declarator compound_statement {
 	$$ = funcDefCreate($1, $2->pointerCount, $2->ident);
-    $$->args = $2->parameterList;
+    $$->isParam = $2->isParam;
+    if($2->isParam){
+        $$->args = $2->parameterList;
+    }
     $$->body = $3;
     free($2);
 	}
     | declaration_specifiers declarator SEMI_COLON{ // modification to original parser for function prototypes.
     $$ = funcDefCreate($1, $2->pointerCount, $2->ident);
-    $$->args = $2->parameterList;
+    $$->isParam = $2->isParam;
+    if($2->isParam)
+    {   
+        $$->args = $2->parameterList;
+    }
     free($2);
     }
 	| declarator declaration_list compound_statement
@@ -771,12 +778,14 @@ direct_declarator
 	| direct_declarator OPEN_SQUARE CLOSE_SQUARE // array of unspecified size
 	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET {
         $1->parameterList = $3;
+        $1->isParam = true;
         $$ = $1;
         }
 	| direct_declarator OPEN_BRACKET identifier_list  CLOSE_BRACKET // just for K&R style
 	| direct_declarator OPEN_BRACKET CLOSE_BRACKET { // TODO: MAKE FUNCTIONS WITHOUT PARAMETERS
 		$$ = declaratorCreate();
         $$->ident = $1->ident;
+        $$->isParam = false;
         free($1);
 	    }
 	;

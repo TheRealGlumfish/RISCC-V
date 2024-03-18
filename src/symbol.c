@@ -467,7 +467,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     SymbolTable *childTable = symbolTableCreate(0, 0, parentTable, funcDefEntry);
     childTablePush(parentTable, childTable);
 
-    if (funcDef->args.size != 0)
+    if (funcDef->isParam)
     {
         // arguments added to child scope
         for (size_t i = 0; i < funcDef->args.size; i++)

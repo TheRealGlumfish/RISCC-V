@@ -961,7 +961,15 @@ void compileFunc(FuncDef *func)
     // TODO: Figure out if FP needs to be restored
     fprintf(outFile, "\tsw fp, 0(fp)\n");  // Save FP, never gets restored
     fprintf(outFile, "\tsw ra, -4(fp)\n"); // Save RA
-    compileFuncArgs(func->args);
+    
+    if(func->isParam)
+    {
+        compileFuncArgs(func->args);
+    }
+    
+
+    if(func->body != NULL)
+    {
     for (size_t i = 0; i < func->body->compoundStmt->declList.size; i++)
     {
         if (func->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
@@ -970,10 +978,13 @@ void compileFunc(FuncDef *func)
             fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(A0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
         }
     }
-    for (size_t i = 0; i < func->body->compoundStmt->stmtList.size; i++)
-    {
-        compileStmt(func->body->compoundStmt->stmtList.stmts[i]);
+
+        for (size_t i = 0; i < func->body->compoundStmt->stmtList.size; i++)
+        {
+            compileStmt(func->body->compoundStmt->stmtList.stmts[i]);
+        }
     }
+
     fprintf(outFile, "\tmv sp, fp\n");
     fprintf(outFile, "\tret\n");
 }

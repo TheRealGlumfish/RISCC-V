@@ -1052,11 +1052,14 @@ void funcDefDestroy(FuncDef *funcDef)
 {
     typeSpecListDestroy(funcDef->retType);
     free(funcDef->ident);
-    if (funcDef->args.size != 0)
+    if (funcDef->isParam)
     {
         declarationListDestroy(&(funcDef->args));
     }
-    stmtDestroy(funcDef->body);
+    if(funcDef->body != NULL)
+    {
+        stmtDestroy(funcDef->body);
+    }
     free(funcDef);
 }
 

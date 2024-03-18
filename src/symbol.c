@@ -18,7 +18,7 @@ SymbolEntry *symbolEntryCreate(char *ident, TypeSpecifier type, size_t size, boo
     symbolEntry->ident = ident;
     symbolEntry->type = type;
 
-    if(isFunc)
+    if (isFunc)
     {
         symbolEntry->size = size + 8; // space allocated for ra and fp
     }
@@ -212,33 +212,33 @@ SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident)
 
 void displaySymbolEntry(SymbolEntry *symbolEntry)
 {
-    char* type;
-    switch(symbolEntry->type.dataType)
+    char *type;
+    switch (symbolEntry->type.dataType)
     {
-        case INT_TYPE:
-        {
-            type = "INT";
-            break;
-        }
-        case FLOAT_TYPE:
-        {
-            type = "FLOAT";
-            break;
-        }
-        case CHAR_TYPE:
-        {
-            type = "CHAR";
-            break;
-        }
-        case LONG_TYPE:
-        {
-            type = "LONG";
-            break;
-        }
-        default:
-        {
-            type = "NULL";
-        }
+    case INT_TYPE:
+    {
+        type = "INT";
+        break;
+    }
+    case FLOAT_TYPE:
+    {
+        type = "FLOAT";
+        break;
+    }
+    case CHAR_TYPE:
+    {
+        type = "CHAR";
+        break;
+    }
+    case LONG_TYPE:
+    {
+        type = "LONG";
+        break;
+    }
+    default:
+    {
+        type = "NULL";
+    }
     }
     printf("%s | %zu | %zu | %s\n", symbolEntry->ident, symbolEntry->stackOffset, symbolEntry->size, type);
 }
@@ -313,6 +313,7 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
     case VARIABLE_EXPR:
     {
         scanVariable(expr->variable, parentTable);
+        expr->variable->type = expr->variable->symbolEntry->type.dataType;
         break;
     }
     case CONSTANT_EXPR:
@@ -323,16 +324,19 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
     case OPERATION_EXPR:
     {
         scanOperationExpr(expr->operation, parentTable);
+        expr->operation->type = returnType(expr->operation->op1);
         break;
     }
     case ASSIGN_EXPR:
     {
         scanAssignment(expr->assignment, parentTable);
+        expr->assignment->type = returnType(expr->assignment->op);
         break;
     }
     case FUNC_EXPR:
     {
         scanFuncExpr(expr->function, parentTable);
+        expr->function->type = expr->function->symbolEntry->type.dataType;
         break;
     }
     }
@@ -382,11 +386,12 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
         char *ident = compoundStmt->declList.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
         size_t size;
-        if(type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
+        if (type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
         {
             size = 8;
         }
-        else {
+        else
+        {
             size = 4;
         }
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
@@ -450,21 +455,22 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     // new scope and new stack frame
     SymbolTable *childTable = symbolTableCreate(0, 0, parentTable, funcDefEntry);
     childTablePush(parentTable, childTable);
-    
-    if(funcDef->args.size != 0)
+
+    if (funcDef->args.size != 0)
     {
         // arguments added to child scope
-        for(size_t i = 0; i < funcDef->args.size; i++)
+        for (size_t i = 0; i < funcDef->args.size; i++)
         {
-            char* ident = funcDef->args.decls[i]->declInit->declarator->ident;
+            char *ident = funcDef->args.decls[i]->declInit->declarator->ident;
             TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-            
+
             size_t size;
-            if(type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
+            if (type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
             {
                 size = 8;
             }
-            else {
+            else
+            {
                 size = 4;
             }
             SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
@@ -478,13 +484,14 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     {
         char *ident = funcDef->body->compoundStmt->declList.decls[i]->declInit->declarator->ident;
         TypeSpecifier type = *(funcDef->body->compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-        
+
         size_t size;
-        if(type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
+        if (type.dataType == DOUBLE_TYPE || type.dataType == UNSIGNED_LONG_TYPE || type.dataType == LONG_TYPE)
         {
             size = 8;
         }
-        else {
+        else
+        {
             size = 4;
         }
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);

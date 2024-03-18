@@ -1,8 +1,9 @@
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "ast.h"
-#include <stdio.h>
+#include "symbol.h"
 
 // Expression constructor
 Expr *exprCreate(const ExprType type)
@@ -1201,7 +1202,18 @@ void resolveType(Expr *expr)
     }
     case VARIABLE_EXPR:
     {
-        // TODO: Do symbol table lookup
+        // TODO: Fix data type
+        expr->variable->type = expr->variable->symbolEntry->type.dataType;
+        return;
+    }
+    case ASSIGN_EXPR:
+    {
+        expr->assignment->type = returnType(expr->assignment->op);
+        return;
+    }
+    case FUNC_EXPR:
+    {
+        expr->function->type = expr->function->symbolEntry->type.dataType;
         return;
     }
     case OPERATION_EXPR:
@@ -1321,6 +1333,30 @@ void resolveType(Expr *expr)
             expr->operation->type = returnType(expr->operation->op1);
             return;
         }
+        case LEFT_SHIFT:
+        {
+            resolveType(expr->operation->op1);
+            resolveType(expr->operation->op2);
+            expr->operation->type = returnType(expr->operation->op1);
+            return;
+        }
+        case RIGHT_SHIFT:
+        {
+            resolveType(expr->operation->op1);
+            resolveType(expr->operation->op2);
+            expr->operation->type = returnType(expr->operation->op1);
+            return;
+        }
+        case NOT:
+        {
+            resolveType(expr->operation->op1);
+            expr->operation->type = returnType(expr->operation->op1);
+            return;
+        }
+        case NOT_BIT:
+            resolveType(expr->operation->op1);
+            expr->operation->type = returnType(expr->operation->op1);
+            return;
         }
     }
     }

@@ -41,6 +41,16 @@ typedef enum
     T4,
     T5,
     T6,
+    FT0,
+    FT1,
+    FT2,
+    FT3,
+    FT4,
+    FT5,
+    FT6,
+    FT7,
+    FS0,
+    FS1,
     FA0,
     FA1,
     FA2,
@@ -48,7 +58,21 @@ typedef enum
     FA4,
     FA5,
     FA6,
-    FA7
+    FA7,
+    FS2,
+    FS3,
+    FS4,
+    FS5,
+    FS6,
+    FS7,
+    FS8,
+    FS9,
+    FS10,
+    FS11,
+    FT8,
+    FT9,
+    FT10,
+    FT11,
 } Reg;
 
 typedef struct ParamRegCounts
@@ -58,18 +82,21 @@ typedef struct ParamRegCounts
 } ParamRegCounts;
 
 const char *regStr(Reg reg);
+Reg getTmpReg(void);
+Reg getTmpFltReg(void);
 
 void compileExpr(Expr *expr, Reg dest);
 void compileOperationExpr(OperationExpr *expr, Reg dest);
 void compileConstantExpr(ConstantExpr *expr, Reg dest);
 void compileVariableExpr(VariableExpr *expr, Reg dest);
 void compileAssignExpr(AssignExpr *expr, Reg dest);
+void compileFuncExpr(FuncExpr *expr, Reg dest);
 
 void compileStmt(Stmt *stmt);
 void compileJumpStmt(JumpStmt *stmt);
 
 void compileFunc(FuncDef *func);
-
-void displayParameterLocations(DeclarationList declList);
+void compileFuncArgs(DeclarationList declList);
+void compileCallArgs(FuncExpr *expr);
 
 #endif

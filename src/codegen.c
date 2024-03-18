@@ -5,7 +5,6 @@
 
 #include "ast.h"
 #include "codegen.h"
-#include "parser.tab.h"
 #include "symbol.h"
 
 FILE *outFile;
@@ -81,6 +80,70 @@ const char *regStr(Reg reg)
         return "t5";
     case T6:
         return "t6";
+    case FT0:
+        return "ft0";
+    case FT1:
+        return "ft1";
+    case FT2:
+        return "ft3";
+    case FT3:
+        return "ft3";
+    case FT4:
+        return "ft4";
+    case FT5:
+        return "ft5";
+    case FT6:
+        return "ft6";
+    case FT7:
+        return "ft7";
+    case FS0:
+        return "fs0";
+    case FS1:
+        return "fs1";
+    case FA0:
+        return "fa0";
+    case FA1:
+        return "fa1";
+    case FA2:
+        return "fa2";
+    case FA3:
+        return "fa3";
+    case FA4:
+        return "fa4";
+    case FA5:
+        return "fa5";
+    case FA6:
+        return "fa6";
+    case FA7:
+        return "fa7";
+    case FS2:
+        return "fs2";
+    case FS3:
+        return "fs3";
+    case FS4:
+        return "fs4";
+    case FS5:
+        return "fs5";
+    case FS6:
+        return "fs6";
+    case FS7:
+        return "fs7";
+    case FS8:
+        return "fs8";
+    case FS9:
+        return "fs9";
+    case FS10:
+        return "fs10";
+    case FS11:
+        return "fs11";
+    case FT8:
+        return "ft8";
+    case FT9:
+        return "ft9";
+    case FT10:
+        return "ft10";
+    case FT11:
+        return "ft11";
     }
 }
 
@@ -99,6 +162,24 @@ Reg getTmpReg(void)
         }
     }
     fprintf(stderr, "All registers filled, exitting...\n");
+    exit(-1);
+}
+
+// Returns a temporary register
+Reg getTmpFltReg(void)
+{
+    for (size_t i = 32; i < 64; i++)
+    {
+        if (i == FT0 || i == FT1 || i == FT2 || i == FT3 || i == FT4 || i == FT5 || i == FT6 || i == FT7 | i == FT8 | i == FT9 || i == FT10 || i == FT11)
+        {
+            if (!regs[i])
+            {
+                regs[i] = true;
+                return i;
+            }
+        }
+    }
+    fprintf(stderr, "All floating-point registers filled, exitting...\n");
     exit(-1);
 }
 
@@ -142,6 +223,11 @@ void compileExpr(Expr *expr, Reg dest)
         compileAssignExpr(expr->assignment, dest);
         break;
     }
+    case FUNC_EXPR:
+    {
+        compileFuncExpr(expr->function, dest);
+        break;
+    }
     }
 }
 
@@ -170,6 +256,12 @@ void compileConstantExpr(ConstantExpr *expr, const Reg dest)
             fprintf(outFile, "\tli %s, %ui\n", regStr(dest), expr->char_const); // TODO: Switch to hex format, check if there is unsigned version, switch to non-pseudoinstruction for char
             break;
         }
+        case FLOAT_TYPE:
+        {
+            Reg op1 = getTmpFltReg();
+            fprintf(outFile, "\tli %s, %ui\n", regStr(op1), (unsigned int)expr->float_const);
+            fprintf(outFile, "\tfmv.s %s, %s\n", regStr(dest), regStr(op1));
+        }
         default:
         {
             fprintf(stderr, "Non-long types not supported, exitting...\n");
@@ -185,51 +277,174 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     {
     case ADD:
     {
-        // TODO: Deal with non-long types
-        Reg op1 = getTmpReg();
-        Reg op2 = getTmpReg();
-        compileExpr(expr->op1, op1);
-        compileExpr(expr->op2, op2);
-        fprintf(outFile, "\tadd %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-        freeReg(op1);
-        freeReg(op2);
+        switch (expr->type)
+        {
+        case FLOAT_TYPE:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tfadd.s %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        case DOUBLE_TYPE:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tfadd.d %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        default:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tadd %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        }
         break;
     }
     case SUB:
     {
-        // TODO: Deal with non-long types
-        Reg op1 = getTmpReg();
-        Reg op2 = getTmpReg();
-        compileExpr(expr->op1, op1);
-        compileExpr(expr->op2, op2);
-        fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-        freeReg(op1);
-        freeReg(op2);
+        switch (expr->type)
+        {
+        case FLOAT_TYPE:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tfsub.s %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        case DOUBLE_TYPE:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tfsub.d %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        default:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        }
         break;
     }
     case MUL:
     {
-        // TODO: Deal with non-long types
-        Reg op1 = getTmpReg();
-        Reg op2 = getTmpReg();
-        compileExpr(expr->op1, op1);
-        compileExpr(expr->op2, op2);
-        fprintf(outFile, "\tmul %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-        freeReg(op1); // TODO: Test register eviction
-        freeReg(op2);
+        switch (expr->type)
+        {
+        case FLOAT_TYPE:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tfmul.s %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        case DOUBLE_TYPE:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tfmul.d %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        default:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tmul %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        }
         break;
     }
     case DIV:
     {
-        // TODO: Deal with non-long types
-        // TODO: Deal with unsigned division
-        Reg op1 = getTmpReg();
-        Reg op2 = getTmpReg();
-        compileExpr(expr->op1, op1);
-        compileExpr(expr->op2, op2);
-        fprintf(outFile, "\tdiv %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-        freeReg(op1); // TODO: Test register eviction
-        freeReg(op2);
+        switch (expr->type)
+        {
+        case FLOAT_TYPE:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tfdiv.s %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        case DOUBLE_TYPE:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tfdiv.d %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        default:
+        {
+            // TODO: Deal with non-long types
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tdiv %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1);
+            freeReg(op2);
+            break;
+        }
+        }
         break;
     }
     case MOD:
@@ -414,12 +629,21 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
 
 void compileVariableExpr(VariableExpr *expr, const Reg dest)
 {
-    expr->type = INT_TYPE; // TODO: REMOVE!!!
     switch (expr->type)
     {
     case INT_TYPE:
     {
-        fprintf(outFile, "\tlw %s, %lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        break;
+    }
+    case FLOAT_TYPE:
+    {
+        fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        break;
+    }
+    case DOUBLE_TYPE:
+    {
+        fprintf(outFile, "\tfld %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
         break;
     }
     default:
@@ -432,22 +656,121 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
 
 void compileAssignExpr(AssignExpr *expr, Reg dest)
 {
-    compileExpr(expr->op, dest);
+    // compileExpr(expr->op, dest);
     switch (expr->type)
     {
     case INT_TYPE:
     {
-        fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        if (expr->operator!= NOT)
+        {
+            OperationExpr *rvalue = operationExprCreate(expr->operator);
+            rvalue->op1 = expr->op;
+            rvalue->op2 = exprCreate(VARIABLE_EXPR);
+            // TODO: Resolve the type you set in op2
+            rvalue->op2->variable = variableExprCreate(expr->ident);
+            rvalue->op2->variable->symbolEntry = expr->symbolEntry;
+            rvalue->op2->variable->type = INT_TYPE;
+            compileOperationExpr(rvalue, dest);
+            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            free(rvalue->op2->assignment);
+            free(rvalue->op2);
+        }
+        else
+        {
+            compileExpr(expr->op, dest);
+            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        }
+        break;
+    }
+    case FLOAT_TYPE:
+    {
+        if (expr->operator!= NOT)
+        {
+            OperationExpr *rvalue = operationExprCreate(expr->operator);
+            rvalue->op1 = expr->op;
+            rvalue->op2 = exprCreate(VARIABLE_EXPR);
+            // TODO: Resolve the type you set in op2
+            rvalue->op2->variable = variableExprCreate(expr->ident);
+            rvalue->op2->variable->symbolEntry = expr->symbolEntry;
+            rvalue->op2->variable->type = FLOAT_TYPE;
+            compileOperationExpr(rvalue, dest);
+            fprintf(outFile, "\tfsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            free(rvalue->op2->assignment);
+            free(rvalue->op2);
+        }
+        else
+        {
+            compileExpr(expr->op, dest);
+            fprintf(outFile, "\tfsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        }
+        break;
+    }
+    case DOUBLE_TYPE:
+    {
+        if (expr->operator!= NOT)
+        {
+            OperationExpr *rvalue = operationExprCreate(expr->operator);
+            rvalue->op1 = expr->op;
+            rvalue->op2 = exprCreate(VARIABLE_EXPR);
+            // TODO: Resolve the type you set in op2
+            rvalue->op2->variable = variableExprCreate(expr->ident);
+            rvalue->op2->variable->symbolEntry = expr->symbolEntry;
+            rvalue->op2->variable->type = DOUBLE_TYPE;
+            compileOperationExpr(rvalue, dest);
+            fprintf(outFile, "\tfsd %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            free(rvalue->op2->assignment);
+            free(rvalue->op2);
+        }
+        else
+        {
+            compileExpr(expr->op, dest);
+            fprintf(outFile, "\tfsd %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        }
         break;
     }
     default:
     {
-        fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        if (expr->operator!= NOT)
+        {
+            OperationExpr *rvalue = operationExprCreate(expr->operator);
+            rvalue->op1 = expr->op;
+            rvalue->op2 = exprCreate(VARIABLE_EXPR);
+            // TODO: Resolve the type you set in op2
+            rvalue->op2->variable = variableExprCreate(expr->ident);
+            rvalue->op2->variable->symbolEntry = expr->symbolEntry;
+            rvalue->op2->variable->type = expr->type;
+            compileOperationExpr(rvalue, dest);
+            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            free(rvalue->op2->assignment);
+            free(rvalue->op2);
+            free(rvalue);
+        }
+        else
+        {
+            compileExpr(expr->op, dest);
+            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        }
         fprintf(stderr, "Type not supported\n");
         // exit(EXIT_FAILURE);
         break;
     }
     }
+}
+
+void compileFuncExpr(FuncExpr *expr, Reg dest)
+{
+    compileCallArgs(expr);
+    fprintf(outFile, "\tcall %s\n", expr->ident);
+    if (expr->type == FLOAT_TYPE || expr->type == DOUBLE_TYPE)
+    {
+        fprintf(outFile, "\tmv %s, fa0\n", regStr(dest));
+    }
+    else
+    {
+        fprintf(outFile, "\tmv %s, a0\n", regStr(dest));
+    }
+    fprintf(outFile, "\tmv fp, sp\n");
+    fprintf(outFile, "\tlw ra, -4(fp)\n");
 }
 
 void compileStmt(Stmt *stmt)
@@ -484,8 +807,25 @@ void compileJumpStmt(JumpStmt *stmt)
         }
         else
         {
-            // TODO: Add code to deal with types
-            compileExpr(stmt->expr, A0);
+            // TODO: Deal with other types
+            switch (returnType(stmt->expr))
+            {
+            case FLOAT_TYPE:
+            {
+                compileExpr(stmt->expr, FA0);
+                break;
+            }
+            case DOUBLE_TYPE:
+            {
+                compileExpr(stmt->expr, FA0);
+                break;
+            }
+            default:
+            {
+                compileExpr(stmt->expr, A0);
+                break;
+            }
+            }
             fprintf(outFile, "\tmv sp, fp\n");
             fprintf(outFile, "\tret\n");
         }
@@ -493,31 +833,29 @@ void compileJumpStmt(JumpStmt *stmt)
     }
 }
 
-void compileArg(Decl *decl, Reg dest)
-{
-    fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(dest), decl->symbolEntry->stackOffset);
-}
+// void compileArg(Decl *decl, Reg dest)
+// {
+//     fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), decl->symbolEntry->stackOffset);
+// }
 
 void compileFunc(FuncDef *func)
 {
-    displayParameterLocations(func->args);
+    // displayParameterLocations(func->args);
     fprintf(outFile, ".globl %s\n", func->ident);
     fprintf(outFile, ".type %s, @function\n", func->ident);
     fprintf(outFile, "%s:\n", func->ident);
     fprintf(outFile, "\tmv fp, sp\n");
-    fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
-
-    for (size_t i = 0; i < func->args.size; i++)
-    {
-        compileArg(func->args.decls[i], i + A0);
-    }
-
+    fprintf(outFile, "\taddi sp, sp, -%lu\n", func->symbolEntry->size);
+    // TODO: Figure out if FP needs to be restored
+    fprintf(outFile, "\tsw fp, 0(fp)\n");  // Save FP, never gets restored
+    fprintf(outFile, "\tsw ra, -4(fp)\n"); // Save RA
+    compileFuncArgs(func->args);
     for (size_t i = 0; i < func->body->compoundStmt->declList.size; i++)
     {
         if (func->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
         {
             compileExpr(func->body->compoundStmt->declList.decls[i]->declInit->initExpr, A0);
-            fprintf(outFile, "\tsw %s, %lu(fp)\n", regStr(A0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
+            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(A0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
         }
     }
     for (size_t i = 0; i < func->body->compoundStmt->stmtList.size; i++)
@@ -528,6 +866,97 @@ void compileFunc(FuncDef *func)
     fprintf(outFile, "\tret\n");
 }
 
+void compileCallArgs(FuncExpr *expr)
+{
+    Reg intRegs[8] = {A0, A1, A2, A3, A4, A5, A6, A7};
+    Reg floatRegs[8] = {FA0, FA1, FA2, FA3, FA4, FA5, FA6, FA7};
+
+    size_t maxFloatRegs = 8;
+    size_t maxIntRegs = 8;
+
+    size_t usedFloatRegs = 0;
+    size_t usedIntRegs = 0;
+
+    for (size_t i = 0; i < expr->argsSize; i++)
+    {
+        // for primitive types
+        DataType paramType = returnType(expr->args[i]);
+        // DataType paramType = declList.decls[i]->symbolEntry->type.dataType;
+        // char *ident = declList.decls[i]->symbolEntry->ident;
+        // size_t stackOffset = declList.decls[i]->symbolEntry->stackOffset;
+
+        if (paramType == INT_TYPE || paramType == CHAR_TYPE || paramType == SHORT_TYPE)
+        {
+            if (usedIntRegs != maxIntRegs)
+            {
+                for (size_t j = 0; j < 8; j++)
+                {
+                    if (intRegs[j] != ZERO)
+                    {
+                        compileExpr(expr->args[i], A0 + j);
+                        // printf("%s : A%zu \n", ident, i);
+                        intRegs[j] = ZERO;
+                        usedIntRegs++;
+                        break;
+                    }
+                }
+            }
+            // else
+            // {
+            //     printf("%s : SP(%zu) \n", ident, stackOffset);
+            // }
+        }
+        else if (paramType == FLOAT_TYPE || paramType == DOUBLE_TYPE)
+        {
+            if (usedFloatRegs != maxFloatRegs)
+            {
+                for (size_t j = 0; j < 8; j++)
+                {
+                    if (floatRegs[j] != ZERO)
+                    {
+                        if (paramType == FLOAT_TYPE)
+                        {
+                            compileExpr(expr->args[i], FA0 + j);
+                        }
+                        else
+                        {
+                            compileExpr(expr->args[i], FA0 + j);
+                        }
+                        // printf("%s : FA%zu\n", ident, i);
+                        floatRegs[i] = ZERO;
+                        usedFloatRegs++;
+                        break;
+                    }
+                }
+            }
+            // else
+            // {
+            //     printf("%s : SP(%zu) \n", ident, stackOffset);
+            //
+            // }
+        }
+        // else if (paramType == LONG_TYPE )
+        // {
+        //     // both halves stored in registers
+        //     if(usedFloatRegs < maxFloatRegs - 2)
+        //     {
+        //         // find next even register
+        //         for(size_t i = 0; i < 8; i++)
+        //         {
+        //             if(i%2 == 0 && intRegs[i] != ZERO && intRegs[i+1] != ZERO)
+        //             {
+        //                 printf("%s : A%zu \n", ident, i);
+        //                 printf("%s : A%zu \n", ident, i+1);
+        //                 intRegs[i] = ZERO;
+        //                 intRegs[i+1] = ZERO;
+        //                 usedIntRegs += 2;
+        //                 break;
+        //             }
+        //         }
+        //     }
+        // }
+    }
+}
 
 // just return number
 // char = 1 byte
@@ -542,85 +971,71 @@ void compileFunc(FuncDef *func)
 // a double takes an entire register
 
 // longs have their high half stored in an even register and lower in an odd
-void displayParameterLocations(DeclarationList declList)
+void compileFuncArgs(DeclarationList declList)
 {
     Reg intRegs[8] = {A0, A1, A2, A3, A4, A5, A6, A7};
     Reg floatRegs[8] = {FA0, FA1, FA2, FA3, FA4, FA5, FA6, FA7};
-    
+
     size_t maxFloatRegs = 8;
     size_t maxIntRegs = 8;
 
     size_t usedFloatRegs = 0;
     size_t usedIntRegs = 0;
 
-    for(size_t i = 0; i < declList.size; i++)
+    for (size_t i = 0; i < declList.size; i++)
     {
         // for primitive types
         DataType paramType = declList.decls[i]->symbolEntry->type.dataType;
-        char *ident = declList.decls[i]->symbolEntry->ident;
+        // char *ident = declList.decls[i]->symbolEntry->ident;
         size_t stackOffset = declList.decls[i]->symbolEntry->stackOffset;
 
-        if(paramType == INT_TYPE || paramType == CHAR_TYPE || paramType == SHORT_TYPE)
+        if (paramType == INT_TYPE || paramType == CHAR_TYPE || paramType == SHORT_TYPE)
         {
-            if(usedIntRegs != maxIntRegs)
+            if (usedIntRegs != maxIntRegs)
             {
-                for(size_t i = 0; i < 8; i++)
+                for (size_t j = 0; j < 8; j++)
                 {
-                    if(intRegs[i] != ZERO)
+                    if (intRegs[j] != ZERO)
                     {
-                        printf("%s : A%zu \n", ident, i);
-                        intRegs[i] = ZERO;
+                        fprintf(outFile, "\tsw a%lu, -%lu(fp)\n", j, stackOffset);
+                        intRegs[j] = ZERO;
                         usedIntRegs++;
                         break;
                     }
                 }
             }
-            else
-            {
-                printf("%s : SP(%zu) \n", ident, stackOffset);
-
-            }
+            // else
+            // {
+            //     printf("%s : SP(%zu) \n", ident, stackOffset);
+            // }
         }
         else if (paramType == FLOAT_TYPE || paramType == DOUBLE_TYPE)
         {
-            if(usedFloatRegs != maxFloatRegs)
+            if (usedFloatRegs != maxFloatRegs)
             {
-                for(size_t i = 0; i < 8; i++)
+                for (size_t j = 0; j < 8; j++)
                 {
-                    if(floatRegs[i] != ZERO)
+                    if (floatRegs[j] != ZERO)
                     {
-                        printf("%s : FA%zu\n", ident, i);
+                        if (paramType == FLOAT_TYPE)
+                        {
+                            fprintf(outFile, "\tfsw fa%lu, -%lu(fp)\n", j, stackOffset);
+                        }
+                        else
+                        {
+                            fprintf(outFile, "\tfsd fa%lu, -%lu(fp)\n", j, stackOffset);
+                        }
                         floatRegs[i] = ZERO;
                         usedFloatRegs++;
                         break;
                     }
                 }
             }
-            else
-            {
-                printf("%s : SP(%zu) \n", ident, stackOffset);
-
-            }
-        }
-        else if (paramType == LONG_TYPE )
-        {
-            // both halves stored in registers
-            if(usedFloatRegs < maxFloatRegs - 2)
-            {
-                // find next even register
-                for(size_t i = 0; i < 8; i++)
-                {
-                    if(i%2 == 0 && intRegs[i] != ZERO && intRegs[i+1] != ZERO)
-                    {
-                        printf("%s : A%zu \n", ident, i);
-                        printf("%s : A%zu \n", ident, i+1);
-                        intRegs[i] = ZERO;
-                        intRegs[i+1] = ZERO;
-                        usedIntRegs += 2;
-                        break;
-                    }
-                }
-            }
+            // else
+            // {
+            //     printf("%s : SP(%zu) \n", ident, stackOffset);
+            //
+            // }
         }
     }
 }

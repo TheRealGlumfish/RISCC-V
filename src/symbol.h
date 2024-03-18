@@ -48,4 +48,6 @@ SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident);
 
 SymbolTable *populateSymbolTable(TranslationUnit *rootExpr);
 
+size_t typeSize(DataType type);
+
 #endif

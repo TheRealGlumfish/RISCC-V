@@ -157,8 +157,8 @@ void entryPush(SymbolTable *symbolTable, SymbolEntry *symbolEntry)
     if (symbolTable->masterFunc != NULL)
     {
         // first element stored at sp + 0
-        symbolEntry->stackOffset = symbolTable->masterFunc->size;
         symbolTable->masterFunc->size += symbolEntry->size;
+        symbolEntry->stackOffset = symbolTable->masterFunc->size;
     }
 }
 
@@ -328,7 +328,14 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
     case OPERATION_EXPR:
     {
         scanOperationExpr(expr->operation, parentTable);
-        expr->operation->type = returnType(expr->operation->op1);
+        if (expr->operation->operator == SIZEOF_OP)
+        {
+            expr->operation->type = UNSIGNED_INT_TYPE;
+        }
+        else
+        {
+            expr->operation->type = returnType(expr->operation->op1);
+        }
         break;
     }
     case ASSIGN_EXPR:
@@ -558,4 +565,38 @@ SymbolTable *populateSymbolTable(TranslationUnit *rootExpr)
     SymbolTable *globalTable = symbolTableCreate(0, 0, NULL, NULL); // global scope
     scanTransUnit(rootExpr, globalTable);
     return globalTable;
+}
+
+size_t typeSize(DataType type)
+{
+    switch (type)
+    {
+    case VOID_TYPE:
+        return 4;
+    case CHAR_TYPE:
+        return 1;
+    case SIGNED_CHAR_TYPE:
+        return 1;
+    case SHORT_TYPE:
+        return 2;
+    case UNSIGNED_SHORT_TYPE:
+        return 2;
+    case INT_TYPE:
+        return 4;
+    case UNSIGNED_INT_TYPE:
+        return 4;
+    case LONG_TYPE:
+        return 8;
+    case UNSIGNED_LONG_TYPE:
+        return 8;
+    case FLOAT_TYPE:
+        return 4;
+    case DOUBLE_TYPE:
+        return 8;
+    default:
+    {
+        fprintf(stderr, "Type does not have a size, exiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    }
 }

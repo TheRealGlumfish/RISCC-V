@@ -10,7 +10,7 @@
 FILE *outFile;
 
 uint64_t LCLabelId;
-bool regs[32] = {0};
+bool regs[64] = {0};
 
 const char *regStr(Reg reg)
 {
@@ -85,7 +85,7 @@ const char *regStr(Reg reg)
     case FT1:
         return "ft1";
     case FT2:
-        return "ft3";
+        return "ft2";
     case FT3:
         return "ft3";
     case FT4:
@@ -153,7 +153,7 @@ Reg getTmpReg(void)
     for (size_t i = 0; i < 32; i++)
     {
         if (i == T0 || i == T1 || i == T2 || i == T3 || i == T4 || i == T5 || i == T6 ||
-        i == S1 || i == S2 || i == S3 || i == S4 || i == S5 || i == S6 || i == S7 || i == S8 || i == S9)
+            i == S1 || i == S2 || i == S3 || i == S4 || i == S5 || i == S6 || i == S7 || i == S8 || i == S9)
         {
             if (!regs[i])
             {
@@ -695,7 +695,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     case INC:
     {
         // TODO: Handle types (add float support)
-        if(expr->op1->type != VARIABLE_EXPR)
+        if (expr->op1->type != VARIABLE_EXPR)
         {
             fprintf(stderr, "Expression is not assignable, exiting...\n");
             exit(EXIT_FAILURE);
@@ -715,7 +715,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     case DEC:
     {
         // TODO: Handle types (add float code)
-        if(expr->op1->type != VARIABLE_EXPR)
+        if (expr->op1->type != VARIABLE_EXPR)
         {
             fprintf(stderr, "Expression is not assignable, exiting...\n");
             exit(EXIT_FAILURE);
@@ -730,6 +730,24 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         assign->symbolEntry = expr->op1->variable->symbolEntry;
         compileAssignExpr(assign, dest);
         exprDestroy(one);
+        break;
+    }
+    case SIZEOF_OP:
+    {
+        size_t size;
+        if (expr->op1->type == CONSTANT_EXPR)
+        {
+            size = typeSize(expr->op1->constant->type);
+        }
+        else if (expr->op1->type == VARIABLE_EXPR)
+        {
+            size = expr->op1->variable->symbolEntry->size;
+        }
+        else
+        {
+            size = typeSize(returnType(expr->op1));
+        }
+        fprintf(outFile, "\tli %s, %lu\n", regStr(dest), size);
         break;
     }
         // default:
@@ -874,6 +892,7 @@ void compileFuncExpr(FuncExpr *expr, Reg dest)
 {
     compileCallArgs(expr);
     fprintf(outFile, "\tcall %s\n", expr->ident);
+    // fprintf(outFile, "\tmv fp, sp\n");
     if (expr->type == FLOAT_TYPE || expr->type == DOUBLE_TYPE)
     {
         fprintf(outFile, "\tmv %s, fa0\n", regStr(dest));
@@ -882,8 +901,8 @@ void compileFuncExpr(FuncExpr *expr, Reg dest)
     {
         fprintf(outFile, "\tmv %s, a0\n", regStr(dest));
     }
-    fprintf(outFile, "\tmv fp, sp\n");
-    fprintf(outFile, "\tlw ra, -4(fp)\n");
+    // fprintf(outFile, "\tlw fp, %lu(sp)\n", expr->symbolEntry->size);
+    // fprintf(outFile, "\tlw ra, -4(fp)\n");
 }
 
 void compileStmt(Stmt *stmt)
@@ -902,7 +921,7 @@ void compileStmt(Stmt *stmt)
     }
     default:
     {
-        fprintf(stderr, "Statement type: %iu, not supported...\n", stmt->type);
+        fprintf(stderr, "Statement type: %i, not supported...\n", stmt->type);
         exit(EXIT_FAILURE);
     }
     }
@@ -940,6 +959,9 @@ void compileJumpStmt(JumpStmt *stmt)
             }
             }
             fprintf(outFile, "\tmv sp, fp\n");
+            fprintf(outFile, "\tlw ra, -4(fp)\n");
+            fprintf(outFile, "\tlw fp, 0(fp)\n");
+            // fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
             fprintf(outFile, "\tret\n");
         }
     }
@@ -957,28 +979,27 @@ void compileFunc(FuncDef *func)
     fprintf(outFile, ".globl %s\n", func->ident);
     fprintf(outFile, ".type %s, @function\n", func->ident);
     fprintf(outFile, "%s:\n", func->ident);
+    fprintf(outFile, "\tsw fp, 0(sp)\n");  // Save FP, never gets restored
+    fprintf(outFile, "\tsw ra, -4(sp)\n"); // Save RA
     fprintf(outFile, "\tmv fp, sp\n");
     fprintf(outFile, "\taddi sp, sp, -%lu\n", func->symbolEntry->size);
     // TODO: Figure out if FP needs to be restored
-    fprintf(outFile, "\tsw fp, 0(fp)\n");  // Save FP, never gets restored
-    fprintf(outFile, "\tsw ra, -4(fp)\n"); // Save RA
-    
-    if(func->isParam)
+
+    if (func->isParam)
     {
         compileFuncArgs(func->args);
     }
-    
 
-    if(func->body != NULL)
+    if (func->body != NULL)
     {
-    for (size_t i = 0; i < func->body->compoundStmt->declList.size; i++)
-    {
-        if (func->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
+        for (size_t i = 0; i < func->body->compoundStmt->declList.size; i++)
         {
-            compileExpr(func->body->compoundStmt->declList.decls[i]->declInit->initExpr, A0);
-            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(A0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
+            if (func->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
+            {
+                compileExpr(func->body->compoundStmt->declList.decls[i]->declInit->initExpr, A0);
+                fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(A0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
+            }
         }
-    }
 
         for (size_t i = 0; i < func->body->compoundStmt->stmtList.size; i++)
         {
@@ -986,7 +1007,10 @@ void compileFunc(FuncDef *func)
         }
     }
 
-    fprintf(outFile, "\tmv sp, fp\n");
+    // fprintf(outFile, "\tmv sp, fp\n");
+    fprintf(outFile, "\tlw ra, -4(fp)\n");
+    fprintf(outFile, "\tlw fp, 0(fp)\n");
+    fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
     fprintf(outFile, "\tret\n");
 }
 
@@ -1164,17 +1188,17 @@ void compileFuncArgs(DeclarationList declList)
     }
 }
 
-
 void compileTranslationUnit(TranslationUnit *transUnit)
 {
-    for(size_t i = 0; i < transUnit->size; i++)
+    for (size_t i = 0; i < transUnit->size; i++)
     {
-        if(transUnit->externDecls[i]->isFunc)
+        if (transUnit->externDecls[i]->isFunc)
         {
-            if(!transUnit->externDecls[i]->funcDef->isPrototype)
+            if (!transUnit->externDecls[i]->funcDef->isPrototype)
             {
                 compileFunc(transUnit->externDecls[i]->funcDef);
             }
         }
     }
 }
+

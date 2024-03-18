@@ -958,6 +958,10 @@ void compileJumpStmt(JumpStmt *stmt)
                 break;
             }
             }
+            for (size_t i = 1; i <= 11; i++) // Restore S1-S11
+            {
+                fprintf(outFile, "\tsw s%lu, -%lu(fp)\n", i, 4 + (i * 4)); // Save RA
+            }
             fprintf(outFile, "\tmv sp, fp\n");
             fprintf(outFile, "\tlw ra, -4(fp)\n");
             fprintf(outFile, "\tlw fp, 0(fp)\n");
@@ -981,6 +985,10 @@ void compileFunc(FuncDef *func)
     fprintf(outFile, "%s:\n", func->ident);
     fprintf(outFile, "\tsw fp, 0(sp)\n");  // Save FP, never gets restored
     fprintf(outFile, "\tsw ra, -4(sp)\n"); // Save RA
+    for (size_t i = 1; i <= 11; i++)       // Save S1-S11
+    {
+        fprintf(outFile, "\tsw s%lu, -%lu(sp)\n", i, 4 + (i * 4)); // Save RA
+    }
     fprintf(outFile, "\tmv fp, sp\n");
     fprintf(outFile, "\taddi sp, sp, -%lu\n", func->symbolEntry->size);
     // TODO: Figure out if FP needs to be restored
@@ -1008,6 +1016,10 @@ void compileFunc(FuncDef *func)
     }
 
     // fprintf(outFile, "\tmv sp, fp\n");
+    for (size_t i = 1; i <= 11; i++) // Restore S1-S11
+    {
+        fprintf(outFile, "\tsw s%lu, -%lu(fp)\n", i, 4 + (i * 4)); // Save RA
+    }
     fprintf(outFile, "\tlw ra, -4(fp)\n");
     fprintf(outFile, "\tlw fp, 0(fp)\n");
     fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
@@ -1201,4 +1213,3 @@ void compileTranslationUnit(TranslationUnit *transUnit)
         }
     }
 }
-

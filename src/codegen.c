@@ -237,7 +237,7 @@ void compileConstantExpr(ConstantExpr *expr, const Reg dest)
     if (expr->isString)
     {
         uint64_t labelId = getId(&LCLabelId);
-        fprintf(outFile, ".rodata\n");
+        fprintf(outFile, ".section .rodata\n");
         fprintf(outFile, ".LC%lu:\n", labelId);
         fprintf(outFile, "\t.string \"%s\"\n", expr->string_const);
         fprintf(outFile, ".text\n");
@@ -254,7 +254,7 @@ void compileConstantExpr(ConstantExpr *expr, const Reg dest)
         }
         case CHAR_TYPE:
         {
-            fprintf(outFile, "\tli %s, %ui\n", regStr(dest), expr->char_const); // TODO: Switch to hex format, check if there is unsigned version, switch to non-pseudoinstruction for char
+            fprintf(outFile, "\tli %s, %u\n", regStr(dest), expr->char_const); // TODO: Switch to hex format, check if there is unsigned version, switch to non-pseudoinstruction for char
             break;
         }
         case FLOAT_TYPE:

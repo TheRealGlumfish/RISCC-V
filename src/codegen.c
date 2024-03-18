@@ -152,7 +152,8 @@ Reg getTmpReg(void)
 {
     for (size_t i = 0; i < 32; i++)
     {
-        if (i == T0 || i == T1 || i == T2 || i == T3 || i == T4 || i == T5 || i == T6)
+        if (i == T0 || i == T1 || i == T2 || i == T3 || i == T4 || i == T5 || i == T6 ||
+        i == S1 || i == S2 || i == S3 || i == S4 || i == S5 || i == S6 || i == S7 || i == S8 || i == S9)
         {
             if (!regs[i])
             {

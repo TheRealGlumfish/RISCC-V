@@ -1047,7 +1047,7 @@ void compileTranslationUnit(TranslationUnit *transUnit)
     {
         if(transUnit->externDecls[i]->isFunc)
         {
-            compileFunc(&(transUnit->externDecls[i]->funcDef));
+            compileFunc(transUnit->externDecls[i]->funcDef);
         }
     }
 }

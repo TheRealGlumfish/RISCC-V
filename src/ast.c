@@ -1083,7 +1083,7 @@ InitList *initListCreate(size_t initListSize)
     }
 
     initList->size = initListSize;
-    initList->size = initListSize;
+    initList->capacity = initListSize;
     return initList;
 }
 
@@ -1360,4 +1360,107 @@ void resolveType(Expr *expr)
         }
     }
     }
+}
+
+// Constructor for external declaration
+ExternDecl externDeclCreate(void)
+{
+    ExternDecl *externDecl = malloc(sizeof(ExternDecl));
+    if (externDecl == NULL)
+    {
+        abort();
+    }
+    externDecl->declList = NULL;
+    externDecl->funcDef = NULL;
+}
+
+// Destructor for external declaration
+void externDeclDestroy(ExternDecl *externDecl)
+{
+    if(externDecl->declList != NULL)
+    {
+        declarationListDestroy(externDecl->declList);
+    }
+    if(externDecl->funcDef != NULL)
+    {
+        funcDefDestroy(externDecl->funcDef);
+    }
+    free(externDecl);
+}
+
+// Consstructor for translation unit
+TranslationUnit *transUnitCreate(size_t size)
+{
+    TranslationUnit *transUnit = malloc(sizeof(TranslationUnit));
+    if (transUnit == NULL)
+    {
+        abort();
+    }
+
+    if (size != 0)
+    {
+        transUnit->externDecls = malloc(sizeof(ExternDecl *) * size);
+        if (transUnit->externDecls == NULL)
+        {
+            abort();
+        }
+    }
+    else
+    {
+        transUnit->externDecls = NULL;
+    }
+
+    transUnit->size = size;
+    transUnit->capacity = size;
+    return transUnit;
+}
+
+
+// Destructor for translation unit
+void transUnitDestroy(TranslationUnit *transUnit)
+{
+    for(size_t i = 0; i < transUnit->size; i++)
+    {
+        externDeclDestroy(transUnit->externDecls[i]);
+    }
+    free(transUnit->externDecls);
+    free(transUnit);
+}
+
+// Resize the translation unit
+void transUnitResize(TranslationUnit *transUnit, const size_t size)
+{
+    if (transUnit->size != 0)
+    {
+        transUnit->size = size;
+        if (transUnit->size > transUnit->capacity)
+        {
+            while (transUnit->size > transUnit->capacity)
+            {
+                transUnit->capacity *= 2;
+            }
+            transUnit->externDecls = realloc(transUnit->externDecls, sizeof(ExternDecl *) * transUnit->capacity);
+            if (transUnit->externDecls == NULL)
+            {
+                abort();
+            }
+        }
+    }
+    else
+    {
+        transUnit->size = size;
+        transUnit->externDecls = malloc(sizeof(ExternDecl *) * size);
+        if (transUnit->externDecls == NULL)
+        {
+            abort();
+        }
+        transUnit->capacity = size;
+    }
+}
+
+// Adds an expression to a translation unit
+void transUnitPush(TranslationUnit *transUnit, ExternDecl *externDecl)
+{
+    transUnitResize(transUnit, transUnit->size + 1);
+    transUnit->externDecls[transUnit->size - 1] = externDecl;
 }

@@ -336,6 +336,19 @@ typedef struct Initializer
     InitList *initList;
 } Initializer;
 
+typedef struct ExternDecl
+{
+    FuncDef *funcDef;
+    DeclarationList *declList;
+} ExternDecl;
+
+typedef struct TranslationUnit
+{
+    ExternDecl **externDecls;
+    size_t size;
+    size_t capacity;
+} TranslationUnit;
+
 Expr *exprCreate(ExprType type);
 void exprDestroy(Expr *expr);
 
@@ -442,5 +455,13 @@ void initDestroy(Initializer *init);
 
 DataType returnType(Expr *expr);
 void resolveType(Expr *expr);
+
+ExternDecl externDeclCreate(void);
+void externDeclDestroy(ExternDecl *externDecl);
+
+TranslationUnit *transUnitCreate(size_t size);
+void transUnitDestroy(TranslationUnit *transUnit);
+void transUnitResize(TranslationUnit *transUnit, const size_t size);
+void transUnitPush(TranslationUnit *transUnit, ExternDecl *externDecl);
 
 #endif

@@ -44,6 +44,9 @@
     StructDeclList* struct_decl_list;
     StructDecl* struct_decl_node;
 
+    ExternDecl *extern_decl_node;
+    TranslationUnit *trans_unit_node;
+
     size_t ptr_count;
 }
 
@@ -59,7 +62,10 @@
 %token PERIOD AND_LOGIC NOT_LOGIC NOT_OP SUB_OP ADD_OP MUL_OP DIV_OP MOD_OP
 %token LT_OP GT_OP XOR_OP OR_LOGIC TERN_OP
 
-%type <expr_node> translation_unit external_declaration primary_expression postfix_expression
+%type <trans_unit_node> translation_unit
+%type <extern_decl_node> external_declaration
+
+%type <expr_node>  primary_expression postfix_expression
 %type <func_node> argument_expression_list
 %type <expr_node> unary_expression cast_expression multiplicative_expression additive_expression shift_expression relational_expression
 %type <expr_node> equality_expression and_expression exclusive_or_expression inclusive_or_expression logical_and_expression logical_or_expression
@@ -104,28 +110,46 @@
 %%
 
 ROOT
-  : function_definition { // change back to translation_unit
+  : translation_unit { // change back to translation_unit
         root = $1;
     }
 
 translation_unit
-	: external_declaration { $$ = $1; }
+	: external_declaration {
+        $$ = tranUnitCreate(1);
+        $$->externDecls[0] = $1;
+        }
 	| translation_unit external_declaration
+        {
+        tranUnitPush($1, $2);
+        $$ = $1;
+        }
 	;
 
 external_declaration
-	: function_definition { $$ = $1; }
-	| declaration
+	: function_definition { 
+        $$ = externDeclCreate();
+        $$->funcDef = $1;
+        }
+	| declaration{
+        $$ = externDeclCreate();
+        $$->declList = $1;     
+        }
 	;
 
 function_definition
 	: declaration_specifiers declarator declaration_list compound_statement
                 // TODO: Add error message "out of spec".
 	| declaration_specifiers declarator compound_statement {
-		$$ = funcDefCreate($1, $2->pointerCount, $2->ident, $3);
+	$$ = funcDefCreate($1, $2->pointerCount, $2->ident, $3);
         $$->args = $2->parameterList; 
         free($2);
-	    }
+	}
+        | declaration_specifiers declarator{ // modification to original parser for function prototypes.
+        $$ = funcDefCreate($1, $2->pointerCount, $2->ident);
+        $$->args = $2->parameter_list;
+        free($2);
+        }
 	| declarator declaration_list compound_statement
                 //TODO: Add error message "out of spec"
 	| declarator compound_statement
@@ -1004,7 +1028,7 @@ jump_statement
 
 %%
 
-FuncDef* root;
+TranslationUnit* root;
 // Node *g_root;
 
 // Node *ParseAST(std::string file_name)

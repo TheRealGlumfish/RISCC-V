@@ -194,7 +194,7 @@ void symbolTableDestroy(SymbolTable *symbolTable)
 SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident)
 {
     // base case
-    if (symbolTable->parentTable == NULL)
+    if (symbolTable == NULL)
     {
         return NULL;
     }
@@ -276,6 +276,10 @@ void scanExpr(Expr *expr, SymbolTable *parentTable);
 void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
 {
     funcExpr->symbolEntry = getSymbolEntry(parentTable, funcExpr->ident);
+    if(funcExpr->symbolEntry == NULL)
+    {
+        printf("HARAM\n");
+    }
 }
 
 void scanAssignment(AssignExpr *assignExpr, SymbolTable *parentTable)
@@ -336,7 +340,14 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
     case FUNC_EXPR:
     {
         scanFuncExpr(expr->function, parentTable);
-        expr->function->type = expr->function->symbolEntry->type.dataType;
+        if(expr->function->symbolEntry != NULL)
+        {
+            expr->function->type = expr->function->symbolEntry->type.dataType;
+        }
+        else
+        {
+            printf("NULL");
+        }
         break;
     }
     }

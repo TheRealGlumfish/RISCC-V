@@ -142,6 +142,7 @@ function_definition
     // TODO: Add error message "out of spec".
 	| declaration_specifiers declarator compound_statement {
 	$$ = funcDefCreate($1, $2->pointerCount, $2->ident);
+    $$->isPrototype = false;
     $$->isParam = $2->isParam;
     if($2->isParam){
         $$->args = $2->parameterList;
@@ -151,6 +152,7 @@ function_definition
 	}
     | declaration_specifiers declarator SEMI_COLON{ // modification to original parser for function prototypes.
     $$ = funcDefCreate($1, $2->pointerCount, $2->ident);
+    $$->isPrototype = true;
     $$->isParam = $2->isParam;
     if($2->isParam)
     {   

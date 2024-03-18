@@ -330,6 +330,7 @@ typedef struct FuncDef
     Stmt *body;
     SymbolEntry *symbolEntry;
     bool isParam;
+    bool isPrototype;
 } FuncDef;
 
 typedef struct Initializer

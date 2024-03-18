@@ -1170,7 +1170,10 @@ void compileTranslationUnit(TranslationUnit *transUnit)
     {
         if(transUnit->externDecls[i]->isFunc)
         {
-            compileFunc(transUnit->externDecls[i]->funcDef);
+            if(!transUnit->externDecls[i]->funcDef->isPrototype)
+            {
+                compileFunc(transUnit->externDecls[i]->funcDef);
+            }
         }
     }
 }

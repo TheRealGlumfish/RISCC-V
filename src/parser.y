@@ -77,7 +77,7 @@
 %type <func_def_node> function_definition
 
 %type <node>  enum_specifier enumerator_list enumerator  
-%type <node> identifier_list type_name abstract_declarator direct_abstract_declarator   
+%type <node> identifier_list abstract_declarator direct_abstract_declarator   
 
 %type <struct_spec_node> struct_specifier
 %type <struct_decl_list> struct_declaration_list struct_declaration struct_declarator_list
@@ -90,7 +90,7 @@
 %type <operator> unary_operator assignment_operator
 %type <type_spec> type_specifier
 
-%type <type_spec_list> declaration_specifiers specifier_qualifier_list
+%type <type_spec_list> declaration_specifiers specifier_qualifier_list type_name
 
 %type <string> storage_class_specifier 
 
@@ -284,8 +284,17 @@ unary_expression
         $$->operation->op1 = $2;
         }
 	| SIZEOF OPEN_BRACKET type_name CLOSE_BRACKET
+        {
+        $$ = exprCreate(OPERATION_EXPR);
+        $$->operation = operationExprCreate(SIZEOF_OP);
+        //$$->operation->op1 = constantExprCreate(flattenTypeSpecs($3)->typeSpecs[0]->dataType, false);
+        Expr *expr = exprCreate(CONSTANT_EXPR);
+        expr->constant = constantExprCreate($3->typeSpecs[0]->dataType, false);
+        $$->operation->op1 = expr;
+        typeSpecListDestroy($3);
+        }
 	;
- 
+
 unary_operator
 	: AND_OP { $$ = ADDRESS; } 
 	| MUL_OP { $$ = DEREF; }
@@ -828,6 +837,9 @@ identifier_list
 
 type_name
 	: specifier_qualifier_list
+    {
+        $$ = $1;
+    }
 	| specifier_qualifier_list abstract_declarator
 	;
 

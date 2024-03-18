@@ -134,13 +134,13 @@ void displayConstExpr(ConstantExpr *constExpr)
     switch (constExpr->type)
     { // doesnt do string literal
     case CHAR_TYPE:
-        printf("%c\n", constExpr->char_const);
+        printf("CHAR %c\n", constExpr->char_const);
         break;
     case INT_TYPE:
-        printf("%i\n", constExpr->int_const);
+        printf("INT %i\n", constExpr->int_const);
         break;
     case FLOAT_TYPE:
-        printf("%f\n", constExpr->float_const);
+        printf("FLOAT %f\n", constExpr->float_const);
         break;
     }
 }

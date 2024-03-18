@@ -468,4 +468,6 @@ void transUnitDestroy(TranslationUnit *transUnit);
 void transUnitResize(TranslationUnit *transUnit, const size_t size);
 void transUnitPush(TranslationUnit *transUnit, ExternDecl *externDecl);
 
+TypeSpecList *flattenTypeSpecs(TypeSpecList *typeSpecList);
+
 #endif

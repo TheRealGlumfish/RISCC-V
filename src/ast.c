@@ -1468,3 +1468,136 @@ void transUnitPush(TranslationUnit *transUnit, ExternDecl *externDecl)
     transUnitResize(transUnit, transUnit->size + 1);
     transUnit->externDecls[transUnit->size - 1] = externDecl;
 }
+
+
+TypeSpecList *flattenTypeSpecs(TypeSpecList *typeSpecList)
+{
+    size_t unsignedCount = 0;
+    size_t signedCount = 0;
+    size_t charCount = 0;
+    size_t intCount = 0;
+    size_t longCount = 0;
+    size_t shortCount = 0;
+    size_t floatCount = 0;
+    size_t doubleCount = 0;
+
+    for(size_t i = 0; i < typeSpecList->typeSpecSize; i++)
+    {
+        // cant flatten structs
+        if(typeSpecList->typeSpecs[i]->isStruct)
+        {
+            return typeSpecList;
+        }
+        
+        switch(typeSpecList->typeSpecs[i]->dataType)
+        {
+            case UNSIGNED_TYPE:
+                unsignedCount++;
+                break;
+            case SIGNED_TYPE:
+                signedCount++;
+                break;
+            case CHAR_TYPE:
+                charCount++;
+                break;
+            case INT_TYPE:
+                intCount++;
+                break;
+            case LONG_TYPE:
+                longCount++;
+                break;
+            case SHORT_TYPE:
+                shortCount++;
+                break;
+            case FLOAT_TYPE:
+                floatCount++;
+                break;
+            case DOUBLE_TYPE:
+                doubleCount++;
+                break;
+            case VOID_TYPE:
+                return typeSpecList;
+        }
+
+        typeSpecListDestroy(typeSpecList);
+        TypeSpecList *flatList  = typeSpecListCreate(1);
+
+        if(signedCount > 1 && unsignedCount > 1)
+        {
+            fprintf(stderr, "Cannot declare as both signed and unsigned, exiting...\n");
+            exit(EXIT_FAILURE);
+        }
+
+        if(unsignedCount > 1)
+        {
+            if(charCount > 1)
+            {
+                flatList->typeSpecs[0] = typeSpecifierCreate(false);
+                flatList->typeSpecs[0]->dataType = CHAR_TYPE;
+            }
+            else if(shortCount > 1)
+            {
+                flatList->typeSpecs[0] = typeSpecifierCreate(false);
+                flatList->typeSpecs[0]->dataType = UNSIGNED_SHORT_TYPE;
+            }
+            else if(longCount == 1)
+            {
+                flatList->typeSpecs[0] = typeSpecifierCreate(false);
+                flatList->typeSpecs[0]->dataType = UNSIGNED_INT_TYPE;
+            }
+            else if(longCount > 1)
+            {
+                flatList->typeSpecs[0] = typeSpecifierCreate(false);
+                flatList->typeSpecs[0]->dataType = UNSIGNED_LONG_TYPE;
+            }
+            else if(intCount > 1)
+            {
+                flatList->typeSpecs[0] = typeSpecifierCreate(false);
+                flatList->typeSpecs[0]->dataType = UNSIGNED_INT_TYPE;
+            }  
+        }
+
+        if(signedCount >= 0)
+        {
+            if(charCount > 1)
+            {
+                flatList->typeSpecs[0] = typeSpecifierCreate(false);
+                flatList->typeSpecs[0]->dataType = SIGNED_CHAR_TYPE;
+            }
+            else if(shortCount > 1)
+            {
+                flatList->typeSpecs[0] = typeSpecifierCreate(false);
+                flatList->typeSpecs[0]->dataType = SHORT_TYPE;
+            }
+            else if(longCount == 1)
+            {
+                flatList->typeSpecs[0] = typeSpecifierCreate(false);
+                flatList->typeSpecs[0]->dataType = INT_TYPE;
+            }
+            else if(longCount > 1)
+            {
+                flatList->typeSpecs[0] = typeSpecifierCreate(false);
+                flatList->typeSpecs[0]->dataType = LONG_TYPE;
+            }
+            else if(intCount > 1)
+            {
+                flatList->typeSpecs[0] = typeSpecifierCreate(false);
+                flatList->typeSpecs[0]->dataType = INT_TYPE;
+            }
+        }
+
+        if(floatCount > 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = FLOAT_TYPE;
+        }
+
+        else if (doubleCount > 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = DOUBLE_TYPE;
+        }
+
+        return flatList;
+    }
+}

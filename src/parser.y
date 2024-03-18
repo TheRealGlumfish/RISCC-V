@@ -5,6 +5,7 @@
     #include <stdio.h>
     #include <stdint.h>
     #include <stdbool.h>
+    #include <string.h>
 
     #include "../src/ast.h"
     #include "../src/symbol.h"
@@ -184,8 +185,16 @@ primary_expression
         }
 	| STRING_LITERAL {
         $$ = exprCreate(CONSTANT_EXPR);
-		$$->constant = constantExprCreate(CHAR_TYPE, true);
-        $$->constant->string_const = $1;
+        if (strlen($1) == 1)
+        {
+		    $$->constant = constantExprCreate(CHAR_TYPE, false);
+            $$->constant->char_const = $1[0];
+        }
+        else
+        {
+		    $$->constant = constantExprCreate(CHAR_TYPE, true);
+            $$->constant->string_const = $1;
+        }
         }
 	| OPEN_BRACKET expression CLOSE_BRACKET { $$ = $2; }
 	;

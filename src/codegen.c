@@ -919,6 +919,11 @@ void compileStmt(Stmt *stmt)
         compileJumpStmt(stmt->jumpStmt);
         break;
     }
+    case COMPOUND_STMT:
+    {
+        compileCompoundStmt(stmt->compoundStmt);
+        break;
+    }
     default:
     {
         fprintf(stderr, "Statement type: %i, not supported...\n", stmt->type);
@@ -960,15 +965,32 @@ void compileJumpStmt(JumpStmt *stmt)
             }
             for (size_t i = 1; i <= 11; i++) // Restore S1-S11
             {
-                fprintf(outFile, "\tsw s%lu, -%lu(fp)\n", i, 4 + (i * 4)); // Save RA
+                fprintf(outFile, "\tsw s%lu, -%lu(fp)\n", i, 8 + (i * 4)); // Save RA
             }
             fprintf(outFile, "\tmv sp, fp\n");
-            fprintf(outFile, "\tlw ra, -4(fp)\n");
-            fprintf(outFile, "\tlw fp, 0(fp)\n");
+            fprintf(outFile, "\tlw ra, -8(fp)\n");
+            fprintf(outFile, "\tlw fp, -4(fp)\n");
             // fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
             fprintf(outFile, "\tret\n");
         }
     }
+    }
+}
+
+void compileCompoundStmt(CompoundStmt *stmt)
+{
+    for (size_t i = 0; i < stmt->declList.size; i++)
+    {
+        if (stmt->declList.decls[i]->declInit->initExpr != NULL)
+        {
+            compileExpr(stmt->declList.decls[i]->declInit->initExpr, A0);
+            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(A0), stmt->declList.decls[i]->symbolEntry->stackOffset);
+        }
+    }
+
+    for (size_t i = 0; i < stmt->stmtList.size; i++)
+    {
+        compileStmt(stmt->stmtList.stmts[i]);
     }
 }
 
@@ -983,11 +1005,11 @@ void compileFunc(FuncDef *func)
     fprintf(outFile, ".globl %s\n", func->ident);
     fprintf(outFile, ".type %s, @function\n", func->ident);
     fprintf(outFile, "%s:\n", func->ident);
-    fprintf(outFile, "\tsw fp, 0(sp)\n");  // Save FP, never gets restored
-    fprintf(outFile, "\tsw ra, -4(sp)\n"); // Save RA
+    fprintf(outFile, "\tsw fp, -4(sp)\n");  // Save FP, never gets restored
+    fprintf(outFile, "\tsw ra, -8(sp)\n"); // Save RA
     for (size_t i = 1; i <= 11; i++)       // Save S1-S11
     {
-        fprintf(outFile, "\tsw s%lu, -%lu(sp)\n", i, 4 + (i * 4)); // Save RA
+        fprintf(outFile, "\tsw s%lu, -%lu(sp)\n", i, 8 + (i * 4)); // Save RA
     }
     fprintf(outFile, "\tmv fp, sp\n");
     fprintf(outFile, "\taddi sp, sp, -%lu\n", func->symbolEntry->size);
@@ -997,7 +1019,7 @@ void compileFunc(FuncDef *func)
     {
         compileFuncArgs(func->args);
     }
-
+    // TODO: Potentially remove
     if (func->body != NULL)
     {
         for (size_t i = 0; i < func->body->compoundStmt->declList.size; i++)
@@ -1018,10 +1040,10 @@ void compileFunc(FuncDef *func)
     // fprintf(outFile, "\tmv sp, fp\n");
     for (size_t i = 1; i <= 11; i++) // Restore S1-S11
     {
-        fprintf(outFile, "\tsw s%lu, -%lu(fp)\n", i, 4 + (i * 4)); // Save RA
+        fprintf(outFile, "\tsw s%lu, -%lu(fp)\n", i, 8 + (i * 4)); // Save RA
     }
-    fprintf(outFile, "\tlw ra, -4(fp)\n");
-    fprintf(outFile, "\tlw fp, 0(fp)\n");
+    fprintf(outFile, "\tlw ra, -8(fp)\n");
+    fprintf(outFile, "\tlw fp, -4(fp)\n");
     fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
     fprintf(outFile, "\tret\n");
 }

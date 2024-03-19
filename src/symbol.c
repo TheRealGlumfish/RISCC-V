@@ -22,7 +22,7 @@ SymbolEntry *symbolEntryCreate(char *ident, TypeSpecifier type, size_t size, boo
 
     if (isFunc)
     {
-        symbolEntry->size = size + (4 * (2 + 11 + 7)); // space allocated for ra and fp and s1-s11 and t0-t6
+        symbolEntry->size = size + (4 * (2 + 11 + 7)) + (8 * (12)); // space allocated for ra and fp and s1-s11 and t0-t6 and ft0-ft11
     }
     else
     {

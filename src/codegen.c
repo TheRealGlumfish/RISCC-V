@@ -901,12 +901,20 @@ void compileFuncExpr(FuncExpr *expr, Reg dest)
     {
         fprintf(outFile, "\tsw t%lu, -%lu(fp)\n", i, 52 + 4 + (i * 4));
     }
+    for (size_t i = 0; i <= 11; i++) // Store FT0-FT11
+    {
+        fprintf(outFile, "\tfsd ft%lu, -%lu(fp)\n", i, 80 + 8 + (i * 8));
+    }
     fprintf(outFile, "\tcall %s\n", expr->ident);
     for (size_t i = 0; i <= 6; i++) // Restore T0-T7
     {
         fprintf(outFile, "\tlw t%lu, -%lu(fp)\n", i, 52 + 4 + (i * 4));
     }
-    // fprintf(outFile, "\tmv fp, sp\n");
+    // TODO: Check if treating all floating point registers as holding doubles is okay
+    for (size_t i = 0; i <= 11; i++) // Restore FT0-FT11
+    {
+        fprintf(outFile, "\tfld ft%lu, -%lu(fp)\n", i, 80 + 8 + (i * 8));
+    }
     if (expr->type == FLOAT_TYPE || expr->type == DOUBLE_TYPE)
     {
         fprintf(outFile, "\tmv %s, fa0\n", regStr(dest));

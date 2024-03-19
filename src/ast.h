@@ -169,6 +169,7 @@ typedef struct WhileStmt
     Expr *condition;
     Stmt *body;
     bool doWhile;
+    int id;
 } WhileStmt;
 
 typedef struct ForStmt

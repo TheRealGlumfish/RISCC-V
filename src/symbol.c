@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 
+int whileCount = 0;
+
 // constructor for symbol entry
 SymbolEntry *symbolEntryCreate(char *ident, TypeSpecifier type, size_t size, bool isFunc)
 {

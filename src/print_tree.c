@@ -566,7 +566,7 @@ void displayFuncDef(FuncDef *funcDef, int indent)
         displayTypeSpec(funcDef->retType->typeSpecs[i], indent);
     }
 
-    if (funcDef->args.size != 0)
+    if(funcDef->isParam)
     {
         for (size_t i = 0; i < funcDef->args.size; i++)
         {

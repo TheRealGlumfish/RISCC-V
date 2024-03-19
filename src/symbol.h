@@ -5,13 +5,21 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+typedef enum EntryType
+{
+    FUNCTION_ENTRY,
+    VARIABLE_ENTRY,
+    WHILE_ENTRY,
+    SWITCH_ENTRY,
+} EntryType;
+
 typedef struct SymbolEntry
 {
     char *ident;
     TypeSpecifier type;
     size_t stackOffset;
     size_t size;
-    bool isFunc;
+    EntryType entryType;
 } SymbolEntry;
 
 typedef struct SymbolTable SymbolTable;
@@ -30,7 +38,7 @@ typedef struct SymbolTable
     size_t chldrenCapacity;
 } SymbolTable;
 
-SymbolEntry *symbolEntryCreate(char *ident, TypeSpecifier type, size_t size, bool isFunc);
+SymbolEntry *symbolEntryCreate(char *ident, size_t size, EntryType entryType);
 void symbolEntryDestroy(SymbolEntry *symbolEntry);
 
 SymbolTable *symbolTableCreate(size_t entryLength, size_t childrenLength, SymbolTable *parentTable, SymbolEntry *masterFunc);
@@ -44,7 +52,7 @@ void entryPush(SymbolTable *symbolTable, SymbolEntry *symbolEntry);
 void symbolTableDestroy(SymbolTable *symbolTable);
 void childTablePush(SymbolTable *symbolTable, SymbolTable *childTable);
 
-SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident);
+SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident, EntryType EntryType);
 
 SymbolTable *populateSymbolTable(TranslationUnit *rootExpr);
 

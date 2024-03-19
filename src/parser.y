@@ -319,7 +319,7 @@ cast_expression
 	| OPEN_BRACKET type_name CLOSE_BRACKET cast_expression {
         $$ = $4;
         fprintf(stderr, "Casts not implemented, ignoring...");
-        } // Casts out of spec
+    } // Casts out of spec
 	;
 
 multiplicative_expression

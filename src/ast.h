@@ -169,7 +169,7 @@ typedef struct WhileStmt
     Expr *condition;
     Stmt *body;
     bool doWhile;
-    int id;
+    SymbolEntry *symbolEntry;
 } WhileStmt;
 
 typedef struct ForStmt
@@ -191,6 +191,7 @@ typedef struct SwitchStmt
 {
     Expr *selector;
     Stmt *body;
+    SymbolEntry *symbolEntry;
 } SwitchStmt;
 
 typedef struct ExprStmt
@@ -320,6 +321,7 @@ typedef struct JumpStmt
     JumpType type;
     char *ident; // can be NULL
     Expr *expr;  // can be NULL
+    SymbolEntry *symbolEntry;
 } JumpStmt;
 
 typedef struct FuncDef

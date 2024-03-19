@@ -94,6 +94,7 @@ void compileFuncExpr(FuncExpr *expr, Reg dest);
 
 void compileStmt(Stmt *stmt);
 void compileJumpStmt(JumpStmt *stmt);
+void compileCompoundStmt(CompoundStmt *stmt);
 
 void compileFunc(FuncDef *func);
 void compileFuncArgs(DeclarationList declList);

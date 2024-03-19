@@ -9,7 +9,8 @@
 
 FILE *outFile;
 
-uint64_t LCLabelId;
+size_t LCLabelId = 0;
+size_t ifLabelId = 0;
 bool regs[64] = {0};
 
 const char *regStr(Reg reg)
@@ -191,13 +192,13 @@ void freeReg(Reg reg)
 }
 
 // Gets a "unique" number, aborts if we run out of numbers
-uint64_t getId(uint64_t *num)
+size_t getId(size_t *num)
 {
-    if (num + 1 < num)
+    if (*num + 1 < *num)
     {
         abort();
     }
-    return *num++; // TODO: Check if this works as expected
+    return (*num)++; // TODO: Check if this works as expected
 }
 
 void compileExpr(Expr *expr, Reg dest)
@@ -767,6 +768,11 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
         fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
         break;
     }
+    case UNSIGNED_INT_TYPE:
+    {
+        fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        break;
+    }
     case FLOAT_TYPE:
     {
         fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
@@ -779,7 +785,7 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
     }
     default:
     {
-        fprintf(stderr, "Non-interger types not supported, exiting\n");
+        fprintf(stderr, "Type not supported, exiting...\n");
         exit(EXIT_FAILURE);
     }
     }
@@ -924,6 +930,11 @@ void compileStmt(Stmt *stmt)
         compileCompoundStmt(stmt->compoundStmt);
         break;
     }
+    case IF_STMT:
+    {
+        compileIfStmt(stmt->ifStmt);
+        break;
+    }
     default:
     {
         fprintf(stderr, "Statement type: %i, not supported...\n", stmt->type);
@@ -991,6 +1002,31 @@ void compileCompoundStmt(CompoundStmt *stmt)
     for (size_t i = 0; i < stmt->stmtList.size; i++)
     {
         compileStmt(stmt->stmtList.stmts[i]);
+    }
+}
+
+void compileIfStmt(IfStmt *stmt)
+{
+    Reg condition = getTmpReg();
+    compileExpr(stmt->condition, condition);
+    size_t endId = getId(&ifLabelId); 
+    size_t elseId = getId(&ifLabelId);
+    if(stmt->falseBody != NULL)
+    {
+        fprintf(outFile, "\tbeqz %s, .IF%lu\n", regStr(condition), elseId);
+        freeReg(condition);
+        compileStmt(stmt->trueBody);
+        fprintf(outFile, "\tj .IF%lu\n", endId);
+        fprintf(outFile, ".IF%lu:\n", elseId);
+        compileStmt(stmt->falseBody);
+        fprintf(outFile, ".IF%lu:\n", endId);
+    }
+    else
+    {
+        fprintf(outFile, "\tbeqz %s, .IF%lu\n", regStr(condition), endId);
+        freeReg(condition);
+        compileStmt(stmt->trueBody);
+        fprintf(outFile, ".IF%lu:\n", endId);
     }
 }
 

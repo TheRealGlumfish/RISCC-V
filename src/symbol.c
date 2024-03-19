@@ -373,7 +373,10 @@ void scanIfStmt(IfStmt *ifStmt, SymbolTable *parentTable)
 {
     scanExpr(ifStmt->condition, parentTable);
     scanStmt(ifStmt->trueBody, parentTable);
-    scanStmt(ifStmt->falseBody, parentTable);
+    if (ifStmt->falseBody != NULL)
+    {
+        scanStmt(ifStmt->falseBody, parentTable);
+    }
 }
 
 void scanForStmt(ForStmt *forStmt, SymbolTable *parentTable)

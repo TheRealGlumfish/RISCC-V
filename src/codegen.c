@@ -897,7 +897,15 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
 void compileFuncExpr(FuncExpr *expr, Reg dest)
 {
     compileCallArgs(expr);
+    for (size_t i = 0; i <= 6; i++) // Store T0-T7
+    {
+        fprintf(outFile, "\tsw t%lu, -%lu(fp)\n", i, 52 + 4 + (i * 4));
+    }
     fprintf(outFile, "\tcall %s\n", expr->ident);
+    for (size_t i = 0; i <= 6; i++) // Restore T0-T7
+    {
+        fprintf(outFile, "\tlw t%lu, -%lu(fp)\n", i, 52 + 4 + (i * 4));
+    }
     // fprintf(outFile, "\tmv fp, sp\n");
     if (expr->type == FLOAT_TYPE || expr->type == DOUBLE_TYPE)
     {
@@ -976,7 +984,7 @@ void compileJumpStmt(JumpStmt *stmt)
             }
             for (size_t i = 1; i <= 11; i++) // Restore S1-S11
             {
-                fprintf(outFile, "\tsw s%lu, -%lu(fp)\n", i, 8 + (i * 4)); // Save RA
+                fprintf(outFile, "\tlw s%lu, -%lu(fp)\n", i, 8 + (i * 4)); // Save RA
             }
             fprintf(outFile, "\tmv sp, fp\n");
             fprintf(outFile, "\tlw ra, -8(fp)\n");
@@ -1076,7 +1084,7 @@ void compileFunc(FuncDef *func)
     // fprintf(outFile, "\tmv sp, fp\n");
     for (size_t i = 1; i <= 11; i++) // Restore S1-S11
     {
-        fprintf(outFile, "\tsw s%lu, -%lu(fp)\n", i, 8 + (i * 4)); // Save RA
+        fprintf(outFile, "\tlw s%lu, -%lu(fp)\n", i, 8 + (i * 4)); // Save RA
     }
     fprintf(outFile, "\tlw ra, -8(fp)\n");
     fprintf(outFile, "\tlw fp, -4(fp)\n");
@@ -1089,8 +1097,8 @@ void compileCallArgs(FuncExpr *expr)
     Reg intRegs[8] = {A0, A1, A2, A3, A4, A5, A6, A7};
     Reg floatRegs[8] = {FA0, FA1, FA2, FA3, FA4, FA5, FA6, FA7};
 
-    size_t maxFloatRegs = 8;
-    size_t maxIntRegs = 8;
+    const size_t maxFloatRegs = 8;
+    const size_t maxIntRegs = 8;
 
     size_t usedFloatRegs = 0;
     size_t usedIntRegs = 0;

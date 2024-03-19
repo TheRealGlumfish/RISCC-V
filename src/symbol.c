@@ -242,7 +242,7 @@ void displaySymbolEntry(SymbolEntry *symbolEntry)
         type = "NULL";
     }
     }
-    printf("%s | %zu | %zu | %s\n", symbolEntry->ident, symbolEntry->stackOffset, symbolEntry->size, type);
+    printf("0x%x | %s | %zu | %zu | %s\n", symbolEntry, symbolEntry->ident, symbolEntry->stackOffset, symbolEntry->size, type);
 }
 
 void displaySymbolTable(SymbolTable *symbolTable)
@@ -287,6 +287,7 @@ void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
 void scanAssignment(AssignExpr *assignExpr, SymbolTable *parentTable)
 {
     assignExpr->symbolEntry = getSymbolEntry(parentTable, assignExpr->ident);
+    
     if (assignExpr->lvalue != NULL)
     {
         scanExpr(assignExpr->lvalue, parentTable);
@@ -396,11 +397,6 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
     SymbolTable *childTable = symbolTableCreate(0, 0, parentTable, parentTable->masterFunc);
     childTablePush(parentTable, childTable);
 
-    for (size_t i = 0; i < compoundStmt->stmtList.size; i++)
-    {
-        scanStmt(compoundStmt->stmtList.stmts[i], childTable);
-    }
-
     for (size_t i = 0; i < compoundStmt->declList.size; i++)
     {
         char *ident = compoundStmt->declList.decls[i]->declInit->declarator->ident;
@@ -410,6 +406,16 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
         entryPush(childTable, symbolEntry);
         compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
+
+        if(compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
+        {
+            scanExpr(compoundStmt->declList.decls[i]->declInit->initExpr, childTable);
+        }
+    }
+
+    for (size_t i = 0; i < compoundStmt->stmtList.size; i++)
+    {
+        scanStmt(compoundStmt->stmtList.stmts[i], childTable);
     }
 }
 
@@ -499,6 +505,11 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
             SymbolEntry *symbolEntry = symbolEntryCreate(ident, type, size, false);
             entryPush(childTable, symbolEntry);
             funcDef->body->compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
+
+            if(funcDef->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
+            {
+                scanExpr(funcDef->body->compoundStmt->declList.decls[i]->declInit->initExpr, childTable);
+            }
         }
 
         for (size_t i = 0; i < funcDef->body->compoundStmt->stmtList.size; i++)

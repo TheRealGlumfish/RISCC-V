@@ -9,7 +9,8 @@
 
 FILE *outFile;
 
-uint64_t LCLabelId;
+size_t LCLabelId = 0;
+size_t ifLabelId = 0;
 bool regs[64] = {0};
 
 const char *regStr(Reg reg)
@@ -191,13 +192,13 @@ void freeReg(Reg reg)
 }
 
 // Gets a "unique" number, aborts if we run out of numbers
-uint64_t getId(uint64_t *num)
+size_t getId(size_t *num)
 {
-    if (num + 1 < num)
+    if (*num + 1 < *num)
     {
         abort();
     }
-    return *num++; // TODO: Check if this works as expected
+    return (*num)++; // TODO: Check if this works as expected
 }
 
 void compileExpr(Expr *expr, Reg dest)
@@ -767,6 +768,11 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
         fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
         break;
     }
+    case UNSIGNED_INT_TYPE:
+    {
+        fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        break;
+    }
     case FLOAT_TYPE:
     {
         fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
@@ -779,7 +785,7 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
     }
     default:
     {
-        fprintf(stderr, "Non-interger types not supported, exiting\n");
+        fprintf(stderr, "Type not supported, exiting...\n");
         exit(EXIT_FAILURE);
     }
     }
@@ -891,8 +897,24 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
 void compileFuncExpr(FuncExpr *expr, Reg dest)
 {
     compileCallArgs(expr);
+    for (size_t i = 0; i <= 6; i++) // Store T0-T7
+    {
+        fprintf(outFile, "\tsw t%lu, -%lu(fp)\n", i, 52 + 4 + (i * 4));
+    }
+    for (size_t i = 0; i <= 11; i++) // Store FT0-FT11
+    {
+        fprintf(outFile, "\tfsd ft%lu, -%lu(fp)\n", i, 80 + 8 + (i * 8));
+    }
     fprintf(outFile, "\tcall %s\n", expr->ident);
-    // fprintf(outFile, "\tmv fp, sp\n");
+    for (size_t i = 0; i <= 6; i++) // Restore T0-T7
+    {
+        fprintf(outFile, "\tlw t%lu, -%lu(fp)\n", i, 52 + 4 + (i * 4));
+    }
+    // TODO: Check if treating all floating point registers as holding doubles is okay
+    for (size_t i = 0; i <= 11; i++) // Restore FT0-FT11
+    {
+        fprintf(outFile, "\tfld ft%lu, -%lu(fp)\n", i, 80 + 8 + (i * 8));
+    }
     if (expr->type == FLOAT_TYPE || expr->type == DOUBLE_TYPE)
     {
         fprintf(outFile, "\tmv %s, fa0\n", regStr(dest));
@@ -922,6 +944,11 @@ void compileStmt(Stmt *stmt)
     case COMPOUND_STMT:
     {
         compileCompoundStmt(stmt->compoundStmt);
+        break;
+    }
+    case IF_STMT:
+    {
+        compileIfStmt(stmt->ifStmt);
         break;
     }
     default:
@@ -965,7 +992,7 @@ void compileJumpStmt(JumpStmt *stmt)
             }
             for (size_t i = 1; i <= 11; i++) // Restore S1-S11
             {
-                fprintf(outFile, "\tsw s%lu, -%lu(fp)\n", i, 8 + (i * 4)); // Save RA
+                fprintf(outFile, "\tlw s%lu, -%lu(fp)\n", i, 8 + (i * 4)); // Save RA
             }
             fprintf(outFile, "\tmv sp, fp\n");
             fprintf(outFile, "\tlw ra, -8(fp)\n");
@@ -991,6 +1018,31 @@ void compileCompoundStmt(CompoundStmt *stmt)
     for (size_t i = 0; i < stmt->stmtList.size; i++)
     {
         compileStmt(stmt->stmtList.stmts[i]);
+    }
+}
+
+void compileIfStmt(IfStmt *stmt)
+{
+    Reg condition = getTmpReg();
+    compileExpr(stmt->condition, condition);
+    size_t endId = getId(&ifLabelId); 
+    size_t elseId = getId(&ifLabelId);
+    if(stmt->falseBody != NULL)
+    {
+        fprintf(outFile, "\tbeqz %s, .IF%lu\n", regStr(condition), elseId);
+        freeReg(condition);
+        compileStmt(stmt->trueBody);
+        fprintf(outFile, "\tj .IF%lu\n", endId);
+        fprintf(outFile, ".IF%lu:\n", elseId);
+        compileStmt(stmt->falseBody);
+        fprintf(outFile, ".IF%lu:\n", endId);
+    }
+    else
+    {
+        fprintf(outFile, "\tbeqz %s, .IF%lu\n", regStr(condition), endId);
+        freeReg(condition);
+        compileStmt(stmt->trueBody);
+        fprintf(outFile, ".IF%lu:\n", endId);
     }
 }
 
@@ -1040,7 +1092,7 @@ void compileFunc(FuncDef *func)
     // fprintf(outFile, "\tmv sp, fp\n");
     for (size_t i = 1; i <= 11; i++) // Restore S1-S11
     {
-        fprintf(outFile, "\tsw s%lu, -%lu(fp)\n", i, 8 + (i * 4)); // Save RA
+        fprintf(outFile, "\tlw s%lu, -%lu(fp)\n", i, 8 + (i * 4)); // Save RA
     }
     fprintf(outFile, "\tlw ra, -8(fp)\n");
     fprintf(outFile, "\tlw fp, -4(fp)\n");
@@ -1053,8 +1105,8 @@ void compileCallArgs(FuncExpr *expr)
     Reg intRegs[8] = {A0, A1, A2, A3, A4, A5, A6, A7};
     Reg floatRegs[8] = {FA0, FA1, FA2, FA3, FA4, FA5, FA6, FA7};
 
-    size_t maxFloatRegs = 8;
-    size_t maxIntRegs = 8;
+    const size_t maxFloatRegs = 8;
+    const size_t maxIntRegs = 8;
 
     size_t usedFloatRegs = 0;
     size_t usedIntRegs = 0;

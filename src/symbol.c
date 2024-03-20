@@ -23,7 +23,7 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t size, EntryType entryType)
     switch(entryType)
     {
         case FUNCTION_ENTRY:
-            symbolEntry->size = size + ( 4 * (2 + 11) ); // space allocated for ra and fp and s1-s11
+            symbolEntry->size = size + (4 * (2 + 11 + 7)) + (8 * (12)); // space allocated for ra and fp and s1-s11 and t0-t6 and ft0-ft11
             break;
 
         case VARIABLE_ENTRY:
@@ -287,10 +287,10 @@ void scanExpr(Expr *expr, SymbolTable *parentTable);
 
 void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
 {
-    funcExpr->symbolEntry = getSymbolEntry(parentTable, funcExpr->ident, FUNCTION_ENTRY);
-    if(funcExpr->symbolEntry == NULL)
+    funcExpr->symbolEntry = getSymbolEntry(parentTable, funcExpr->ident);
+    for (size_t i = 0; i < funcExpr->argsSize; i++)
     {
-        printf("HARAM\n");
+        scanExpr(funcExpr->args[i], parentTable);
     }
 }
 
@@ -341,7 +341,7 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
     case OPERATION_EXPR:
     {
         scanOperationExpr(expr->operation, parentTable);
-        if (expr->operation->operator == SIZEOF_OP)
+        if (expr->operation->operator== SIZEOF_OP)
         {
             expr->operation->type = UNSIGNED_INT_TYPE;
         }
@@ -360,7 +360,7 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
     case FUNC_EXPR:
     {
         scanFuncExpr(expr->function, parentTable);
-        if(expr->function->symbolEntry != NULL)
+        if (expr->function->symbolEntry != NULL)
         {
             expr->function->type = expr->function->symbolEntry->type.dataType;
         }
@@ -395,7 +395,10 @@ void scanIfStmt(IfStmt *ifStmt, SymbolTable *parentTable)
 {
     scanExpr(ifStmt->condition, parentTable);
     scanStmt(ifStmt->trueBody, parentTable);
-    scanStmt(ifStmt->falseBody, parentTable);
+    if (ifStmt->falseBody != NULL)
+    {
+        scanStmt(ifStmt->falseBody, parentTable);
+    }
 }
 
 void scanForStmt(ForStmt *forStmt, SymbolTable *parentTable)
@@ -442,7 +445,7 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
         entryPush(childTable, symbolEntry);
         compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
 
-        if(compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
+        if (compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
         {
             scanExpr(compoundStmt->declList.decls[i]->declInit->initExpr, childTable);
         }
@@ -540,7 +543,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
         // arguments added to child scope
         for (size_t i = 0; i < funcDef->args.size; i++)
         {
-            if(funcDef->args.decls[i]->declInit != NULL)
+            if (funcDef->args.decls[i]->declInit != NULL)
             {
                 char *ident = funcDef->args.decls[i]->declInit->declarator->ident;
                 TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
@@ -554,7 +557,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
         }
     }
 
-    if(funcDef->body != NULL)
+    if (funcDef->body != NULL)
     {
         // add body to child table
         for (size_t i = 0; i < funcDef->body->compoundStmt->declList.size; i++)
@@ -568,7 +571,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
             entryPush(childTable, symbolEntry);
             funcDef->body->compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
 
-            if(funcDef->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
+            if (funcDef->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
             {
                 scanExpr(funcDef->body->compoundStmt->declList.decls[i]->declInit->initExpr, childTable);
             }
@@ -579,18 +582,18 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
             scanStmt(funcDef->body->compoundStmt->stmtList.stmts[i], childTable);
         }
     }
-    
 }
 
 void scanTransUnit(TranslationUnit *transUnit, SymbolTable *parentTable)
 {
-    for(size_t i = 0; i < transUnit->size; i++)
+    for (size_t i = 0; i < transUnit->size; i++)
     {
-        if(transUnit->externDecls[i]->isFunc)
+        if (transUnit->externDecls[i]->isFunc)
         {
             scanFuncDef(transUnit->externDecls[i]->funcDef, parentTable);
         }
-        else {
+        else
+        {
             for (size_t i = 0; i < transUnit->externDecls[i]->declList.size; i++)
             {
                 char *ident = transUnit->externDecls[i]->declList.decls[i]->declInit->declarator->ident;

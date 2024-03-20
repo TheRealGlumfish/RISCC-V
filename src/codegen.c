@@ -332,38 +332,60 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         {
         case FLOAT_TYPE:
         {
-            // TODO: Deal with non-long types
-            Reg op1 = getTmpFltReg();
-            Reg op2 = getTmpFltReg();
-            compileExpr(expr->op1, op1);
-            compileExpr(expr->op2, op2);
-            fprintf(outFile, "\tfsub.s %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-            freeReg(op1);
-            freeReg(op2);
+            if (expr->op2 == NULL)
+            {
+                compileExpr(expr->op1, dest);
+                fprintf(outFile, "\tfneg.s %s, %s\n", regStr(dest), regStr(dest));
+            }
+            else
+            {
+                Reg op1 = getTmpFltReg();
+                Reg op2 = getTmpFltReg();
+                compileExpr(expr->op1, op1);
+                compileExpr(expr->op2, op2);
+                fprintf(outFile, "\tfsub.s %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+                freeReg(op1);
+                freeReg(op2);
+            }
             break;
         }
         case DOUBLE_TYPE:
         {
-            // TODO: Deal with non-long types
-            Reg op1 = getTmpFltReg();
-            Reg op2 = getTmpFltReg();
-            compileExpr(expr->op1, op1);
-            compileExpr(expr->op2, op2);
-            fprintf(outFile, "\tfsub.d %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-            freeReg(op1);
-            freeReg(op2);
+            if (expr->op2 == NULL)
+            {
+                compileExpr(expr->op1, dest);
+                fprintf(outFile, "\tfneg.s %s, %s\n", regStr(dest), regStr(dest));
+            }
+            else        
+            {
+                Reg op1 = getTmpFltReg();
+                Reg op2 = getTmpFltReg();
+                compileExpr(expr->op1, op1);
+                compileExpr(expr->op2, op2);
+                fprintf(outFile, "\tfsub.d %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+                freeReg(op1);
+                freeReg(op2);
+            }
             break;
         }
         default:
         {
-            // TODO: Deal with non-long types
-            Reg op1 = getTmpReg();
-            Reg op2 = getTmpReg();
-            compileExpr(expr->op1, op1);
-            compileExpr(expr->op2, op2);
-            fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-            freeReg(op1);
-            freeReg(op2);
+            if (expr->op2 == NULL)
+            {
+                compileExpr(expr->op1, dest);
+                fprintf(outFile, "\tneg %s, %s\n", regStr(dest), regStr(dest)); 
+            }
+            else
+            {
+                // TODO: Deal with non-long types
+                Reg op1 = getTmpReg();
+                Reg op2 = getTmpReg();
+                compileExpr(expr->op1, op1);
+                compileExpr(expr->op2, op2);
+                fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+                freeReg(op1);
+                freeReg(op2);
+            }
             break;
         }
         }
@@ -771,6 +793,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     }
     case DEC_POST:
     {
+        // TODO: Fix memory leaks everywhere
         // TODO: Handle types (add float code)
         if (expr->op1->type != VARIABLE_EXPR)
         {

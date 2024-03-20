@@ -96,6 +96,8 @@ void compileStmt(Stmt *stmt);
 void compileJumpStmt(JumpStmt *stmt);
 void compileCompoundStmt(CompoundStmt *stmt);
 void compileIfStmt(IfStmt *stmt);
+void compileWhileStmt(WhileStmt *stmt);
+void compileForStmt(ForStmt *stmt);
 
 void compileFunc(FuncDef *func);
 void compileFuncArgs(DeclarationList declList);

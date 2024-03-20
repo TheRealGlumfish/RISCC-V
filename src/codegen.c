@@ -260,9 +260,14 @@ void compileConstantExpr(ConstantExpr *expr, const Reg dest)
         }
         case FLOAT_TYPE:
         {
-            Reg op1 = getTmpFltReg();
-            fprintf(outFile, "\tli %s, %ui\n", regStr(op1), (unsigned int)expr->float_const);
-            fprintf(outFile, "\tfmv.s %s, %s\n", regStr(dest), regStr(op1));
+            Reg address = getTmpReg();
+            uint64_t labelId = getId(&LCLabelId);
+            fprintf(outFile, ".section .rodata\n");
+            fprintf(outFile, ".LC%lu:\n", labelId);
+            fprintf(outFile, "\t.float %f\n", expr->float_const);
+            fprintf(outFile, ".text\n");
+            fprintf(outFile, "\tlui %s, %%hi(.LC%lu)\n", regStr(address), labelId);
+            fprintf(outFile, "\tflw %s, %%lo(.LC%lu)(%s)\n", regStr(dest), labelId, regStr(address));
             break;
         }
         default:
@@ -713,6 +718,37 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         exprDestroy(one);
         break;
     }
+    case INC_POST:
+    {
+        // TODO: Handle types (add float support)
+        if (expr->op1->type != VARIABLE_EXPR)
+        {
+            fprintf(stderr, "Expression is not assignable, exiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        compileVariableExpr(expr->op1->variable, dest);
+        Expr *one = exprCreate(CONSTANT_EXPR);
+        one->constant = constantExprCreate(expr->type, false);
+        one->constant->int_const = 1;
+        AssignExpr *assign = assignExprCreate(one, ADD);
+        assign->type = expr->type;
+        assign->lvalue = NULL;
+        assign->ident = expr->op1->variable->ident;
+        assign->symbolEntry = expr->op1->variable->symbolEntry;
+        Reg tmp;
+        if (expr->type == FLOAT_TYPE || expr->type == DOUBLE_TYPE)
+        {
+            tmp = getTmpFltReg();
+        }
+        else
+        {
+            tmp = getTmpReg();
+        }
+        compileAssignExpr(assign, tmp);
+        freeReg(tmp);
+        exprDestroy(one);
+        break;
+    }
     case DEC:
     {
         // TODO: Handle types (add float code)
@@ -730,6 +766,37 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         assign->ident = expr->op1->variable->ident;
         assign->symbolEntry = expr->op1->variable->symbolEntry;
         compileAssignExpr(assign, dest);
+        exprDestroy(one);
+        break;
+    }
+    case DEC_POST:
+    {
+        // TODO: Handle types (add float code)
+        if (expr->op1->type != VARIABLE_EXPR)
+        {
+            fprintf(stderr, "Expression is not assignable, exiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        compileVariableExpr(expr->op1->variable, dest);
+        Expr *one = exprCreate(CONSTANT_EXPR);
+        one->constant = constantExprCreate(expr->type, false);
+        one->constant->int_const = 1;
+        AssignExpr *assign = assignExprCreate(one, SUB);
+        assign->type = expr->type;
+        assign->lvalue = NULL;
+        assign->ident = expr->op1->variable->ident;
+        assign->symbolEntry = expr->op1->variable->symbolEntry;
+        Reg tmp;
+        if (expr->type == FLOAT_TYPE || expr->type == DOUBLE_TYPE)
+        {
+            tmp = getTmpFltReg();
+        }
+        else
+        {
+            tmp = getTmpReg();
+        }
+        compileAssignExpr(assign, tmp);
+        freeReg(tmp);
         exprDestroy(one);
         break;
     }
@@ -801,6 +868,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
         if (expr->operator!= NOT)
         {
             OperationExpr *rvalue = operationExprCreate(expr->operator);
+            rvalue->type = expr->type; // TODO: Maybe remove?
             rvalue->op1 = expr->op;
             rvalue->op2 = exprCreate(VARIABLE_EXPR);
             // TODO: Resolve the type you set in op2
@@ -824,6 +892,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
         if (expr->operator!= NOT)
         {
             OperationExpr *rvalue = operationExprCreate(expr->operator);
+            rvalue->type = expr->type; // TODO: Maybe remove?
             rvalue->op1 = expr->op;
             rvalue->op2 = exprCreate(VARIABLE_EXPR);
             // TODO: Resolve the type you set in op2
@@ -933,7 +1002,14 @@ void compileStmt(Stmt *stmt)
     {
     case EXPR_STMT:
     {
-        compileExpr(stmt->exprStmt->expr, A0);
+        if (returnType(stmt->exprStmt->expr) == FLOAT_TYPE || returnType(stmt->exprStmt->expr) == DOUBLE_TYPE)
+        {
+            compileExpr(stmt->exprStmt->expr, FA0);
+        }
+        else
+        {
+            compileExpr(stmt->exprStmt->expr, A0);
+        }
         break;
     }
     case JUMP_STMT:
@@ -949,6 +1025,16 @@ void compileStmt(Stmt *stmt)
     case IF_STMT:
     {
         compileIfStmt(stmt->ifStmt);
+        break;
+    }
+    case WHILE_STMT:
+    {
+        compileWhileStmt(stmt->whileStmt);
+        break;
+    }
+    case FOR_STMT:
+    {
+        compileForStmt(stmt->forStmt);
         break;
     }
     default:
@@ -1000,6 +1086,41 @@ void compileJumpStmt(JumpStmt *stmt)
             // fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
             fprintf(outFile, "\tret\n");
         }
+        break;
+    }
+    case BREAK_JUMP:
+    {
+        switch (stmt->symbolEntry->entryType)
+        {
+        case WHILE_ENTRY:
+        {
+            fprintf(outFile, "\tj .WHILE_END%s\n", stmt->symbolEntry->ident);
+            break;
+        }
+        case FOR_ENTRY:
+        {
+            fprintf(outFile, "\tj .FOR_END%s\n", stmt->symbolEntry->ident);
+            break;
+        }
+        }
+        break;
+    }
+    case CONTINUE_JUMP:
+    {
+        switch (stmt->symbolEntry->entryType)
+        {
+        case WHILE_ENTRY:
+        {
+            fprintf(outFile, "\tj .WHILE%s\n", stmt->symbolEntry->ident);
+            break;
+        }
+        case FOR_ENTRY:
+        {
+            fprintf(outFile, "\tj .FOR%s\n", stmt->symbolEntry->ident);
+            break;
+        }
+        }
+        break;
     }
     }
 }
@@ -1025,9 +1146,9 @@ void compileIfStmt(IfStmt *stmt)
 {
     Reg condition = getTmpReg();
     compileExpr(stmt->condition, condition);
-    size_t endId = getId(&ifLabelId); 
+    size_t endId = getId(&ifLabelId);
     size_t elseId = getId(&ifLabelId);
-    if(stmt->falseBody != NULL)
+    if (stmt->falseBody != NULL)
     {
         fprintf(outFile, "\tbeqz %s, .IF%lu\n", regStr(condition), elseId);
         freeReg(condition);
@@ -1046,6 +1167,50 @@ void compileIfStmt(IfStmt *stmt)
     }
 }
 
+void compileWhileStmt(WhileStmt *stmt)
+{
+    Reg condition = getTmpReg();
+    // TODO: Add do while support
+    if (stmt->doWhile)
+    {
+        fprintf(outFile, ".DO_WHILE%s:\n", stmt->symbolEntry->ident);
+        compileStmt(stmt->body);
+        compileExpr(stmt->condition, condition);
+        fprintf(outFile, "\tbnez %s, .DO_WHILE%s\n", regStr(condition), stmt->symbolEntry->ident);
+        freeReg(condition);
+    }
+    else
+    {
+        fprintf(outFile, ".WHILE%s:\n", stmt->symbolEntry->ident);
+        compileExpr(stmt->condition, condition);
+        freeReg(condition);
+        fprintf(outFile, "\tbeqz %s, .WHILE_END%s\n", regStr(condition), stmt->symbolEntry->ident);
+        compileStmt(stmt->body);
+        fprintf(outFile, "\tj .WHILE%s\n", stmt->symbolEntry->ident);
+        fprintf(outFile, ".WHILE_END%s:\n", stmt->symbolEntry->ident);
+    }
+}
+
+void compileForStmt(ForStmt *stmt)
+{
+    Reg condition = getTmpReg();
+    compileStmt(stmt->init);
+    fprintf(outFile, ".FOR%s:\n", stmt->symbolEntry->ident);
+    compileExpr(stmt->condition->exprStmt->expr, condition);
+    fprintf(outFile, "\tbeqz %s, .FOR_END%s\n", regStr(condition), stmt->symbolEntry->ident);
+    freeReg(condition);
+    compileStmt(stmt->body);
+    if (stmt->modifier != NULL)
+    {
+        // TODO: Add code to deal with floats
+        Reg tmp = getTmpReg();
+        compileExpr(stmt->modifier, tmp);
+        getTmpReg();
+    }
+    fprintf(outFile, "\tj .FOR%s\n", stmt->symbolEntry->ident);
+    fprintf(outFile, ".FOR_END%s:\n", stmt->symbolEntry->ident);
+}
+
 // void compileArg(Decl *decl, Reg dest)
 // {
 //     fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), decl->symbolEntry->stackOffset);
@@ -1057,7 +1222,7 @@ void compileFunc(FuncDef *func)
     fprintf(outFile, ".globl %s\n", func->ident);
     fprintf(outFile, ".type %s, @function\n", func->ident);
     fprintf(outFile, "%s:\n", func->ident);
-    fprintf(outFile, "\tsw fp, -4(sp)\n");  // Save FP, never gets restored
+    fprintf(outFile, "\tsw fp, -4(sp)\n"); // Save FP, never gets restored
     fprintf(outFile, "\tsw ra, -8(sp)\n"); // Save RA
     for (size_t i = 1; i <= 11; i++)       // Save S1-S11
     {
@@ -1078,8 +1243,21 @@ void compileFunc(FuncDef *func)
         {
             if (func->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
             {
-                compileExpr(func->body->compoundStmt->declList.decls[i]->declInit->initExpr, A0);
-                fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(A0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
+                if (returnType(func->body->compoundStmt->declList.decls[i]->declInit->initExpr) == FLOAT_TYPE)
+                {
+                    compileExpr(func->body->compoundStmt->declList.decls[i]->declInit->initExpr, FA0);
+                    fprintf(outFile, "\tfsw %s, -%lu(fp)\n", regStr(FA0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
+                }
+                else if (returnType(func->body->compoundStmt->declList.decls[i]->declInit->initExpr) == DOUBLE_TYPE)
+                {
+                    compileExpr(func->body->compoundStmt->declList.decls[i]->declInit->initExpr, FA0);
+                    fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(FA0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
+                }
+                else
+                {
+                    compileExpr(func->body->compoundStmt->declList.decls[i]->declInit->initExpr, A0);
+                    fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(A0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
+                }
             }
         }
 

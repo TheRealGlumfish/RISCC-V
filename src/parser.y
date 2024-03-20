@@ -63,8 +63,7 @@
 %token PERIOD AND_LOGIC NOT_LOGIC NOT_OP SUB_OP ADD_OP MUL_OP DIV_OP MOD_OP
 %token LT_OP GT_OP XOR_OP OR_LOGIC TERN_OP
 
-%type <trans_unit_node> translation_unit
-%type <extern_decl_node> external_declaration
+%type <trans_unit_node> translation_unit external_declaration
 
 %type <expr_node>  primary_expression postfix_expression
 %type <func_node> argument_expression_list
@@ -117,25 +116,61 @@ ROOT
 
 translation_unit
 	: external_declaration {
-        $$ = transUnitCreate(1);
-        $$->externDecls[0] = $1;
-        }
-	| translation_unit external_declaration
-        {
-        transUnitPush($1, $2);
         $$ = $1;
+    }
+	| translation_unit external_declaration{
+        for(size_t i = 0; i < $2->size; i++)
+        {
+            transUnitPush($1, $2->externDecls[i]);
         }
+        free($2->externDecls);
+        free($2);
+    }
 	;
 
-external_declaration
+// returns a translation unit!
+external_declaration 
 	: function_definition { 
-        $$ = externDeclCreate(true);
-        $$->funcDef = $1;
+        ExternDecl *externDecl = externDeclCreate(true);
+        externDecl->funcDef = $1;
+
+        $$ = transUnitCreate(1);
+        $$->externDecls[0] = externDecl;
         }
 	| declaration{
-        $$ = externDeclCreate(false);
-        $$->declList = $1;     
+        $$ = transUnitCreate(0);
+
+        for(size_t i = 0; i < $1.size; i++)
+        {
+            Decl *decl = $1.decls[i];
+
+            // function prototype
+            if(decl->declInit->declarator->isFunc)
+            {
+                FuncDef *funcDef = funcDefCreate(decl->typeSpecList, decl->declInit->declarator->pointerCount, decl->declInit->declarator->ident);
+                funcDef->isPrototype = true;
+                funcDef->isParam = decl->declInit->declarator->isParam;
+                if(decl->declInit->declarator->isParam)
+                {   
+                        funcDef->args = decl->declInit->declarator->parameterList;
+                }
+                free(decl->declInit->declarator);
+                free(decl);
+                ExternDecl *externDecl = externDeclCreate(true);
+                externDecl->funcDef = funcDef;
+                transUnitPush($$, externDecl);
+            }
+
+            // global declaration
+            else
+            {
+                ExternDecl *externDecl = externDeclCreate(false);
+                externDecl->decl = decl;
+                transUnitPush($$, externDecl);
+            }            
         }
+        free($1.decls);
+    }
 	;
 
 function_definition
@@ -151,7 +186,7 @@ function_definition
     $$->body = $3;
     free($2);
 	}
-    | declaration_specifiers declarator SEMI_COLON{ // modification to original parser for function prototypes.
+    /* | declaration_specifiers declarator SEMI_COLON{ // modification to original parser for function prototypes.
     $$ = funcDefCreate($1, $2->pointerCount, $2->ident);
     $$->isPrototype = true;
     $$->isParam = $2->isParam;
@@ -160,7 +195,7 @@ function_definition
         $$->args = $2->parameterList;
     }
     free($2);
-    }
+    } */
 	| declarator declaration_list compound_statement
                 //TODO: Add error message "out of spec"
 	| declarator compound_statement
@@ -789,26 +824,29 @@ direct_declarator
 	: IDENTIFIER {
 		$$ = declaratorCreate();
 		$$->ident = $1;
-	    }
+                $$->isFunc = false; // false by default
+	}
 	| OPEN_BRACKET declarator CLOSE_BRACKET
 	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE {
-        $1->isArray = true;
-        $1->arraySize = $3;
-        $$ = $1;
+                $1->isArray = true;
+                $1->arraySize = $3;
+                $$ = $1;
         }
 	| direct_declarator OPEN_SQUARE CLOSE_SQUARE // array of unspecified size
 	| direct_declarator OPEN_BRACKET parameter_list CLOSE_BRACKET {
-        $1->parameterList = $3;
-        $1->isParam = true;
-        $$ = $1;
+                $$ = $1;
+                $$->parameterList = $3;
+                $$->isParam = true;
+                $$->isFunc = true;
         }
 	| direct_declarator OPEN_BRACKET identifier_list  CLOSE_BRACKET // just for K&R style
 	| direct_declarator OPEN_BRACKET CLOSE_BRACKET { // TODO: MAKE FUNCTIONS WITHOUT PARAMETERS
 		$$ = declaratorCreate();
-        $$->ident = $1->ident;
-        $$->isParam = false;
-        free($1);
-	    }
+                $$->ident = $1->ident;
+                $$->isParam = false;
+                $$->isFunc = true;
+                free($1);
+	}
 	;
 
 pointer
@@ -847,9 +885,9 @@ identifier_list
 
 type_name
 	: specifier_qualifier_list
-    {
-        $$ = $1;
-    }
+        {
+                $$ = $1;
+        }
 	| specifier_qualifier_list abstract_declarator
 	;
 

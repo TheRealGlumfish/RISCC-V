@@ -269,6 +269,7 @@ typedef struct Declarator
     DeclarationList parameterList;
     bool isArray;
     Expr *arraySize; // constant expression
+    bool isFunc;
 } Declarator;
 
 typedef struct DeclInit // holds declarator and sometimes initializers
@@ -347,7 +348,7 @@ typedef struct ExternDecl
 {
     bool isFunc;
     FuncDef *funcDef;
-    DeclarationList declList;
+    Decl *decl;
 } ExternDecl;
 
 typedef struct TranslationUnit

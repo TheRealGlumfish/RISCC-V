@@ -1387,7 +1387,7 @@ void externDeclDestroy(ExternDecl *externDecl)
     }
     else
     {
-        declarationListDestroy(&(externDecl->declList));
+        declDestroy(externDecl->decl);
     }
     free(externDecl);
 }

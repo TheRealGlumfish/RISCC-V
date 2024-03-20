@@ -35,7 +35,7 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t size, EntryType entryType)
             symbolEntry->size = size;
             break;
     }
-
+    symbolEntry->isGlobal = false;
     symbolEntry->entryType = entryType;
     return symbolEntry;
 }
@@ -253,7 +253,17 @@ void displaySymbolEntry(SymbolEntry *symbolEntry)
         type = "NULL";
     }
     }
-    printf("0x%x | %s | %zu | %zu | %s\n", symbolEntry, symbolEntry->ident, symbolEntry->stackOffset, symbolEntry->size, type);
+
+    char* localGlobal;
+    if(symbolEntry->isGlobal)
+    {
+        localGlobal = "GLOBAL";
+    }
+    else
+    {
+        localGlobal = "LOCAL";
+    }
+    printf("0x%x | %s | %zu | %zu | %s | %s\n", symbolEntry, symbolEntry->ident, symbolEntry->stackOffset, symbolEntry->size, type, localGlobal);
 }
 
 void displaySymbolTable(SymbolTable *symbolTable)
@@ -545,6 +555,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     // new function def symbol entry
     SymbolEntry *funcDefEntry = symbolEntryCreate(funcDef->ident, 0, FUNCTION_ENTRY);
     funcDefEntry->type = *(funcDef->retType->typeSpecs[0]);
+    funcDefEntry->isGlobal = true;
     entryPush(parentTable, funcDefEntry);
     funcDef->symbolEntry = funcDefEntry;
 
@@ -608,16 +619,14 @@ void scanTransUnit(TranslationUnit *transUnit, SymbolTable *parentTable)
         }
         else
         {
-            for (size_t i = 0; i < transUnit->externDecls[i]->declList.size; i++)
-            {
-                char *ident = transUnit->externDecls[i]->declList.decls[i]->declInit->declarator->ident;
-                TypeSpecifier type = *(transUnit->externDecls[i]->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-                size_t size = typeSize(type.dataType);
-                SymbolEntry *symbolEntry = symbolEntryCreate(ident, size, VARIABLE_ENTRY);
-                symbolEntry->type = type;
-                entryPush(parentTable, symbolEntry);
-                transUnit->externDecls[i]->declList.decls[i]->symbolEntry = symbolEntry;
-            }
+            char *ident = transUnit->externDecls[i]->decl->declInit->declarator->ident;
+            TypeSpecifier type = *(transUnit->externDecls[i]->decl->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
+            size_t size = typeSize(type.dataType);
+            SymbolEntry *symbolEntry = symbolEntryCreate(ident, size, VARIABLE_ENTRY);
+            symbolEntry->isGlobal = true;
+            symbolEntry->type = type;
+            entryPush(parentTable, symbolEntry);
+            transUnit->externDecls[i]->decl->symbolEntry = symbolEntry;
         }
     }
 }

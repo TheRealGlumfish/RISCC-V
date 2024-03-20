@@ -584,9 +584,15 @@ void displayTranslationUnit(TranslationUnit *transUnit, int indent)
 {
     for(size_t i = 0; i < transUnit->size; i++)
     {
+        
+
         if(transUnit->externDecls[i]->isFunc)
         {
             displayFuncDef(transUnit->externDecls[i]->funcDef, indent);
+        }
+        else
+        {
+            displayDecl(transUnit->externDecls[i]->decl, 0);
         }
     }
 }

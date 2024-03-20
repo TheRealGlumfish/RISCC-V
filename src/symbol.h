@@ -20,6 +20,7 @@ typedef struct SymbolEntry
     TypeSpecifier type;
     size_t stackOffset;
     size_t size;
+    size_t isGlobal;
     EntryType entryType;
 } SymbolEntry;
 

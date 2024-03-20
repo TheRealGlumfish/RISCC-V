@@ -566,7 +566,7 @@ void displayFuncDef(FuncDef *funcDef, int indent)
         displayTypeSpec(funcDef->retType->typeSpecs[i], indent);
     }
 
-    if(funcDef->isParam)
+    if (funcDef->isParam)
     {
         for (size_t i = 0; i < funcDef->args.size; i++)
         {
@@ -582,15 +582,14 @@ void displayFuncDef(FuncDef *funcDef, int indent)
 
 void displayTranslationUnit(TranslationUnit *transUnit, int indent)
 {
-    for(size_t i = 0; i < transUnit->size; i++)
+    for (size_t i = 0; i < transUnit->size; i++)
     {
-        if(transUnit->externDecls[i]->isFunc)
+        if (transUnit->externDecls[i]->isFunc)
         {
             displayFuncDef(transUnit->externDecls[i]->funcDef, indent);
         }
     }
 }
-
 
 int main(int argc, char **argv)
 {

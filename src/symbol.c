@@ -21,19 +21,19 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t size, EntryType entryType)
 
     symbolEntry->ident = ident;
 
-    switch(entryType)
+    switch (entryType)
     { // what sizes for while, for, etc...
-        case FUNCTION_ENTRY:
-            symbolEntry->size = size + (4 * (2 + 11 + 7)) + (8 * (12)); // space allocated for ra and fp and s1-s11 and t0-t6 and ft0-ft11
-            break;
+    case FUNCTION_ENTRY:
+        symbolEntry->size = size + (4 * (2 + 11 + 7)) + (8 * (12)); // space allocated for ra and fp and s1-s11 and t0-t6 and ft0-ft11
+        break;
 
-        case VARIABLE_ENTRY:
-            symbolEntry->size = size;
-            break;
+    case VARIABLE_ENTRY:
+        symbolEntry->size = size;
+        break;
 
-        case WHILE_ENTRY:
-            symbolEntry->size = size;
-            break;
+    case WHILE_ENTRY:
+        symbolEntry->size = size;
+        break;
     }
 
     symbolEntry->entryType = entryType;
@@ -43,7 +43,7 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t size, EntryType entryType)
 // destructor for symbol entry
 void symbolEntryDestroy(SymbolEntry *symbolEntry)
 {
-    if(symbolEntry->entryType == WHILE_ENTRY || symbolEntry->entryType == SWITCH_ENTRY)
+    if (symbolEntry->entryType == WHILE_ENTRY || symbolEntry->entryType == SWITCH_ENTRY)
     {
         free(symbolEntry->ident);
     }
@@ -298,7 +298,7 @@ void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
 void scanAssignment(AssignExpr *assignExpr, SymbolTable *parentTable)
 {
     assignExpr->symbolEntry = getSymbolEntry(parentTable, assignExpr->ident, VARIABLE_ENTRY);
-    
+
     if (assignExpr->lvalue != NULL)
     {
         scanExpr(assignExpr->lvalue, parentTable);
@@ -377,7 +377,7 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
 void scanSwitchStmt(SwitchStmt *switchStmt, SymbolTable *parentTable)
 {
     int strSize = snprintf(NULL, 0, "%lu", switchCount);
-    char* switchID = malloc((strSize + 1) * sizeof(char));
+    char *switchID = malloc((strSize + 1) * sizeof(char));
     if (switchID == NULL)
     {
         abort();
@@ -387,7 +387,7 @@ void scanSwitchStmt(SwitchStmt *switchStmt, SymbolTable *parentTable)
     SymbolEntry *switchEntry = symbolEntryCreate(switchID, switchCount, SWITCH_ENTRY);
     entryPush(parentTable, switchEntry);
     switchStmt->symbolEntry = switchEntry;
-    switchCount+=1;
+    switchCount += 1;
     scanExpr(switchStmt->selector, parentTable);
     scanStmt(switchStmt->body, parentTable);
 }
@@ -405,7 +405,7 @@ void scanIfStmt(IfStmt *ifStmt, SymbolTable *parentTable)
 void scanForStmt(ForStmt *forStmt, SymbolTable *parentTable)
 {
     int strSize = snprintf(NULL, 0, "%lu", forCount);
-    char* forID = malloc((strSize + 1) * sizeof(char));
+    char *forID = malloc((strSize + 1) * sizeof(char));
     if (forID == NULL)
     {
         abort();
@@ -415,7 +415,7 @@ void scanForStmt(ForStmt *forStmt, SymbolTable *parentTable)
     SymbolEntry *forEntry = symbolEntryCreate(forID, 0, FOR_ENTRY); // make identifier work
     entryPush(parentTable, forEntry);
     forStmt->symbolEntry = forEntry;
-    forCount+=1;
+    forCount += 1;
 
     scanStmt(forStmt->init, parentTable);
     scanStmt(forStmt->condition, parentTable);
@@ -426,7 +426,7 @@ void scanForStmt(ForStmt *forStmt, SymbolTable *parentTable)
 void scanWhileStmt(WhileStmt *whileStmt, SymbolTable *parentTable)
 {
     int strSize = snprintf(NULL, 0, "%lu", whileCount);
-    char* whileID = malloc((strSize + 1) * sizeof(char));
+    char *whileID = malloc((strSize + 1) * sizeof(char));
     if (whileID == NULL)
     {
         abort();
@@ -436,7 +436,7 @@ void scanWhileStmt(WhileStmt *whileStmt, SymbolTable *parentTable)
     SymbolEntry *whileEntry = symbolEntryCreate(whileID, 0, WHILE_ENTRY); // make identifier work
     entryPush(parentTable, whileEntry);
     whileStmt->symbolEntry = whileEntry;
-    whileCount+=1;
+    whileCount += 1;
     scanExpr(whileStmt->condition, parentTable);
     scanStmt(whileStmt->body, parentTable);
 }
@@ -486,7 +486,7 @@ SymbolEntry *getClosestBreakable(SymbolTable *symbolTable)
         return NULL;
     }
     // search in reverse order (most recent while)
-    for (size_t i = 0 ; i < symbolTable->entrySize; i++)
+    for (size_t i = 0; i < symbolTable->entrySize; i++)
     {
         SymbolEntry *currEntry = symbolTable->entries[symbolTable->entrySize - i - 1];
         if (currEntry->entryType == WHILE_ENTRY || currEntry->entryType == SWITCH_ENTRY || currEntry->entryType == FOR_ENTRY)
@@ -494,7 +494,7 @@ SymbolEntry *getClosestBreakable(SymbolTable *symbolTable)
             return symbolTable->entries[symbolTable->entrySize - i - 1];
         }
     }
-    
+
     // search further tables
     return getClosestBreakable(symbolTable->parentTable);
 }

@@ -155,6 +155,7 @@ external_declaration
                         funcDef->args = decl->declInit->declarator->parameterList;
                 }
                 free(decl->declInit->declarator);
+                free(decl->declInit);
                 free(decl);
                 ExternDecl *externDecl = externDeclCreate(true);
                 externDecl->funcDef = funcDef;

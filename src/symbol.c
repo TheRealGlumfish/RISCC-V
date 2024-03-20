@@ -8,6 +8,7 @@
 
 size_t whileCount = 0;
 size_t switchCount = 0;
+size_t forCount = 0;
 
 // constructor for symbol entry
 SymbolEntry *symbolEntryCreate(char *ident, size_t size, EntryType entryType)
@@ -21,7 +22,7 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t size, EntryType entryType)
     symbolEntry->ident = ident;
 
     switch(entryType)
-    {
+    { // what sizes for while, for, etc...
         case FUNCTION_ENTRY:
             symbolEntry->size = size + (4 * (2 + 11 + 7)) + (8 * (12)); // space allocated for ra and fp and s1-s11 and t0-t6 and ft0-ft11
             break;
@@ -287,7 +288,7 @@ void scanExpr(Expr *expr, SymbolTable *parentTable);
 
 void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
 {
-    funcExpr->symbolEntry = getSymbolEntry(parentTable, funcExpr->ident);
+    funcExpr->symbolEntry = getSymbolEntry(parentTable, funcExpr->ident, FUNCTION_ENTRY);
     for (size_t i = 0; i < funcExpr->argsSize; i++)
     {
         scanExpr(funcExpr->args[i], parentTable);
@@ -403,6 +404,19 @@ void scanIfStmt(IfStmt *ifStmt, SymbolTable *parentTable)
 
 void scanForStmt(ForStmt *forStmt, SymbolTable *parentTable)
 {
+    int strSize = snprintf(NULL, 0, "%lu", forCount);
+    char* forID = malloc((strSize + 1) * sizeof(char));
+    if (forID == NULL)
+    {
+        abort();
+    }
+    sprintf(forID, "%lu", forCount);
+
+    SymbolEntry *forEntry = symbolEntryCreate(forID, 0, FOR_ENTRY); // make identifier work
+    entryPush(parentTable, forEntry);
+    forStmt->symbolEntry = forEntry;
+    forCount+=1;
+
     scanStmt(forStmt->init, parentTable);
     scanStmt(forStmt->condition, parentTable);
     scanStmt(forStmt->body, parentTable);
@@ -475,7 +489,7 @@ SymbolEntry *getClosestBreakable(SymbolTable *symbolTable)
     for (size_t i = 0 ; i < symbolTable->entrySize; i++)
     {
         SymbolEntry *currEntry = symbolTable->entries[symbolTable->entrySize - i - 1];
-        if (currEntry->entryType == WHILE_ENTRY || currEntry->entryType == SWITCH_ENTRY)
+        if (currEntry->entryType == WHILE_ENTRY || currEntry->entryType == SWITCH_ENTRY || currEntry->entryType == FOR_ENTRY)
         {
             return symbolTable->entries[symbolTable->entrySize - i - 1];
         }

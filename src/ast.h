@@ -178,6 +178,7 @@ typedef struct ForStmt
     Stmt *condition;
     Expr *modifier;
     Stmt *body;
+    SymbolEntry *symbolEntry;
 } ForStmt;
 
 typedef struct IfStmt

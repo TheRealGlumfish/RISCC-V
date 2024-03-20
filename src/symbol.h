@@ -11,6 +11,7 @@ typedef enum EntryType
     VARIABLE_ENTRY,
     WHILE_ENTRY,
     SWITCH_ENTRY,
+    FOR_ENTRY
 } EntryType;
 
 typedef struct SymbolEntry

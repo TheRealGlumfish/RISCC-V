@@ -11,29 +11,35 @@ size_t switchCount = 0;
 size_t forCount = 0;
 
 // constructor for symbol entry
-SymbolEntry *symbolEntryCreate(char *ident, size_t size, EntryType entryType)
+SymbolEntry *symbolEntryCreate(char *ident, size_t storageSize, size_t typeSize, EntryType entryType)
 {
     SymbolEntry *symbolEntry = malloc(sizeof(SymbolEntry));
     if (symbolEntry == NULL)
     {
         abort();
     }
-
     symbolEntry->ident = ident;
-
     switch (entryType)
-    { // what sizes for while, for, etc...
-    case FUNCTION_ENTRY:
-        symbolEntry->size = size + (4 * (2 + 11 + 7)) + (8 * (12)); // space allocated for ra and fp and s1-s11 and t0-t6 and ft0-ft11
-        break;
+    {
+        case FUNCTION_ENTRY:
+            symbolEntry->storageSize = storageSize + (4 * (2 + 11 + 7)) + (8 * (12)); // space allocated for ra and fp and s1-s11 and t0-t6 and ft0-ft11
+            symbolEntry->typeSize = typeSize;
+            break;
 
-    case VARIABLE_ENTRY:
-        symbolEntry->size = size;
-        break;
+        case VARIABLE_ENTRY:
+            symbolEntry->storageSize = storageSize;
+            symbolEntry->typeSize = typeSize;
+            break;
 
-    case WHILE_ENTRY:
-        symbolEntry->size = size;
-        break;
+        case WHILE_ENTRY:
+            symbolEntry->storageSize = 0;
+            symbolEntry->typeSize = 0;
+            break;
+        
+        case ARRAY_ENTRY:
+            symbolEntry->storageSize = storageSize;
+            symbolEntry->typeSize = typeSize;
+            break;
     }
     symbolEntry->isGlobal = false;
     symbolEntry->entryType = entryType;
@@ -170,8 +176,8 @@ void entryPush(SymbolTable *symbolTable, SymbolEntry *symbolEntry)
     if (symbolTable->masterFunc != NULL)
     {
         // first element stored at sp + 0
-        symbolTable->masterFunc->size += symbolEntry->size;
-        symbolEntry->stackOffset = symbolTable->masterFunc->size;
+        symbolTable->masterFunc->storageSize += symbolEntry->storageSize;
+        symbolEntry->stackOffset = symbolTable->masterFunc->storageSize;
     }
 }
 
@@ -199,7 +205,6 @@ void symbolTableDestroy(SymbolTable *symbolTable)
         }
     }
     free(symbolTable->childrenTables);
-
     free(symbolTable);
 }
 
@@ -223,6 +228,7 @@ SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident, EntryType ent
     return getSymbolEntry(symbolTable->parentTable, ident, entryType);
 }
 
+// prints a symbol entry to the terminal
 void displaySymbolEntry(SymbolEntry *symbolEntry)
 {
     char *type;
@@ -263,9 +269,10 @@ void displaySymbolEntry(SymbolEntry *symbolEntry)
     {
         localGlobal = "LOCAL";
     }
-    printf("0x%x | %s | %zu | %zu | %s | %s\n", symbolEntry, symbolEntry->ident, symbolEntry->stackOffset, symbolEntry->size, type, localGlobal);
+    printf("0x%x | %s | %zu | %zu | %zu | %s | %s\n", symbolEntry, symbolEntry->ident, symbolEntry->stackOffset, symbolEntry->typeSize, symbolEntry->storageSize, type, localGlobal);
 }
 
+// prints a symbol table and it's children to the terminal
 void displaySymbolTable(SymbolTable *symbolTable)
 {
     if (symbolTable->masterFunc == NULL)
@@ -296,6 +303,60 @@ void displaySymbolTable(SymbolTable *symbolTable)
 void scanStmt(Stmt *stmt, SymbolTable *parentTable);
 void scanExpr(Expr *expr, SymbolTable *parentTable);
 
+void scanInitList(InitList *initList, SymbolTable *parentTable)
+{
+    for(size_t i = 0; i < initList->size; i++)
+    {
+        // expression initialiser
+        if(initList->inits[i]->expr != NULL)
+        {
+            scanExpr(initList->inits[i]->expr, parentTable);
+        }
+        // list initializer
+        else
+        {
+            scanInitList(initList->inits[i]->initList, parentTable);
+        }
+    }
+}
+
+
+// declaration second pass
+void scanDecl(Decl *decl, SymbolTable *symbolTable)
+{
+    char *ident = decl->declInit->declarator->ident;
+    TypeSpecifier type = *(decl->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
+
+    if(decl->declInit->declarator->isArray)
+    {
+        //int arraySize = evaluateConstantExpr(decl->declInit->declarator->arraySize);
+
+        int arraySize = decl->declInit->declarator->arraySize->constant->int_const;
+        SymbolEntry *symbolEntry = symbolEntryCreate(ident, storageSize(type.dataType)*arraySize, typeSize(type.dataType), ARRAY_ENTRY);
+        symbolEntry->type = type;
+        entryPush(symbolTable, symbolEntry);
+        decl->symbolEntry = symbolEntry;
+
+        if (decl->declInit->initList != NULL)
+        {
+            scanInitList(decl->declInit->initList, symbolTable);
+        }
+    }
+    else {
+        SymbolEntry *symbolEntry = symbolEntryCreate(ident, storageSize(type.dataType), typeSize(type.dataType), VARIABLE_ENTRY);
+        symbolEntry->type = type;
+        entryPush(symbolTable, symbolEntry);
+        decl->symbolEntry = symbolEntry;
+
+        if (decl->declInit->initExpr != NULL)
+        {
+            scanExpr(decl->declInit->initExpr, symbolTable);
+        }
+    }
+    
+}
+
+// function expression second pass
 void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
 {
     funcExpr->symbolEntry = getSymbolEntry(parentTable, funcExpr->ident, FUNCTION_ENTRY);
@@ -305,6 +366,7 @@ void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
     }
 }
 
+// assignment second pass
 void scanAssignment(AssignExpr *assignExpr, SymbolTable *parentTable)
 {
     assignExpr->symbolEntry = getSymbolEntry(parentTable, assignExpr->ident, VARIABLE_ENTRY);
@@ -316,11 +378,13 @@ void scanAssignment(AssignExpr *assignExpr, SymbolTable *parentTable)
     scanExpr(assignExpr->op, parentTable);
 }
 
+// variable second pass
 void scanVariable(VariableExpr *variable, SymbolTable *parentTable)
 {
     variable->symbolEntry = getSymbolEntry(parentTable, variable->ident, VARIABLE_ENTRY);
 }
 
+// operation expression second pass
 void scanOperationExpr(OperationExpr *opExpr, SymbolTable *parentTable)
 {
     scanExpr(opExpr->op1, parentTable);
@@ -334,6 +398,7 @@ void scanOperationExpr(OperationExpr *opExpr, SymbolTable *parentTable)
     }
 }
 
+// expression second pass
 void scanExpr(Expr *expr, SymbolTable *parentTable)
 {
     switch (expr->type)
@@ -346,7 +411,7 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
     }
     case CONSTANT_EXPR:
     {
-        // not scanned atm
+        // doesnt require a second pass
         break;
     }
     case OPERATION_EXPR:
@@ -384,6 +449,7 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
     }
 }
 
+// switch statement second pass
 void scanSwitchStmt(SwitchStmt *switchStmt, SymbolTable *parentTable)
 {
     int strSize = snprintf(NULL, 0, "%lu", switchCount);
@@ -394,7 +460,7 @@ void scanSwitchStmt(SwitchStmt *switchStmt, SymbolTable *parentTable)
     }
     sprintf(switchID, "%lu", whileCount);
 
-    SymbolEntry *switchEntry = symbolEntryCreate(switchID, switchCount, SWITCH_ENTRY);
+    SymbolEntry *switchEntry = symbolEntryCreate(switchID, 0, 0, SWITCH_ENTRY);
     entryPush(parentTable, switchEntry);
     switchStmt->symbolEntry = switchEntry;
     switchCount += 1;
@@ -402,6 +468,7 @@ void scanSwitchStmt(SwitchStmt *switchStmt, SymbolTable *parentTable)
     scanStmt(switchStmt->body, parentTable);
 }
 
+// if statement second pass
 void scanIfStmt(IfStmt *ifStmt, SymbolTable *parentTable)
 {
     scanExpr(ifStmt->condition, parentTable);
@@ -412,6 +479,7 @@ void scanIfStmt(IfStmt *ifStmt, SymbolTable *parentTable)
     }
 }
 
+// for statement second pass
 void scanForStmt(ForStmt *forStmt, SymbolTable *parentTable)
 {
     int strSize = snprintf(NULL, 0, "%lu", forCount);
@@ -422,7 +490,7 @@ void scanForStmt(ForStmt *forStmt, SymbolTable *parentTable)
     }
     sprintf(forID, "%lu", forCount);
 
-    SymbolEntry *forEntry = symbolEntryCreate(forID, 0, FOR_ENTRY); // make identifier work
+    SymbolEntry *forEntry = symbolEntryCreate(forID, 0, 0, FOR_ENTRY); // make identifier work
     entryPush(parentTable, forEntry);
     forStmt->symbolEntry = forEntry;
     forCount += 1;
@@ -433,6 +501,7 @@ void scanForStmt(ForStmt *forStmt, SymbolTable *parentTable)
     scanExpr(forStmt->modifier, parentTable);
 }
 
+// while statement second pass
 void scanWhileStmt(WhileStmt *whileStmt, SymbolTable *parentTable)
 {
     int strSize = snprintf(NULL, 0, "%lu", whileCount);
@@ -443,7 +512,7 @@ void scanWhileStmt(WhileStmt *whileStmt, SymbolTable *parentTable)
     }
     sprintf(whileID, "%lu", whileCount);
 
-    SymbolEntry *whileEntry = symbolEntryCreate(whileID, 0, WHILE_ENTRY); // make identifier work
+    SymbolEntry *whileEntry = symbolEntryCreate(whileID, 0, 0, WHILE_ENTRY); // make identifier work
     entryPush(parentTable, whileEntry);
     whileStmt->symbolEntry = whileEntry;
     whileCount += 1;
@@ -460,19 +529,7 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
 
     for (size_t i = 0; i < compoundStmt->declList.size; i++)
     {
-        char *ident = compoundStmt->declList.decls[i]->declInit->declarator->ident;
-        TypeSpecifier type = *(compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-        size_t size;
-        size = typeSize(type.dataType);
-        SymbolEntry *symbolEntry = symbolEntryCreate(ident, size, VARIABLE_ENTRY);
-        symbolEntry->type = type;
-        entryPush(childTable, symbolEntry);
-        compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
-
-        if (compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
-        {
-            scanExpr(compoundStmt->declList.decls[i]->declInit->initExpr, childTable);
-        }
+        scanDecl(compoundStmt->declList.decls[i], childTable);
     }
 
     for (size_t i = 0; i < compoundStmt->stmtList.size; i++)
@@ -481,6 +538,7 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
     }
 }
 
+// label second pass
 void scanLabelStmt(LabelStmt *labelStmt, SymbolTable *parentTable)
 {
     scanExpr(labelStmt->caseLabel, parentTable);
@@ -509,9 +567,9 @@ SymbolEntry *getClosestBreakable(SymbolTable *symbolTable)
     return getClosestBreakable(symbolTable->parentTable);
 }
 
+// jump statement second pass
 void scanJumpStmt(JumpStmt *jumpStmt, SymbolTable *parentTable)
 {
-    // start searching in scope above
     jumpStmt->symbolEntry = getClosestBreakable(parentTable->parentTable);
     if (jumpStmt->expr != NULL)
     {
@@ -519,6 +577,7 @@ void scanJumpStmt(JumpStmt *jumpStmt, SymbolTable *parentTable)
     }
 }
 
+// statement second pass
 void scanStmt(Stmt *stmt, SymbolTable *parentTable)
 {
     switch (stmt->type)
@@ -550,10 +609,11 @@ void scanStmt(Stmt *stmt, SymbolTable *parentTable)
     }
 }
 
+// function definition second pass
 void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
 {
     // new function def symbol entry
-    SymbolEntry *funcDefEntry = symbolEntryCreate(funcDef->ident, 0, FUNCTION_ENTRY);
+    SymbolEntry *funcDefEntry = symbolEntryCreate(funcDef->ident, 0, 0, FUNCTION_ENTRY);
     funcDefEntry->type = *(funcDef->retType->typeSpecs[0]);
     funcDefEntry->isGlobal = true;
     entryPush(parentTable, funcDefEntry);
@@ -570,14 +630,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
         {
             if (funcDef->args.decls[i]->declInit != NULL)
             {
-                char *ident = funcDef->args.decls[i]->declInit->declarator->ident;
-                TypeSpecifier type = *(funcDef->args.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-
-                size_t size = typeSize(type.dataType);
-                SymbolEntry *symbolEntry = symbolEntryCreate(ident, size, VARIABLE_ENTRY);
-                symbolEntry->type = type;
-                entryPush(childTable, symbolEntry);
-                funcDef->args.decls[i]->symbolEntry = symbolEntry;
+                scanDecl(funcDef->args.decls[i], childTable);
             }
         }
     }
@@ -587,19 +640,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
         // add body to child table
         for (size_t i = 0; i < funcDef->body->compoundStmt->declList.size; i++)
         {
-            char *ident = funcDef->body->compoundStmt->declList.decls[i]->declInit->declarator->ident;
-            TypeSpecifier type = *(funcDef->body->compoundStmt->declList.decls[i]->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-
-            size_t size = typeSize(type.dataType);
-            SymbolEntry *symbolEntry = symbolEntryCreate(ident, size, VARIABLE_ENTRY);
-            symbolEntry->type = type;
-            entryPush(childTable, symbolEntry);
-            funcDef->body->compoundStmt->declList.decls[i]->symbolEntry = symbolEntry;
-
-            if (funcDef->body->compoundStmt->declList.decls[i]->declInit->initExpr != NULL)
-            {
-                scanExpr(funcDef->body->compoundStmt->declList.decls[i]->declInit->initExpr, childTable);
-            }
+            scanDecl(funcDef->body->compoundStmt->declList.decls[i], childTable);
         }
 
         for (size_t i = 0; i < funcDef->body->compoundStmt->stmtList.size; i++)
@@ -609,6 +650,7 @@ void scanFuncDef(FuncDef *funcDef, SymbolTable *parentTable)
     }
 }
 
+// translation unit second pass
 void scanTransUnit(TranslationUnit *transUnit, SymbolTable *parentTable)
 {
     for (size_t i = 0; i < transUnit->size; i++)
@@ -619,18 +661,12 @@ void scanTransUnit(TranslationUnit *transUnit, SymbolTable *parentTable)
         }
         else
         {
-            char *ident = transUnit->externDecls[i]->decl->declInit->declarator->ident;
-            TypeSpecifier type = *(transUnit->externDecls[i]->decl->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-            size_t size = typeSize(type.dataType);
-            SymbolEntry *symbolEntry = symbolEntryCreate(ident, size, VARIABLE_ENTRY);
-            symbolEntry->isGlobal = true;
-            symbolEntry->type = type;
-            entryPush(parentTable, symbolEntry);
-            transUnit->externDecls[i]->decl->symbolEntry = symbolEntry;
+            scanDecl(transUnit->externDecls[i]->decl, parentTable);
         }
     }
 }
 
+// starts the second pass
 SymbolTable *populateSymbolTable(TranslationUnit *rootExpr)
 {
     SymbolTable *globalTable = symbolTableCreate(0, 0, NULL, NULL); // global scope
@@ -638,6 +674,7 @@ SymbolTable *populateSymbolTable(TranslationUnit *rootExpr)
     return globalTable;
 }
 
+// returns the size of a given datatype
 size_t typeSize(DataType type)
 {
     switch (type)
@@ -664,9 +701,58 @@ size_t typeSize(DataType type)
         return 4;
     case DOUBLE_TYPE:
         return 8;
+    case INT_POINTER_TYPE:
+        return 4;
+    case CHAR_POINTER_TYPE:
+        return 4;
+    case VOID_POINTER_TYPE:
+        return 4;
+
     default:
     {
         fprintf(stderr, "Type does not have a size, exiting...\n");
+        exit(EXIT_FAILURE);
+    }
+    }
+}
+
+// returns the memory required dor a given datatype (different to type size)
+size_t storageSize(DataType type)
+{
+    switch (type)
+    {
+    case VOID_TYPE:
+        return 4;
+    case CHAR_TYPE:
+        return 4;
+    case SIGNED_CHAR_TYPE:
+        return 4;
+    case SHORT_TYPE:
+        return 4;
+    case UNSIGNED_SHORT_TYPE:
+        return 4;
+    case INT_TYPE:
+        return 4;
+    case UNSIGNED_INT_TYPE:
+        return 4;
+    case LONG_TYPE:
+        return 8;
+    case UNSIGNED_LONG_TYPE:
+        return 8;
+    case FLOAT_TYPE:
+        return 8;
+    case DOUBLE_TYPE:
+        return 8;
+    case INT_POINTER_TYPE:
+        return 4;
+    case CHAR_POINTER_TYPE:
+        return 4;
+    case VOID_POINTER_TYPE:
+        return 4;
+
+    default:
+    {
+        fprintf(stderr, "Type does not have a storage size, exiting...\n");
         exit(EXIT_FAILURE);
     }
     }

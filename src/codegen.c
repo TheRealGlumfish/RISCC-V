@@ -832,7 +832,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         }
         else if (expr->op1->type == VARIABLE_EXPR)
         {
-            size = expr->op1->variable->symbolEntry->size;
+            size = expr->op1->variable->symbolEntry->storageSize;
         }
         else
         {
@@ -1252,7 +1252,7 @@ void compileFunc(FuncDef *func)
         fprintf(outFile, "\tsw s%lu, -%lu(sp)\n", i, 8 + (i * 4)); // Save RA
     }
     fprintf(outFile, "\tmv fp, sp\n");
-    fprintf(outFile, "\taddi sp, sp, -%lu\n", func->symbolEntry->size);
+    fprintf(outFile, "\taddi sp, sp, -%lu\n", func->symbolEntry->storageSize);
     // TODO: Figure out if FP needs to be restored
 
     if (func->isParam)
@@ -1297,7 +1297,7 @@ void compileFunc(FuncDef *func)
     }
     fprintf(outFile, "\tlw ra, -8(fp)\n");
     fprintf(outFile, "\tlw fp, -4(fp)\n");
-    fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->size);
+    fprintf(outFile, "\taddi sp, sp, %lu\n", func->symbolEntry->storageSize);
     fprintf(outFile, "\tret\n");
 }
 

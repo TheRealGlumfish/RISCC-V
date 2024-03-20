@@ -11,7 +11,8 @@ typedef enum EntryType
     VARIABLE_ENTRY,
     WHILE_ENTRY,
     SWITCH_ENTRY,
-    FOR_ENTRY
+    FOR_ENTRY,
+    ARRAY_ENTRY
 } EntryType;
 
 typedef struct SymbolEntry
@@ -19,7 +20,8 @@ typedef struct SymbolEntry
     char *ident;
     TypeSpecifier type;
     size_t stackOffset;
-    size_t size;
+    size_t typeSize;
+    size_t storageSize;
     size_t isGlobal;
     EntryType entryType;
 } SymbolEntry;
@@ -40,7 +42,7 @@ typedef struct SymbolTable
     size_t chldrenCapacity;
 } SymbolTable;
 
-SymbolEntry *symbolEntryCreate(char *ident, size_t size, EntryType entryType);
+SymbolEntry *symbolEntryCreate(char *ident, size_t storageSize, size_t typeSize, EntryType entryType);
 void symbolEntryDestroy(SymbolEntry *symbolEntry);
 
 SymbolTable *symbolTableCreate(size_t entryLength, size_t childrenLength, SymbolTable *parentTable, SymbolEntry *masterFunc);
@@ -49,6 +51,8 @@ void childrenListResize(SymbolTable *symbolTable, size_t childrenLength);
 
 void displaySymbolTable(SymbolTable *symbolTable);
 void displaySymbolEntry(SymbolEntry *symbolEntry);
+
+size_t storageSize(DataType type);
 
 void entryPush(SymbolTable *symbolTable, SymbolEntry *symbolEntry);
 void symbolTableDestroy(SymbolTable *symbolTable);

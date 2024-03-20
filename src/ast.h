@@ -52,7 +52,10 @@ typedef enum
     FLOAT_TYPE,          // 4 bytes
     DOUBLE_TYPE,         // 8 bytes
     SIGNED_TYPE,         // only used in parsing
-    UNSIGNED_TYPE        // only used in parsing
+    UNSIGNED_TYPE,       // only used in parsing
+    INT_POINTER_TYPE,    // 4 bytes
+    CHAR_POINTER_TYPE,   // 4 bytes
+    VOID_POINTER_TYPE    // 4 bytes
 } DataType;              // TODO: Add full list of types and deal with unsigned and void
 
 typedef enum

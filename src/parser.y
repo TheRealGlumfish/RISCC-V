@@ -179,13 +179,13 @@ function_definition
     // TODO: Add error message "out of spec".
 	| declaration_specifiers declarator compound_statement {
 	$$ = funcDefCreate($1, $2->pointerCount, $2->ident);
-    $$->isPrototype = false;
-    $$->isParam = $2->isParam;
-    if($2->isParam){
-        $$->args = $2->parameterList;
-    }
-    $$->body = $3;
-    free($2);
+        $$->isPrototype = false;
+        $$->isParam = $2->isParam;
+        if($2->isParam){
+                $$->args = $2->parameterList;
+        }
+        $$->body = $3;
+        free($2);
 	}
     /* | declaration_specifiers declarator SEMI_COLON{ // modification to original parser for function prototypes.
     $$ = funcDefCreate($1, $2->pointerCount, $2->ident);
@@ -580,19 +580,21 @@ declaration
         }
 	| declaration_specifiers init_declarator_list SEMI_COLON{
         declarationListInit(&$$, 0);
+        
         // assuming init_declarator_list is a list of decl_inits
         for (size_t i = 0; i < $2->declInitListSize; i++)
         {
-            TypeSpecList * typeSpecList;
-            if (i == 0)
-            {
-                typeSpecList = $1;
-            }
-            else
-            {
-                typeSpecList = typeSpecListCopy($1);
-            }
+            TypeSpecList *typeSpecList = flattenTypeSpecs($1);
             
+            if (i != 0)
+            {
+                typeSpecList = typeSpecListCopy(typeSpecList);
+            }
+            if($2->declInits[i]->declarator->pointerCount > 0)
+            {
+                typeSpecList->typeSpecs[0]->dataType = addPtrToType(typeSpecList->typeSpecs[0]->dataType);
+            }
+
             Decl* decl = declCreate(typeSpecList);
             decl->declInit = $2->declInits[i];
             declarationListPush(&$$, decl);
@@ -609,13 +611,13 @@ declaration_specifiers
 	: storage_class_specifier
 	| storage_class_specifier declaration_specifiers
 	| type_specifier {
-        $$ = typeSpecListCreate(1);
-        $$->typeSpecs[0] = $1; 
+                $$ = typeSpecListCreate(1);
+                $$->typeSpecs[0] = $1; 
         }
         // these are in a weird order - could cause issues
 	| type_specifier declaration_specifiers {
-        $$ = $2;
-        typeSpecListPush($$, $1);
+                $$ = $2;
+                typeSpecListPush($$, $1);
         }
 	;
 
@@ -637,15 +639,15 @@ init_declarator
         }
 	| declarator ASSIGN initializer {
 		$$ = declInitCreate($1);
-        if($3->initList != NULL)
-        {
-            $$->initList = $3->initList;
-        }
-        if($3->expr != NULL)
-        {
-            $$->initExpr = $3->expr;
-        }
-        free($3);
+                if($3->initList != NULL)
+                {
+                $$->initList = $3->initList;
+                }
+                if($3->expr != NULL)
+                {
+                $$->initExpr = $3->expr;
+                }
+                free($3);
         }
 	;
 
@@ -696,7 +698,7 @@ type_specifier
 		$$ = typeSpecifierCreate(false);
 		$$->dataType = UNSIGNED_TYPE;
 	    }
-    | struct_specifier {
+        | struct_specifier {
 		$$ = typeSpecifierCreate(true);
 		$$->structSpecifier = $1;
 	    } // later
@@ -825,7 +827,7 @@ direct_declarator
 	: IDENTIFIER {
 		$$ = declaratorCreate();
 		$$->ident = $1;
-                $$->isFunc = false; // false by default
+        $$->isFunc = false; // false by default
 	}
 	| OPEN_BRACKET declarator CLOSE_BRACKET
 	| direct_declarator OPEN_SQUARE constant_expression CLOSE_SQUARE {
@@ -870,7 +872,14 @@ parameter_list
 // declaration (not list)
 parameter_declaration
 	: declaration_specifiers declarator {
-        $$ = declCreate($1);
+
+
+        TypeSpecList *typeSpecList = flattenTypeSpecs($1);
+        if($2->pointerCount > 0)
+        {
+            typeSpecList->typeSpecs[0]->dataType = addPtrToType(typeSpecList->typeSpecs[0]->dataType);
+        }
+        $$ = declCreate(typeSpecList);
         $$->declInit = declInitCreate($2);
         }
 	| declaration_specifiers abstract_declarator // not implementing atm

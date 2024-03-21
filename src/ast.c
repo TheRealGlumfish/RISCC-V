@@ -1599,3 +1599,18 @@ TypeSpecList *flattenTypeSpecs(TypeSpecList *typeSpecList)
 
     return flatList;
 }
+
+DataType addPtrToType(DataType dataType)
+{
+    switch(dataType)
+    {
+        case INT_TYPE:
+            return INT_POINTER_TYPE;
+        case CHAR_TYPE:
+            return CHAR_POINTER_TYPE;
+        case VOID_TYPE:
+            return VOID_POINTER_TYPE;
+    }
+}
+
+

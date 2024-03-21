@@ -418,7 +418,7 @@ void displayDecl(Decl *decl, int indent)
     {
         printIndent(indent + 4);
         printf("└── ");
-        printf("%s \n", decl->declInit->declarator->ident);
+        printf("%s (%lu) \n", decl->declInit->declarator->ident, decl->declInit->declarator->pointerCount);
         if (decl->declInit->declarator->isArray)
         {
             printIndent(indent + 4);

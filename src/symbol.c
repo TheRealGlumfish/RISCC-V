@@ -254,6 +254,21 @@ void displaySymbolEntry(SymbolEntry *symbolEntry)
         type = "LONG";
         break;
     }
+    case INT_POINTER_TYPE:
+    {
+        type = "INT*";
+        break; 
+    }
+    case CHAR_POINTER_TYPE:
+    {
+        type = "CHAR*";
+        break; 
+    }
+    case VOID_POINTER_TYPE:
+    {
+        type = "VOID*";
+        break; 
+    }
     default:
     {
         type = "NULL";

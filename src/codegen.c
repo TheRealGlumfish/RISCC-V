@@ -833,7 +833,14 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         }
         else if (expr->op1->type == VARIABLE_EXPR)
         {
-            size = expr->op1->variable->symbolEntry->storageSize;
+            if (expr->op1->variable->symbolEntry->entryType == ARRAY_ENTRY) // TODO: Do the same for structs
+            {
+                size = expr->op1->variable->symbolEntry->storageSize;
+            }
+            else
+            {
+                size = expr->op1->variable->symbolEntry->typeSize;
+            }
         }
         else
         {

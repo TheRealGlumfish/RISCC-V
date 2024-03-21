@@ -44,7 +44,6 @@ int main(int argc, char **argv)
     SymbolTable *globalTable = populateSymbolTable(root);
     displaySymbolTable(globalTable);
 
-
     compileTranslationUnit(root);
     transUnitDestroy(root);
     symbolTableDestroy(globalTable);
@@ -54,6 +53,7 @@ int main(int argc, char **argv)
     {
         fclose(outFile);
     }
-
+    // TODO: Maybe remove
+    yylex_destroy();
     return EXIT_SUCCESS;
 }

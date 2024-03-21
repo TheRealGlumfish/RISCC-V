@@ -40,6 +40,10 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t storageSize, size_t typeSize,
         symbolEntry->storageSize = storageSize;
         symbolEntry->typeSize = typeSize;
         break;
+    
+    case SWITCH_ENTRY:
+        symbolEntry->storageSize = 0;
+        symbolEntry->typeSize = 0;
     }
     symbolEntry->isGlobal = false;
     symbolEntry->entryType = entryType;
@@ -596,7 +600,10 @@ SymbolEntry *getClosestSwitch(SymbolTable *symbolTable)
 void scanLabelStmt(LabelStmt *labelStmt, SymbolTable *parentTable)
 {
     labelStmt->symbolEntry = getClosestSwitch(parentTable);
-    scanExpr(labelStmt->caseLabel, parentTable);
+    if(labelStmt->caseLabel!= NULL)
+    {
+        scanExpr(labelStmt->caseLabel, parentTable);
+    }
     scanStmt(labelStmt->body, parentTable);
 }
 

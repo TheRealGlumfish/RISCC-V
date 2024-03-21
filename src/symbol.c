@@ -258,24 +258,29 @@ void displaySymbolEntry(SymbolEntry *symbolEntry)
         type = "LONG";
         break;
     }
-    case INT_POINTER_TYPE:
+    case INT_PTR_TYPE:
     {
         type = "INT*";
         break; 
     }
-    case CHAR_POINTER_TYPE:
+    case CHAR_PTR_TYPE:
     {
         type = "CHAR*";
         break; 
     }
-    case VOID_POINTER_TYPE:
+    case VOID_PTR_TYPE:
     {
         type = "VOID*";
         break; 
     }
-    case FLOAT_POINTER_TYPE:
+    case FLOAT_PTR_TYPE:
     {
         type = "FLOAT*";
+        break;
+    }
+    case DOUBLE_PTR_TYPE:
+    {
+        type = "DOUBLE*";
         break;
     }
     default:
@@ -772,13 +777,15 @@ size_t typeSize(DataType type)
         return 4;
     case DOUBLE_TYPE:
         return 8;
-    case INT_POINTER_TYPE:
+    case INT_PTR_TYPE:
         return 4;
-    case CHAR_POINTER_TYPE:
+    case CHAR_PTR_TYPE:
         return 4;
-    case VOID_POINTER_TYPE:
+    case VOID_PTR_TYPE:
         return 4;
-    case FLOAT_POINTER_TYPE:
+    case FLOAT_PTR_TYPE:
+        return 4;
+    case DOUBLE_PTR_TYPE:
         return 4;
 
     default:
@@ -816,11 +823,15 @@ size_t storageSize(DataType type)
         return 8;
     case DOUBLE_TYPE:
         return 8;
-    case INT_POINTER_TYPE:
+    case INT_PTR_TYPE:
         return 4;
-    case CHAR_POINTER_TYPE:
+    case CHAR_PTR_TYPE:
         return 4;
-    case VOID_POINTER_TYPE:
+    case VOID_PTR_TYPE:
+        return 4;
+    case FLOAT_PTR_TYPE:
+        return 4;
+    case DOUBLE_PTR_TYPE:
         return 4;
 
     default:

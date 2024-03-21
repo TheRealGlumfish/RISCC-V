@@ -1605,13 +1605,15 @@ DataType addPtrToType(DataType dataType)
     switch(dataType)
     {
         case INT_TYPE:
-            return INT_POINTER_TYPE;
+            return INT_PTR_TYPE;
         case CHAR_TYPE:
-            return CHAR_POINTER_TYPE;
+            return CHAR_PTR_TYPE;
         case VOID_TYPE:
-            return VOID_POINTER_TYPE;
+            return VOID_PTR_TYPE;
         case FLOAT_TYPE:
-            return FLOAT_POINTER_TYPE;
+            return FLOAT_PTR_TYPE;
+        case DOUBLE_PTR_TYPE:
+            return DOUBLE_PTR_TYPE;
     }
 }
 
@@ -1619,13 +1621,15 @@ DataType isPtr(DataType dataType)
 {
     switch(dataType)
     {
-        case INT_POINTER_TYPE:
+        case INT_PTR_TYPE:
             return true;
-        case CHAR_POINTER_TYPE:
+        case CHAR_PTR_TYPE:
             return true;
-        case VOID_POINTER_TYPE:
+        case VOID_PTR_TYPE:
             return true;
-        case FLOAT_POINTER_TYPE:
+        case FLOAT_PTR_TYPE:
+            return true;
+        case DOUBLE_PTR_TYPE:
             return true;
         default:
             return false;

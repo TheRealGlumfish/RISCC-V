@@ -417,13 +417,28 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
     case OPERATION_EXPR:
     {
         scanOperationExpr(expr->operation, parentTable);
+
+        // this is botttom-up because of the recursive call previously
         if (expr->operation->operator== SIZEOF_OP)
         {
             expr->operation->type = UNSIGNED_INT_TYPE;
         }
         else
         {
-            expr->operation->type = returnType(expr->operation->op1);
+            DataType op1Type = returnType(expr->operation->op1);
+            DataType op2Type = returnType(expr->operation->op2);
+            if(op1Type == INT_POINTER_TYPE || op1Type == CHAR_POINTER_TYPE || op1Type == VOID_POINTER_TYPE)
+            {
+                expr->operation->type = op1Type;
+            }
+            else if(op2Type == INT_POINTER_TYPE || op2Type == CHAR_POINTER_TYPE || op2Type == VOID_POINTER_TYPE)
+            {
+                expr->operation->type = op1Type;
+            }
+            else
+            {
+                expr->operation->type = op1Type;
+            }
         }
         break;
     }
@@ -588,28 +603,6 @@ SymbolEntry *getClosestBreakable(SymbolTable *symbolTable)
 
     // search further tables
     return getClosestBreakable(symbolTable->parentTable);
-}
-
-// finds closest switch
-SymbolEntry *getClosestSwitch(SymbolTable *symbolTable)
-{
-    // base case
-    if (symbolTable == NULL)
-    {
-        return NULL;
-    }
-    // search in reverse order (most recent switch)
-    for (size_t i = 0; i < symbolTable->entrySize; i++)
-    {
-        SymbolEntry *currEntry = symbolTable->entries[symbolTable->entrySize - i - 1];
-        if (currEntry->entryType == SWITCH_ENTRY)
-        {
-            return symbolTable->entries[symbolTable->entrySize - i - 1];
-        }
-    }
-
-    // search further tables
-    return getClosestSwitch(symbolTable->parentTable);
 }
 
 // jump statement second pass

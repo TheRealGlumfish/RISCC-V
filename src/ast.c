@@ -1610,6 +1610,25 @@ DataType addPtrToType(DataType dataType)
             return CHAR_POINTER_TYPE;
         case VOID_TYPE:
             return VOID_POINTER_TYPE;
+        case FLOAT_TYPE:
+            return FLOAT_POINTER_TYPE;
+    }
+}
+
+DataType isPtr(DataType dataType)
+{
+    switch(dataType)
+    {
+        case INT_POINTER_TYPE:
+            return true;
+        case CHAR_POINTER_TYPE:
+            return true;
+        case VOID_POINTER_TYPE:
+            return true;
+        case FLOAT_POINTER_TYPE:
+            return true;
+        default:
+            return false;
     }
 }
 

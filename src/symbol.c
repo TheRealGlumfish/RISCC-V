@@ -273,6 +273,11 @@ void displaySymbolEntry(SymbolEntry *symbolEntry)
         type = "VOID*";
         break; 
     }
+    case FLOAT_POINTER_TYPE:
+    {
+        type = "FLOAT*";
+        break;
+    }
     default:
     {
         type = "NULL";
@@ -441,13 +446,17 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
         {
             expr->operation->type = UNSIGNED_INT_TYPE;
         }
+        else if (expr->operation->operator== ADDRESS)
+        {
+            expr->operation->type = addPtrToType(returnType(expr->operation->op1));
+        }
         else
         {
             DataType op1Type = returnType(expr->operation->op1);
             // by default the type is just that of op1
             expr->operation->type = op1Type;
             // check for pointer types (these override the default case)
-            if(op1Type == INT_POINTER_TYPE || op1Type == CHAR_POINTER_TYPE || op1Type == VOID_POINTER_TYPE)
+            if(isPtr(op1Type))
             {
                 expr->operation->type = op1Type;
             }
@@ -455,9 +464,9 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
             if(expr->operation->op2 != NULL)
             {
                 DataType op2Type = returnType(expr->operation->op2);
-                if(op2Type == INT_POINTER_TYPE || op2Type == CHAR_POINTER_TYPE || op2Type == VOID_POINTER_TYPE)
+                if(isPtr(op2Type))
                 {
-                    expr->operation->type = op1Type;
+                    expr->operation->type = op2Type;
                 }
             }
         }
@@ -768,6 +777,8 @@ size_t typeSize(DataType type)
     case CHAR_POINTER_TYPE:
         return 4;
     case VOID_POINTER_TYPE:
+        return 4;
+    case FLOAT_POINTER_TYPE:
         return 4;
 
     default:

@@ -368,6 +368,10 @@ void ifStmtDestroy(IfStmt *stmt)
 SwitchStmt *switchStmtCreate(Expr *selector, Stmt *body)
 {
     SwitchStmt *stmt = malloc(sizeof(SwitchStmt));
+    if (stmt == NULL)
+    {
+        abort();
+    }
     stmt->selector = selector;
     stmt->body = body;
     return stmt;
@@ -575,7 +579,7 @@ void compoundStmtDestroy(CompoundStmt *stmt)
 LabelStmt *labelStmtCreate(Stmt *body)
 {
     LabelStmt *stmt = malloc(sizeof(LabelStmt));
-    if (stmt != NULL)
+    if (stmt == NULL)
     {
         abort();
     }
@@ -589,15 +593,11 @@ LabelStmt *labelStmtCreate(Stmt *body)
 void labelStmtDestroy(LabelStmt *stmt)
 {
     stmtDestroy(stmt->body);
-    if (stmt->ident != NULL)
-    {
-        free(stmt->ident);
-    }
     if (stmt->caseLabel != NULL)
     {
         exprDestroy(stmt->caseLabel);
     }
-    stmtDestroy(stmt->body);
+    free(stmt->ident);
     free(stmt);
 }
 

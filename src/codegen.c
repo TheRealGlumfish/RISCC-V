@@ -12,6 +12,8 @@ FILE *outFile;
 size_t LCLabelId = 0;
 size_t ifLabelId = 0;
 bool regs[64] = {0};
+// TODO: For the love of god remove this horrible hack, I beggggggg Toby add these to the AST I begggggg pleassseeeee
+SymbolEntry *switchEntry = NULL;
 
 const char *regStr(Reg reg)
 {
@@ -356,7 +358,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
                 compileExpr(expr->op1, dest);
                 fprintf(outFile, "\tfneg.s %s, %s\n", regStr(dest), regStr(dest));
             }
-            else        
+            else
             {
                 Reg op1 = getTmpFltReg();
                 Reg op2 = getTmpFltReg();
@@ -373,7 +375,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
             if (expr->op2 == NULL)
             {
                 compileExpr(expr->op1, dest);
-                fprintf(outFile, "\tneg %s, %s\n", regStr(dest), regStr(dest)); 
+                fprintf(outFile, "\tneg %s, %s\n", regStr(dest), regStr(dest));
             }
             else
             {
@@ -900,18 +902,18 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
         {
             OperationExpr *rvalue = operationExprCreate(expr->operator);
             rvalue->type = expr->type; // TODO: Maybe remove?
-            rvalue->op1 = expr->op;
-            rvalue->op2 = exprCreate(VARIABLE_EXPR);
+            rvalue->op2 = expr->op;
+            rvalue->op1 = exprCreate(VARIABLE_EXPR);
 
             // TODO: Resolve the type you set in op2
-            rvalue->op2->variable = variableExprCreate(expr->ident);
-            rvalue->op2->variable->symbolEntry = expr->symbolEntry;
-            rvalue->op2->variable->type = INT_TYPE;
+            rvalue->op1->variable = variableExprCreate(expr->ident);
+            rvalue->op1->variable->symbolEntry = expr->symbolEntry;
+            rvalue->op1->variable->type = INT_TYPE;
 
             compileOperationExpr(rvalue, dest);
             fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
-            free(rvalue->op2->assignment);
-            free(rvalue->op2);
+            free(rvalue->op1->assignment);
+            free(rvalue->op1);
             free(rvalue);
         }
         else
@@ -1071,6 +1073,16 @@ void compileStmt(Stmt *stmt)
         compileForStmt(stmt->forStmt);
         break;
     }
+    case SWITCH_STMT:
+    {
+        compileSwitchStmt(stmt->switchStmt);
+        break;
+    }
+    case LABEL_STMT:
+    {
+        compileLabelStmt(stmt->labelStmt);
+        break;
+    }
     default:
     {
         fprintf(stderr, "Statement type: %i, not supported...\n", stmt->type);
@@ -1136,6 +1148,11 @@ void compileJumpStmt(JumpStmt *stmt)
             fprintf(outFile, "\tj .FOR_END%s\n", stmt->symbolEntry->ident);
             break;
         }
+        case SWITCH_ENTRY:
+        {
+            fprintf(outFile, "\tj .SWITCH_END%s\n", stmt->symbolEntry->ident);
+            break;
+        }
         }
         break;
     }
@@ -1165,8 +1182,21 @@ void compileCompoundStmt(CompoundStmt *stmt)
     {
         if (stmt->declList.decls[i]->declInit->initExpr != NULL)
         {
-            compileExpr(stmt->declList.decls[i]->declInit->initExpr, A0);
-            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(A0), stmt->declList.decls[i]->symbolEntry->stackOffset);
+            if (returnType(stmt->declList.decls[i]->declInit->initExpr) == FLOAT_TYPE)
+            {
+                compileExpr(stmt->declList.decls[i]->declInit->initExpr, FA0);
+                fprintf(outFile, "\tfsw %s, -%lu(fp)\n", regStr(FA0), stmt->declList.decls[i]->symbolEntry->stackOffset);
+            }
+            else if (returnType(stmt->declList.decls[i]->declInit->initExpr) == DOUBLE_TYPE)
+            {
+                compileExpr(stmt->declList.decls[i]->declInit->initExpr, FA0);
+                fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(FA0), stmt->declList.decls[i]->symbolEntry->stackOffset);
+            }
+            else
+            {
+                compileExpr(stmt->declList.decls[i]->declInit->initExpr, A0);
+                fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(A0), stmt->declList.decls[i]->symbolEntry->stackOffset);
+            }
         }
     }
 
@@ -1243,6 +1273,62 @@ void compileForStmt(ForStmt *stmt)
     }
     fprintf(outFile, "\tj .FOR%s\n", stmt->symbolEntry->ident);
     fprintf(outFile, ".FOR_END%s:\n", stmt->symbolEntry->ident);
+}
+
+void compileSwitchStmt(SwitchStmt *stmt)
+{
+    Reg selector = getTmpReg();
+    Reg tmp = getTmpReg();
+    compileExpr(stmt->selector, selector);
+    // TODO: Add code to deal with const expr
+    bool hasDefault = false;
+    for (size_t i = 0; i < stmt->body->compoundStmt->stmtList.size; i++)
+    {
+        if (stmt->body->compoundStmt->stmtList.stmts[i]->type == LABEL_STMT)
+        {
+            if (stmt->body->compoundStmt->stmtList.stmts[i]->labelStmt->caseLabel != NULL)
+            {
+                fprintf(outFile, "\tli %s, %i\n", regStr(tmp), stmt->body->compoundStmt->stmtList.stmts[i]->labelStmt->caseLabel->constant->int_const);
+                fprintf(outFile, "\tbeq %s, %s, .SWITCH%s_CASE%i\n", regStr(selector), regStr(tmp),
+                        stmt->symbolEntry->ident,
+                        stmt->body->compoundStmt->stmtList.stmts[i]->labelStmt->caseLabel->constant->int_const);
+            }
+            else
+            {
+                hasDefault = true;
+            }
+        }
+    }
+    freeReg(selector);
+    freeReg(tmp);
+    if (hasDefault)
+    {
+        fprintf(outFile, "\tj .SWITCH_DEFAULT%s\n", stmt->symbolEntry->ident);
+    }
+    else
+    {
+        fprintf(outFile, "\tj .SWITCH_END%s\n", stmt->symbolEntry->ident);
+    }
+    switchEntry = stmt->symbolEntry;
+    compileStmt(stmt->body);
+    fprintf(outFile, ".SWITCH_END%s:\n", stmt->symbolEntry->ident);
+}
+
+void compileLabelStmt(LabelStmt *stmt)
+{
+    // TODO: Add support for other types of labels
+    if (stmt->ident == NULL && stmt->caseLabel == NULL)
+    {
+        fprintf(outFile, ".SWITCH_DEFAULT%s:\n", switchEntry->ident);
+        compileStmt(stmt->body);
+    }
+    else if (stmt->caseLabel != NULL)
+    {
+        fprintf(outFile, ".SWITCH%s_CASE%i:\n", switchEntry->ident, stmt->caseLabel->constant->int_const);
+        compileStmt(stmt->body);
+        // TOOD: Add support for const expr
+    }
+    // TODO: Add case for simple goto labels
 }
 
 // void compileArg(Decl *decl, Reg dest)

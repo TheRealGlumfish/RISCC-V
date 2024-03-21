@@ -21,25 +21,25 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t storageSize, size_t typeSize,
     symbolEntry->ident = ident;
     switch (entryType)
     {
-        case FUNCTION_ENTRY:
-            symbolEntry->storageSize = storageSize + (4 * (2 + 11 + 7)) + (8 * (12)); // space allocated for ra and fp and s1-s11 and t0-t6 and ft0-ft11
-            symbolEntry->typeSize = typeSize;
-            break;
+    case FUNCTION_ENTRY:
+        symbolEntry->storageSize = storageSize + (4 * (2 + 11 + 7)) + (8 * (12)); // space allocated for ra and fp and s1-s11 and t0-t6 and ft0-ft11
+        symbolEntry->typeSize = typeSize;
+        break;
 
-        case VARIABLE_ENTRY:
-            symbolEntry->storageSize = storageSize;
-            symbolEntry->typeSize = typeSize;
-            break;
+    case VARIABLE_ENTRY:
+        symbolEntry->storageSize = storageSize;
+        symbolEntry->typeSize = typeSize;
+        break;
 
-        case WHILE_ENTRY:
-            symbolEntry->storageSize = 0;
-            symbolEntry->typeSize = 0;
-            break;
-        
-        case ARRAY_ENTRY:
-            symbolEntry->storageSize = storageSize;
-            symbolEntry->typeSize = typeSize;
-            break;
+    case WHILE_ENTRY:
+        symbolEntry->storageSize = 0;
+        symbolEntry->typeSize = 0;
+        break;
+
+    case ARRAY_ENTRY:
+        symbolEntry->storageSize = storageSize;
+        symbolEntry->typeSize = typeSize;
+        break;
     }
     symbolEntry->isGlobal = false;
     symbolEntry->entryType = entryType;
@@ -260,8 +260,8 @@ void displaySymbolEntry(SymbolEntry *symbolEntry)
     }
     }
 
-    char* localGlobal;
-    if(symbolEntry->isGlobal)
+    char *localGlobal;
+    if (symbolEntry->isGlobal)
     {
         localGlobal = "GLOBAL";
     }
@@ -305,10 +305,10 @@ void scanExpr(Expr *expr, SymbolTable *parentTable);
 
 void scanInitList(InitList *initList, SymbolTable *parentTable)
 {
-    for(size_t i = 0; i < initList->size; i++)
+    for (size_t i = 0; i < initList->size; i++)
     {
         // expression initialiser
-        if(initList->inits[i]->expr != NULL)
+        if (initList->inits[i]->expr != NULL)
         {
             scanExpr(initList->inits[i]->expr, parentTable);
         }
@@ -320,19 +320,18 @@ void scanInitList(InitList *initList, SymbolTable *parentTable)
     }
 }
 
-
 // declaration second pass
 void scanDecl(Decl *decl, SymbolTable *symbolTable)
 {
     char *ident = decl->declInit->declarator->ident;
     TypeSpecifier type = *(decl->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
 
-    if(decl->declInit->declarator->isArray)
+    if (decl->declInit->declarator->isArray)
     {
-        //int arraySize = evaluateConstantExpr(decl->declInit->declarator->arraySize);
+        // int arraySize = evaluateConstantExpr(decl->declInit->declarator->arraySize);
 
         int arraySize = decl->declInit->declarator->arraySize->constant->int_const;
-        SymbolEntry *symbolEntry = symbolEntryCreate(ident, storageSize(type.dataType)*arraySize, typeSize(type.dataType), ARRAY_ENTRY);
+        SymbolEntry *symbolEntry = symbolEntryCreate(ident, storageSize(type.dataType) * arraySize, typeSize(type.dataType), ARRAY_ENTRY);
         symbolEntry->type = type;
         entryPush(symbolTable, symbolEntry);
         decl->symbolEntry = symbolEntry;
@@ -342,7 +341,8 @@ void scanDecl(Decl *decl, SymbolTable *symbolTable)
             scanInitList(decl->declInit->initList, symbolTable);
         }
     }
-    else {
+    else
+    {
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, storageSize(type.dataType), typeSize(type.dataType), VARIABLE_ENTRY);
         symbolEntry->type = type;
         entryPush(symbolTable, symbolEntry);
@@ -353,7 +353,6 @@ void scanDecl(Decl *decl, SymbolTable *symbolTable)
             scanExpr(decl->declInit->initExpr, symbolTable);
         }
     }
-    
 }
 
 // function expression second pass
@@ -541,7 +540,11 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
 // label second pass
 void scanLabelStmt(LabelStmt *labelStmt, SymbolTable *parentTable)
 {
-    scanExpr(labelStmt->caseLabel, parentTable);
+    // if (labelStmt->caseLabel != NULL)
+    // {
+    //     scanExpr(labelStmt->caseLabel, parentTable);
+    // }
+    // TODO: Confirm that const expr doesn't get added to the symbol table
     scanStmt(labelStmt->body, parentTable);
 }
 

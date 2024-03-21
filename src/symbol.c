@@ -538,14 +538,37 @@ void scanCompoundStmt(CompoundStmt *compoundStmt, SymbolTable *parentTable)
     }
 }
 
+// finds closest switch
+SymbolEntry *getClosestSwitch(SymbolTable *symbolTable)
+{
+    // base case
+    if (symbolTable == NULL)
+    {
+        return NULL;
+    }
+    // search in reverse order (most recent switch)
+    for (size_t i = 0; i < symbolTable->entrySize; i++)
+    {
+        SymbolEntry *currEntry = symbolTable->entries[symbolTable->entrySize - i - 1];
+        if (currEntry->entryType == SWITCH_ENTRY)
+        {
+            return symbolTable->entries[symbolTable->entrySize - i - 1];
+        }
+    }
+
+    // search further tables
+    return getClosestSwitch(symbolTable->parentTable);
+}
+
 // label second pass
 void scanLabelStmt(LabelStmt *labelStmt, SymbolTable *parentTable)
 {
+    labelStmt->symbolEntry = getClosestSwitch(parentTable);
     scanExpr(labelStmt->caseLabel, parentTable);
     scanStmt(labelStmt->body, parentTable);
 }
 
-// finds closest while loop (closest scope)
+// finds closest while/for/switch (closest scope)
 SymbolEntry *getClosestBreakable(SymbolTable *symbolTable)
 {
     // base case
@@ -565,6 +588,28 @@ SymbolEntry *getClosestBreakable(SymbolTable *symbolTable)
 
     // search further tables
     return getClosestBreakable(symbolTable->parentTable);
+}
+
+// finds closest switch
+SymbolEntry *getClosestSwitch(SymbolTable *symbolTable)
+{
+    // base case
+    if (symbolTable == NULL)
+    {
+        return NULL;
+    }
+    // search in reverse order (most recent switch)
+    for (size_t i = 0; i < symbolTable->entrySize; i++)
+    {
+        SymbolEntry *currEntry = symbolTable->entries[symbolTable->entrySize - i - 1];
+        if (currEntry->entryType == SWITCH_ENTRY)
+        {
+            return symbolTable->entries[symbolTable->entrySize - i - 1];
+        }
+    }
+
+    // search further tables
+    return getClosestSwitch(symbolTable->parentTable);
 }
 
 // jump statement second pass

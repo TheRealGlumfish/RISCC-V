@@ -318,6 +318,7 @@ typedef struct LabelStmt
     char *ident;     // not NULL for goto
     Expr *caseLabel; // not NULL for case
     Stmt *body;
+    SymbolEntry *symbolEntry; // case label points to it's parent switch
 
 } LabelStmt;
 

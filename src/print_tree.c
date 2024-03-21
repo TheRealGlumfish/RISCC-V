@@ -73,7 +73,7 @@ void displayOpExpr(OperationExpr *opExpr)
         printf("!=");
         break;
     case LT:
-        printf(",");
+        printf("<");
         break;
     case GT:
         printf(">");

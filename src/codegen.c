@@ -819,6 +819,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
             tmp = getTmpReg();
         }
         compileAssignExpr(assign, tmp);
+        free(assign);
         freeReg(tmp);
         exprDestroy(one);
         break;
@@ -894,14 +895,17 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             rvalue->type = expr->type; // TODO: Maybe remove?
             rvalue->op1 = expr->op;
             rvalue->op2 = exprCreate(VARIABLE_EXPR);
+
             // TODO: Resolve the type you set in op2
             rvalue->op2->variable = variableExprCreate(expr->ident);
             rvalue->op2->variable->symbolEntry = expr->symbolEntry;
             rvalue->op2->variable->type = INT_TYPE;
+
             compileOperationExpr(rvalue, dest);
             fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
             free(rvalue->op2->assignment);
             free(rvalue->op2);
+            free(rvalue);
         }
         else
         {

@@ -1467,6 +1467,7 @@ void transUnitPush(TranslationUnit *transUnit, ExternDecl *externDecl)
     transUnit->externDecls[transUnit->size - 1] = externDecl;
 }
 
+// condenses a list of types into a single type
 TypeSpecList *flattenTypeSpecs(TypeSpecList *typeSpecList)
 {
     size_t unsignedCount = 0;
@@ -1614,8 +1615,30 @@ DataType addPtrToType(DataType dataType)
             return FLOAT_PTR_TYPE;
         case DOUBLE_PTR_TYPE:
             return DOUBLE_PTR_TYPE;
+        default:
+            printf("Type does not have corresponding pointer type");
     }
 }
+
+DataType removerPtrFromType(DataType dataType)
+{
+    switch(dataType)
+    {
+        case INT_PTR_TYPE:
+            return INT_TYPE;
+        case CHAR_PTR_TYPE:
+            return CHAR_TYPE;
+        case VOID_PTR_TYPE:
+            return VOID_TYPE;
+        case FLOAT_PTR_TYPE:
+            return FLOAT_TYPE;
+        case DOUBLE_PTR_TYPE:
+            return DOUBLE_TYPE;
+        default:
+            printf("Type is not apointer type");
+    }
+}
+
 
 DataType isPtr(DataType dataType)
 {

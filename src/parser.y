@@ -143,32 +143,40 @@ external_declaration
         for(size_t i = 0; i < $1.size; i++)
         {
             Decl *decl = $1.decls[i];
-
-            // function prototype
-            if(decl->declInit->declarator->isFunc)
+            if(decl->declInit != NULL)
             {
-                FuncDef *funcDef = funcDefCreate(decl->typeSpecList, decl->declInit->declarator->pointerCount, decl->declInit->declarator->ident);
-                funcDef->isPrototype = true;
-                funcDef->isParam = decl->declInit->declarator->isParam;
-                if(decl->declInit->declarator->isParam)
-                {   
+                // function prototype
+                if(decl->declInit->declarator->isFunc)
+                {
+                    FuncDef *funcDef = funcDefCreate(decl->typeSpecList, decl->declInit->declarator->pointerCount, decl->declInit->declarator->ident);
+                    funcDef->isPrototype = true;
+                    funcDef->isParam = decl->declInit->declarator->isParam;
+                    if(decl->declInit->declarator->isParam)
+                    {   
                         funcDef->args = decl->declInit->declarator->parameterList;
+                    }
+                    free(decl->declInit->declarator);
+                    free(decl->declInit);
+                    free(decl);
+                    ExternDecl *externDecl = externDeclCreate(true);
+                    externDecl->funcDef = funcDef;
+                    transUnitPush($$, externDecl);
                 }
-                free(decl->declInit->declarator);
-                free(decl->declInit);
-                free(decl);
-                ExternDecl *externDecl = externDeclCreate(true);
-                externDecl->funcDef = funcDef;
-                transUnitPush($$, externDecl);
+                // global declaration
+                else
+                {
+                    ExternDecl *externDecl = externDeclCreate(false);
+                    externDecl->decl = decl;
+                    transUnitPush($$, externDecl);
+                }            
             }
-
-            // global declaration
-            else
-            {
+            else {
+                // global declaration again...
                 ExternDecl *externDecl = externDeclCreate(false);
                 externDecl->decl = decl;
                 transUnitPush($$, externDecl);
-            }            
+            }
+            
         }
         free($1.decls);
     }

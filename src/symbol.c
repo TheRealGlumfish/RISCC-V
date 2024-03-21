@@ -451,9 +451,13 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
         {
             expr->operation->type = UNSIGNED_INT_TYPE;
         }
-        else if (expr->operation->operator== ADDRESS)
+        else if (expr->operation->operator == ADDRESS)
         {
             expr->operation->type = addPtrToType(returnType(expr->operation->op1));
+        }
+        else if(expr->operation->operator == DEREF)
+        {
+            expr->operation->type = removerPtrFromType(returnType(expr->operation->op1));
         }
         else
         {

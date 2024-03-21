@@ -482,5 +482,6 @@ void transUnitPush(TranslationUnit *transUnit, ExternDecl *externDecl);
 TypeSpecList *flattenTypeSpecs(TypeSpecList *typeSpecList);
 DataType addPtrToType(DataType dataType);
 DataType isPtr(DataType dataType);
+DataType removerPtrFromType(DataType dataType);
 
 #endif

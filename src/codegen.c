@@ -13,6 +13,8 @@ size_t LCLabelId = 0;
 size_t ifLabelId = 0;
 bool regs[64] = {0};
 // TODO: For the love of god remove this horrible hack, I beggggggg Toby add these to the AST I begggggg pleassseeeee
+// TOBY I begggg you need to give me what I need
+// Please stop breaking the compiler we can fix this thing
 SymbolEntry *switchEntry = NULL;
 
 const char *regStr(Reg reg)
@@ -851,6 +853,65 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         fprintf(outFile, "\tli %s, %lu\n", regStr(dest), size);
         break;
     }
+    case ADDRESS:
+    {
+        if (expr->op1->type == VARIABLE_EXPR)
+        {
+            if (expr->op1->variable->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\tla %s, %s\n", regStr(dest), expr->op1->variable->ident);
+            }
+            else
+            {
+                fprintf(outFile, "\taddi %s, sp, -%lu\n", regStr(dest), expr->op1->variable->symbolEntry->stackOffset);
+            }
+        }
+        else
+        {
+            fprintf(stderr, "Toby you promised me that it was gonna be a variable node, exiting...\n");
+            exit(EXIT_FAILURE);
+        }
+        break;
+    }
+    case DEREF:
+    {
+        switch (expr->type)
+        {
+        case INT_PTR_TYPE:
+        {
+            Reg lvalue = getTmpReg();
+            compileExpr(expr->op1, lvalue);
+            fprintf(outFile, "\tlw %s, 0(%s)\n", regStr(dest), regStr(lvalue));
+            freeReg(lvalue);
+            break;
+        }
+        case FLOAT_PTR_TYPE:
+        {
+            Reg lvalue = getTmpReg();
+            compileExpr(expr->op1, lvalue);
+            fprintf(outFile, "\tflw %s, 0(%s)\n", regStr(dest), regStr(lvalue));
+            freeReg(lvalue);
+            break;
+        }
+        case DOUBLE_PTR_TYPE:
+        {
+            Reg lvalue = getTmpReg();
+            compileExpr(expr->op1, lvalue);
+            fprintf(outFile, "\tfld %s, 0(%s)\n", regStr(dest), regStr(lvalue));
+            freeReg(lvalue);
+            break;
+        }
+        default:
+        {
+            Reg lvalue = getTmpReg();
+            compileExpr(expr->op1, lvalue);
+            fprintf(outFile, "\tlw %s, 0(%s)\n", regStr(dest), regStr(lvalue));
+            freeReg(lvalue);
+            break;
+        }
+        }
+        break;
+    }
         // default:
         // {
         //     fprintf(stderr, "Operation not supported, exiting...");
@@ -865,28 +926,78 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
     {
     case INT_TYPE:
     {
-        fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        if (!expr->symbolEntry->isGlobal)
+        {
+            fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        }
+        else
+        {
+            fprintf(outFile, "\tlw %s, %s\n", regStr(dest), expr->ident);
+        }
         break;
     }
     case UNSIGNED_INT_TYPE:
     {
-        fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        if (!expr->symbolEntry->isGlobal)
+        {
+            fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        }
+        else
+        {
+            fprintf(outFile, "\tlw %s, %s\n", regStr(dest), expr->ident);
+        }
         break;
     }
     case FLOAT_TYPE:
     {
-        fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        if (!expr->symbolEntry->isGlobal)
+        {
+            fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        }
+        else
+        {
+            fprintf(outFile, "\tflw %s, %s\n", regStr(dest), expr->ident);
+        }
         break;
     }
     case DOUBLE_TYPE:
     {
-        fprintf(outFile, "\tfld %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        if (!expr->symbolEntry->isGlobal)
+        {
+            fprintf(outFile, "\tfld %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        }
+        else
+        {
+            fprintf(outFile, "\tfld %s, %s\n", regStr(dest), expr->ident);
+        }
+        break;
+    }
+    case CHAR_TYPE:
+    {
+        if (!expr->symbolEntry->isGlobal)
+        {
+            fprintf(outFile, "\tlb %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        }
+        else
+        {
+            fprintf(outFile, "\tlb %s, %s\n", regStr(dest), expr->ident);
+        }
         break;
     }
     default:
     {
-        fprintf(stderr, "Type not supported, exiting...\n");
-        exit(EXIT_FAILURE);
+        if (!expr->symbolEntry->isGlobal)
+        {
+            fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+        }
+        else
+        {
+            fprintf(outFile, "\tlw %s, %s\n", regStr(dest), expr->ident);
+        }
+        break;
+        // TOOD: Deal with more types
+        // fprintf(stderr, "Type not supported, exiting...\n");
+        // exit(EXIT_FAILURE);
     }
     }
 }
@@ -896,7 +1007,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
     // compileExpr(expr->op, dest);
     switch (expr->type)
     {
-    case INT_TYPE:
+    case CHAR_TYPE:
     {
         if (expr->operator!= NOT)
         {
@@ -908,10 +1019,17 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             // TODO: Resolve the type you set in op2
             rvalue->op1->variable = variableExprCreate(expr->ident);
             rvalue->op1->variable->symbolEntry = expr->symbolEntry;
-            rvalue->op1->variable->type = INT_TYPE;
+            rvalue->op1->variable->type = CHAR_TYPE;
 
             compileOperationExpr(rvalue, dest);
-            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            if (expr->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\tsb %s, %s\n", regStr(dest), expr->ident);
+            }
+            else
+            {
+                fprintf(outFile, "\tsb %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            }
             free(rvalue->op1->assignment);
             free(rvalue->op1);
             free(rvalue);
@@ -919,7 +1037,74 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
         else
         {
             compileExpr(expr->op, dest);
-            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            if (expr->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\tsb %s, %s\n", regStr(dest), expr->ident);
+            }
+            else
+            {
+                fprintf(outFile, "\tsb %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            }
+        }
+        break;
+    }
+    case INT_TYPE:
+    {
+        if (expr->operator!=NOT)
+        {
+            OperationExpr *rvalue = operationExprCreate(expr->operator);
+            rvalue->type = expr->type; // TODO: Maybe remove?
+            rvalue->op2 = expr->op;
+            rvalue->op1 = exprCreate(VARIABLE_EXPR);
+            // TODO: Resolve the type you set in op2
+            rvalue->op1->variable = variableExprCreate(expr->ident);
+            rvalue->op1->variable->symbolEntry = expr->symbolEntry;
+            rvalue->op1->variable->type = INT_TYPE;
+
+            compileOperationExpr(rvalue, dest);
+            if (expr->lvalue == NULL)
+            {
+                if (expr->symbolEntry->isGlobal)
+                {
+                    fprintf(outFile, "\tsw %s, %s\n", regStr(dest), expr->ident);
+                }
+                else
+                {
+                    fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+                }
+            }
+            else
+            {
+                Reg lvalue = getTmpReg();
+                compileExpr(expr->lvalue->operation->op1, lvalue);
+                fprintf(outFile, "\tsw %s, 0(%s)\n", regStr(dest), regStr(lvalue));
+                freeReg(lvalue);
+            }
+            free(rvalue->op1->assignment);
+            free(rvalue->op1);
+            free(rvalue);
+        }
+        else
+        {
+            compileExpr(expr->op, dest);
+            if (expr->lvalue == NULL)
+            {
+                if (expr->symbolEntry->isGlobal)
+                {
+                    fprintf(outFile, "\tsw %s, %s\n", regStr(dest), expr->ident);
+                }
+                else
+                {
+                    fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+                }
+            }
+            else
+            {
+                Reg lvalue = getTmpReg();
+                compileExpr(expr->lvalue->operation->op1, lvalue);
+                fprintf(outFile, "\tsw %s, 0(%s)\n", regStr(dest), regStr(lvalue));
+                freeReg(lvalue);
+            }
         }
         break;
     }
@@ -936,14 +1121,28 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             rvalue->op2->variable->symbolEntry = expr->symbolEntry;
             rvalue->op2->variable->type = FLOAT_TYPE;
             compileOperationExpr(rvalue, dest);
-            fprintf(outFile, "\tfsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            if (expr->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\tfsw %s, %s\n", regStr(dest), expr->ident);
+            }
+            else
+            {
+                fprintf(outFile, "\tfsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            }
             free(rvalue->op2->assignment);
             free(rvalue->op2);
         }
         else
         {
             compileExpr(expr->op, dest);
-            fprintf(outFile, "\tfsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            if (expr->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\tfsw %s, %s\n", regStr(dest), expr->ident);
+            }
+            else
+            {
+                fprintf(outFile, "\tfsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            }
         }
         break;
     }
@@ -959,14 +1158,28 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             rvalue->op2->variable->symbolEntry = expr->symbolEntry;
             rvalue->op2->variable->type = DOUBLE_TYPE;
             compileOperationExpr(rvalue, dest);
-            fprintf(outFile, "\tfsd %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            if (expr->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\tfsd %s, %s\n", regStr(dest), expr->ident);
+            }
+            else
+            {
+                fprintf(outFile, "\tfsd %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            }
             free(rvalue->op2->assignment);
             free(rvalue->op2);
         }
         else
         {
             compileExpr(expr->op, dest);
-            fprintf(outFile, "\tfsd %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            if (expr->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\tfsd %s, %s\n", regStr(dest), expr->ident);
+            }
+            else
+            {
+                fprintf(outFile, "\tfsd %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            }
         }
         break;
     }
@@ -982,7 +1195,14 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             rvalue->op2->variable->symbolEntry = expr->symbolEntry;
             rvalue->op2->variable->type = expr->type;
             compileOperationExpr(rvalue, dest);
-            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            if (expr->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\tsw %s, %s\n", regStr(dest), expr->ident);
+            }
+            else
+            {
+                fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            }
             free(rvalue->op2->assignment);
             free(rvalue->op2);
             free(rvalue);
@@ -990,7 +1210,14 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
         else
         {
             compileExpr(expr->op, dest);
-            fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            if (expr->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\tsw %s, %s\n", regStr(dest), expr->ident);
+            }
+            else
+            {
+                fprintf(outFile, "\tsw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            }
         }
         fprintf(stderr, "Type not supported\n");
         // exit(EXIT_FAILURE);

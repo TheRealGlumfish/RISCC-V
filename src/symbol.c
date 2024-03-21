@@ -440,18 +440,21 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
         else
         {
             DataType op1Type = returnType(expr->operation->op1);
-            DataType op2Type = returnType(expr->operation->op2);
+            // by default the type is just that of op1
+            expr->operation->type = op1Type;
+            // check for pointer types (these override the default case)
             if(op1Type == INT_POINTER_TYPE || op1Type == CHAR_POINTER_TYPE || op1Type == VOID_POINTER_TYPE)
             {
                 expr->operation->type = op1Type;
             }
-            else if(op2Type == INT_POINTER_TYPE || op2Type == CHAR_POINTER_TYPE || op2Type == VOID_POINTER_TYPE)
+
+            if(expr->operation->op2 != NULL)
             {
-                expr->operation->type = op1Type;
-            }
-            else
-            {
-                expr->operation->type = op1Type;
+                DataType op2Type = returnType(expr->operation->op2);
+                if(op2Type == INT_POINTER_TYPE || op2Type == CHAR_POINTER_TYPE || op2Type == VOID_POINTER_TYPE)
+                {
+                    expr->operation->type = op1Type;
+                }
             }
         }
         break;

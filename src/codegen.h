@@ -98,6 +98,8 @@ void compileCompoundStmt(CompoundStmt *stmt);
 void compileIfStmt(IfStmt *stmt);
 void compileWhileStmt(WhileStmt *stmt);
 void compileForStmt(ForStmt *stmt);
+void compileSwitchStmt(SwitchStmt *stmt);
+void compileLabelStmt(LabelStmt *stmt);
 
 void compileFunc(FuncDef *func);
 void compileFuncArgs(DeclarationList declList);

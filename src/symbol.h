@@ -64,5 +64,5 @@ SymbolTable *populateSymbolTable(TranslationUnit *rootExpr);
 
 size_t typeSize(DataType type);
 int evaluateIntConstExpr(Expr *expr);
-
+float evaluateFloatConstExpr(Expr *expr);
 #endif

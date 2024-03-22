@@ -2124,14 +2124,7 @@ void compileGlobal(Decl *decl)
         }
         else
         {
-            if (decl->declInit->initExpr->type == CONSTANT_EXPR)
-            {
-                fprintf(outFile, "\t.float %f\n", decl->declInit->initExpr->constant->float_const);
-            }
-            else
-            {
-                fprintf(outFile, "\t.float 0.0\n");
-            }
+            fprintf(outFile, "\t.float %f\n", evaluateFloatConstExpr(decl->declInit->initExpr));
         }
     }
     else if (decl->symbolEntry->type.dataType == DOUBLE_TYPE)

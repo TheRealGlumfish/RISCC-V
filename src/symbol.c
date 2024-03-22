@@ -17,11 +17,7 @@ int evaluateIntConstExpr(Expr *expr)
     {
     case CONSTANT_EXPR:
     {
-        switch(expr->constant->type)
-        {
-            // int + pointer doesnt work yet
-            return expr->constant->int_const;
-        }
+        return expr->constant->int_const;
     }
     case OPERATION_EXPR:
     {
@@ -102,11 +98,7 @@ float evaluateFloatConstExpr(Expr *expr)
     {
     case CONSTANT_EXPR:
     {
-        switch(expr->constant->type)
-        {
-            // float + pointers don't work yet
-            return expr->constant->float_const;
-        }
+        return expr->constant->float_const;
     }
     case OPERATION_EXPR:
     {

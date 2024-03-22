@@ -397,10 +397,9 @@ void scanFuncExpr(FuncExpr *funcExpr, SymbolTable *parentTable)
 // assignment second pass
 void scanAssignment(AssignExpr *assignExpr, SymbolTable *parentTable)
 {
-    assignExpr->symbolEntry = getSymbolEntry(parentTable, assignExpr->ident, VARIABLE_ENTRY);
-
     if (assignExpr->lvalue != NULL)
     {
+        assignExpr->symbolEntry = getSymbolEntry(parentTable, assignExpr->ident, VARIABLE_ENTRY);
         scanExpr(assignExpr->lvalue, parentTable);
     }
     scanExpr(assignExpr->op, parentTable);

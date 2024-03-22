@@ -2087,8 +2087,6 @@ void compileTranslationUnit(TranslationUnit *transUnit)
 
 void compileGlobal(Decl *decl)
 {
-    if (decl->symbolEntry->entryType == ARRAY_ENTRY)
-        return;
     // TODO: Add const expr eval
     if (decl->declInit->initExpr == NULL)
     {
@@ -2102,7 +2100,7 @@ void compileGlobal(Decl *decl)
     fprintf(outFile, "%s:\n", decl->symbolEntry->ident);
     if (isPtr(decl->symbolEntry->type.dataType))
     {
-        if (decl->declInit->initExpr == NULL)
+        if (decl->declInit->initExpr == NULL || decl->symbolEntry->entryType == ARRAY_ENTRY)
         {
             fprintf(outFile, "\t.zero %lu\n", decl->symbolEntry->storageSize);
         }

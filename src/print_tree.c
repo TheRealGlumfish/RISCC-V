@@ -409,10 +409,7 @@ void displayDecl(Decl *decl, int indent)
     printf("DECL \n");
 
     // print type specifiers
-    for (size_t i = 0; i < decl->typeSpecList->typeSpecSize; i++)
-    {
-        displayTypeSpec(decl->typeSpecList->typeSpecs[i], indent + 4);
-    }
+    displayTypeSpec(decl->typeSpecList->typeSpecs[0], indent + 4);
 
     if (decl->declInit != NULL)
     {

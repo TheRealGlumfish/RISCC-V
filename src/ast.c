@@ -1527,6 +1527,9 @@ TypeSpecList *flattenTypeSpecs(TypeSpecList *typeSpecList)
         exit(EXIT_FAILURE);
     }
 
+    // char is unsigned by default
+    
+
     if (unsignedCount >= 1)
     {
         if (charCount >= 1)
@@ -1557,12 +1560,40 @@ TypeSpecList *flattenTypeSpecs(TypeSpecList *typeSpecList)
         return flatList;
     }
 
-    if (signedCount >= 0)
+    else if (signedCount >= 1)
     {
         if (charCount >= 1)
         {
             flatList->typeSpecs[0] = typeSpecifierCreate(false);
             flatList->typeSpecs[0]->dataType = SIGNED_CHAR_TYPE;
+        }
+        else if (shortCount >= 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = SHORT_TYPE;
+        }
+        else if (longCount == 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = INT_TYPE;
+        }
+        else if (longCount >= 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = LONG_TYPE;
+        }
+        else if (intCount >= 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = INT_TYPE;
+        }
+    }
+    else // default cases
+    {
+        if (charCount >= 1)
+        {
+            flatList->typeSpecs[0] = typeSpecifierCreate(false);
+            flatList->typeSpecs[0]->dataType = CHAR_TYPE;
         }
         else if (shortCount >= 1)
         {
@@ -1597,7 +1628,6 @@ TypeSpecList *flattenTypeSpecs(TypeSpecList *typeSpecList)
         flatList->typeSpecs[0] = typeSpecifierCreate(false);
         flatList->typeSpecs[0]->dataType = DOUBLE_TYPE;
     }
-
     return flatList;
 }
 

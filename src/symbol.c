@@ -354,7 +354,7 @@ void scanDecl(Decl *decl, SymbolTable *symbolTable)
 {
     char *ident = decl->declInit->declarator->ident;
     TypeSpecifier type = *(decl->typeSpecList->typeSpecs[0]); // assumes a list of length 1 after type resolution stuff
-
+    
     if (decl->declInit->declarator->isArray)
     {
         // int arraySize = evaluateConstantExpr(decl->declInit->declarator->arraySize);
@@ -364,6 +364,11 @@ void scanDecl(Decl *decl, SymbolTable *symbolTable)
         symbolEntry->type = type;
         entryPush(symbolTable, symbolEntry);
         decl->symbolEntry = symbolEntry;
+
+        if(symbolTable->parentTable == NULL)
+        {
+            symbolEntry->isGlobal = true;
+        }
 
         if (decl->declInit->initList != NULL)
         {
@@ -376,6 +381,11 @@ void scanDecl(Decl *decl, SymbolTable *symbolTable)
         symbolEntry->type = type;
         entryPush(symbolTable, symbolEntry);
         decl->symbolEntry = symbolEntry;
+
+        if(symbolTable->parentTable == NULL)
+        {
+            symbolEntry->isGlobal = true;
+        }
 
         if (decl->declInit->initExpr != NULL)
         {

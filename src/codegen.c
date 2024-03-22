@@ -1748,7 +1748,7 @@ void compileFuncArgs(DeclarationList declList)
         // char *ident = declList.decls[i]->symbolEntry->ident;
         size_t stackOffset = declList.decls[i]->symbolEntry->stackOffset;
 
-        if (paramType == INT_TYPE || paramType == CHAR_TYPE || paramType == SHORT_TYPE)
+        if (paramType == INT_TYPE || paramType == CHAR_TYPE || paramType == SHORT_TYPE || isPtr(paramType))
         {
             if (usedIntRegs != maxIntRegs)
             {

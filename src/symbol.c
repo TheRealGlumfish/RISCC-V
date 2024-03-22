@@ -167,7 +167,9 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t storageSize, size_t typeSize,
     {
         abort();
     }
+
     symbolEntry->ident = ident;
+
     switch (entryType)
     {
     case FUNCTION_ENTRY:
@@ -209,7 +211,7 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t storageSize, size_t typeSize,
 // destructor for symbol entry
 void symbolEntryDestroy(SymbolEntry *symbolEntry)
 {
-    if (symbolEntry->entryType == WHILE_ENTRY || symbolEntry->entryType == SWITCH_ENTRY || symbolEntry == FOR_ENTRY)
+    if (symbolEntry->entryType == WHILE_ENTRY || symbolEntry->entryType == SWITCH_ENTRY || symbolEntry->entryType == FOR_ENTRY)
     {
         free(symbolEntry->ident);
     }

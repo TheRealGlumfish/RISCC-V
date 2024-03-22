@@ -361,7 +361,7 @@ void scanDecl(Decl *decl, SymbolTable *symbolTable)
 
         int arraySize = decl->declInit->declarator->arraySize->constant->int_const;
         SymbolEntry *symbolEntry = symbolEntryCreate(ident, storageSize(type.dataType) * arraySize, typeSize(type.dataType), ARRAY_ENTRY);
-        symbolEntry->type = type;
+        symbolEntry->type.dataType = addPtrToType(type.dataType); // arrays are pointers
         entryPush(symbolTable, symbolEntry);
         decl->symbolEntry = symbolEntry;
 

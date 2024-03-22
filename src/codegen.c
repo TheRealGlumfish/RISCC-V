@@ -12,6 +12,7 @@ FILE *outFile;
 size_t LCLabelId = 0;
 size_t ifLabelId = 0;
 bool regs[64] = {0};
+int ternID = 0;
 
 const char *regStr(Reg reg)
 {
@@ -1060,22 +1061,24 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         compileExpr(expr->op2, dest);
         break;
     }
-    // case TERN:
-    // {
-    //     Reg condition = getTmpReg(); // always an int (bool)
-    //     compileExpr(expr->op1, condition);
-    //     // br if zero
-    //     // dest Reg = compileExpr(op2)
-    //     // jump END
-    //     // destReg = compileExpr(op3)
-    //     //END
-
-    // }
-        // default:
-        // {
-        //     fprintf(stderr, "Operation not supported, exiting...");
-        //     exit(EXIT_FAILURE);
-        // }
+    case TERN:
+    {
+        Reg condition = getTmpReg(); // always an int (bool)
+        compileExpr(expr->op1, condition);
+        fprintf(outFile, "\tbeqz %s, .TERNa%i\n", regStr(condition), ternID);
+        compileExpr(expr->op2, dest);
+        fprintf(outFile, "\tj .TERNb%i\n", ternID); // unconditional jump
+        fprintf(outFile, ".TERNa%lu:\n", ternID);
+        compileExpr(expr->op3, dest);
+        fprintf(outFile, ".TERNb%lu:\n", ternID);
+        ternID++;
+        break;
+    }
+    default:
+    {
+        fprintf(stderr, "Operation not supported, exiting...");
+        exit(EXIT_FAILURE);
+    }
     }
 }
 

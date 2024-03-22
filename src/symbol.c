@@ -193,7 +193,14 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t storageSize, size_t typeSize,
     case SWITCH_ENTRY:
         symbolEntry->storageSize = 0;
         symbolEntry->typeSize = 0;
+        break;
+    
+    case FOR_ENTRY:
+        symbolEntry->storageSize = 0;
+        symbolEntry->typeSize = 0;
+        break;
     }
+    
     symbolEntry->isGlobal = false;
     symbolEntry->entryType = entryType;
     return symbolEntry;
@@ -202,7 +209,7 @@ SymbolEntry *symbolEntryCreate(char *ident, size_t storageSize, size_t typeSize,
 // destructor for symbol entry
 void symbolEntryDestroy(SymbolEntry *symbolEntry)
 {
-    if (symbolEntry->entryType == WHILE_ENTRY || symbolEntry->entryType == SWITCH_ENTRY)
+    if (symbolEntry->entryType == WHILE_ENTRY || symbolEntry->entryType == SWITCH_ENTRY || symbolEntry == FOR_ENTRY)
     {
         free(symbolEntry->ident);
     }

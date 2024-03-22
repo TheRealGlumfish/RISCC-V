@@ -902,6 +902,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         }
         compileAssignExpr(assign, tmp);
         freeReg(tmp);
+        free(assign);
         exprDestroy(one);
         break;
     }
@@ -1650,7 +1651,7 @@ void compileJumpStmt(JumpStmt *stmt)
         }
         case FOR_ENTRY:
         {
-            fprintf(outFile, "\tj .FOR%s\n", stmt->symbolEntry->ident);
+            fprintf(outFile, "\tj .FOR_MOD%s\n", stmt->symbolEntry->ident);
             break;
         }
         }
@@ -1752,7 +1753,15 @@ void compileForStmt(ForStmt *stmt)
         // TODO: Add code to deal with floats
         Reg tmp = getTmpReg();
         compileExpr(stmt->modifier, tmp);
-        getTmpReg();
+        freeReg(tmp);
+        fprintf(outFile, "\tj .FOR%s\n", stmt->symbolEntry->ident);
+
+        fprintf(outFile, ".FOR_MOD%s:\n", stmt->symbolEntry->ident);
+        Reg tmp1 = getTmpReg();
+        compileExpr(stmt->modifier, tmp1);
+        freeReg(tmp1);
+
+        fprintf(outFile, "\tj .FOR_END%s\n", stmt->symbolEntry->ident);
     }
     fprintf(outFile, "\tj .FOR%s\n", stmt->symbolEntry->ident);
     fprintf(outFile, ".FOR_END%s:\n", stmt->symbolEntry->ident);
@@ -1999,57 +2008,61 @@ void compileFuncArgs(DeclarationList declList)
     for (size_t i = 0; i < declList.size; i++)
     {
         // for primitive types
-        DataType paramType = declList.decls[i]->symbolEntry->type.dataType;
-        // char *ident = declList.decls[i]->symbolEntry->ident;
-        size_t stackOffset = declList.decls[i]->symbolEntry->stackOffset;
+        if(declList.decls[i]->typeSpecList->typeSpecs[0]->dataType != VOID_TYPE)
+        {
+            DataType paramType = declList.decls[i]->symbolEntry->type.dataType;
+        
+            // char *ident = declList.decls[i]->symbolEntry->ident;
+            size_t stackOffset = declList.decls[i]->symbolEntry->stackOffset;
 
-        if (paramType == INT_TYPE || paramType == CHAR_TYPE || paramType == SHORT_TYPE || isPtr(paramType))
-        {
-            if (usedIntRegs != maxIntRegs)
+            if (paramType == INT_TYPE || paramType == CHAR_TYPE || paramType == SHORT_TYPE || isPtr(paramType))
             {
-                for (size_t j = 0; j < 8; j++)
+                if (usedIntRegs != maxIntRegs)
                 {
-                    if (intRegs[j] != ZERO)
+                    for (size_t j = 0; j < 8; j++)
                     {
-                        fprintf(outFile, "\tsw a%lu, -%lu(fp)\n", j, stackOffset);
-                        intRegs[j] = ZERO;
-                        usedIntRegs++;
-                        break;
+                        if (intRegs[j] != ZERO)
+                        {
+                            fprintf(outFile, "\tsw a%lu, -%lu(fp)\n", j, stackOffset);
+                            intRegs[j] = ZERO;
+                            usedIntRegs++;
+                            break;
+                        }
                     }
                 }
+                // else
+                // {
+                //     printf("%s : SP(%zu) \n", ident, stackOffset);
+                // }
             }
-            // else
-            // {
-            //     printf("%s : SP(%zu) \n", ident, stackOffset);
-            // }
-        }
-        else if (paramType == FLOAT_TYPE || paramType == DOUBLE_TYPE)
-        {
-            if (usedFloatRegs != maxFloatRegs)
+            else if (paramType == FLOAT_TYPE || paramType == DOUBLE_TYPE)
             {
-                for (size_t j = 0; j < 8; j++)
+                if (usedFloatRegs != maxFloatRegs)
                 {
-                    if (floatRegs[j] != ZERO)
+                    for (size_t j = 0; j < 8; j++)
                     {
-                        if (paramType == FLOAT_TYPE)
+                        if (floatRegs[j] != ZERO)
                         {
-                            fprintf(outFile, "\tfsw fa%lu, -%lu(fp)\n", j, stackOffset);
+                            if (paramType == FLOAT_TYPE)
+                            {
+                                fprintf(outFile, "\tfsw fa%lu, -%lu(fp)\n", j, stackOffset);
+                            }
+                            else
+                            {
+                                fprintf(outFile, "\tfsd fa%lu, -%lu(fp)\n", j, stackOffset);
+                            }
+                            floatRegs[i] = ZERO;
+                            usedFloatRegs++;
+                            break;
                         }
-                        else
-                        {
-                            fprintf(outFile, "\tfsd fa%lu, -%lu(fp)\n", j, stackOffset);
-                        }
-                        floatRegs[i] = ZERO;
-                        usedFloatRegs++;
-                        break;
                     }
                 }
+                // else
+                // {
+                //     printf("%s : SP(%zu) \n", ident, stackOffset);
+                //
+                // }
             }
-            // else
-            // {
-            //     printf("%s : SP(%zu) \n", ident, stackOffset);
-            //
-            // }
         }
     }
 }

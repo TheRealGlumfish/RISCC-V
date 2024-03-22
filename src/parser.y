@@ -549,9 +549,9 @@ assignment_operator
 	| SUB_ASSIGN { $$ = SUB; } 
 	| LEFT_ASSIGN { $$ = LEFT_SHIFT; } 
 	| RIGHT_ASSIGN { $$ = RIGHT_SHIFT; } 
-	| AND_ASSIGN { $$ = AND; } 
+	| AND_ASSIGN { $$ = AND_BIT; } 
 	| XOR_ASSIGN { $$ = XOR; } 
-	| OR_ASSIGN { $$ = OR; } 
+	| OR_ASSIGN { $$ = OR_BIT; } 
 	;
 
 expression

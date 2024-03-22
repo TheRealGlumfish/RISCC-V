@@ -39,7 +39,6 @@ int main(int argc, char **argv)
         fprintf(stderr, "No output file specified, outputing to STDOUT...\n");
         outFile = stdout;
     }
-
     yyparse();
     SymbolTable *globalTable = populateSymbolTable(root);
     displaySymbolTable(globalTable);

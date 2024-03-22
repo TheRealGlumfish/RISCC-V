@@ -196,16 +196,6 @@ function_definition
         $$->body = $3;
         free($2);
 	}
-    /* | declaration_specifiers declarator SEMI_COLON{ // modification to original parser for function prototypes.
-    $$ = funcDefCreate($1, $2->pointerCount, $2->ident);
-    $$->isPrototype = true;
-    $$->isParam = $2->isParam;
-    if($2->isParam)
-    {   
-        $$->args = $2->parameterList;
-    }
-    free($2);
-    } */
 	| declarator declaration_list compound_statement
                 //TODO: Add error message "out of spec"
 	| declarator compound_statement

@@ -456,10 +456,12 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
         scanOperationExpr(expr->operation, parentTable);
 
         // this is botttom-up because of the recursive call previously
+        Operator *operator;
         if (expr->operation->operator== SIZEOF_OP)
         {
             expr->operation->type = UNSIGNED_INT_TYPE;
         }
+        //else if(expr->operation->ty)
         else if (expr->operation->operator == ADDRESS)
         {
             expr->operation->type = addPtrToType(returnType(expr->operation->op1));

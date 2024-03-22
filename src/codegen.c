@@ -242,7 +242,7 @@ void compileConstantExpr(ConstantExpr *expr, const Reg dest)
     if (expr->isString)
     {
         uint64_t labelId = getId(&LCLabelId);
-        fprintf(outFile, ".section .data\n");
+        fprintf(outFile, ".section .sdata\n");
         fprintf(outFile, ".align 2\n");
         fprintf(outFile, ".LC%lu:\n", labelId);
         fprintf(outFile, "\t.string \"%s\"\n", expr->string_const);
@@ -1011,10 +1011,11 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
         if (!expr->symbolEntry->isGlobal)
         {
             fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            
         }
         else
         {
-            fprintf(outFile, "\tflw %s, %s\n", regStr(dest), expr->ident);
+            fprintf(outFile, "\tflw %s, %s, zero\n", regStr(dest), expr->ident);
         }
         break;
     }
@@ -1026,7 +1027,7 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
         }
         else
         {
-            fprintf(outFile, "\tfld %s, %s\n", regStr(dest), expr->ident);
+            fprintf(outFile, "\tfld %s, %s, zero\n", regStr(dest), expr->ident);
         }
         break;
     }
@@ -1098,7 +1099,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             {
                 if (expr->symbolEntry->isGlobal)
                 {
-                    fprintf(outFile, "\tsb %s, %s\n", regStr(dest), expr->ident);
+                    fprintf(outFile, "\tsb %s, %s, zero\n", regStr(dest), expr->ident);
                 }
                 else
                 {
@@ -1123,7 +1124,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             {
                 if (expr->symbolEntry->isGlobal)
                 {
-                    fprintf(outFile, "\tsb %s, %s\n", regStr(dest), expr->ident);
+                    fprintf(outFile, "\tsb %s, %s, zero\n", regStr(dest), expr->ident);
                 }
                 else
                 {
@@ -1158,7 +1159,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             {
                 if (expr->symbolEntry->isGlobal)
                 {
-                    fprintf(outFile, "\tsw %s, %s\n", regStr(dest), expr->ident);
+                    fprintf(outFile, "\tsw %s, %s, zero\n", regStr(dest), expr->ident);
                 }
                 else
                 {
@@ -1183,7 +1184,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             {
                 if (expr->symbolEntry->isGlobal)
                 {
-                    fprintf(outFile, "\tsw %s, %s\n", regStr(dest), expr->ident);
+                    fprintf(outFile, "\tsw %s, %s, zero\n", regStr(dest), expr->ident);
                 }
                 else
                 {
@@ -1217,7 +1218,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             {
                 if (expr->symbolEntry->isGlobal)
                 {
-                    fprintf(outFile, "\tfsw %s, %s\n", regStr(dest), expr->ident);
+                    fprintf(outFile, "\tfsw %s, %s, zero\n", regStr(dest), expr->ident);
                 }
                 else
                 {
@@ -1241,7 +1242,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             {
                 if (expr->symbolEntry->isGlobal)
                 {
-                    fprintf(outFile, "\tfsw %s, %s\n", regStr(dest), expr->ident);
+                    fprintf(outFile, "\tfsw %s, %s, zero\n", regStr(dest), expr->ident);
                 }
                 else
                 {
@@ -1274,7 +1275,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             {
                 if (expr->symbolEntry->isGlobal)
                 {
-                    fprintf(outFile, "\tfsd %s, %s\n", regStr(dest), expr->ident);
+                    fprintf(outFile, "\tfsd %s, %s, zero\n", regStr(dest), expr->ident);
                 }
                 else
                 {
@@ -1298,7 +1299,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             {
                 if (expr->symbolEntry->isGlobal)
                 {
-                    fprintf(outFile, "\tfsd %s, %s\n", regStr(dest), expr->ident);
+                    fprintf(outFile, "\tfsd %s, %s, zero\n", regStr(dest), expr->ident);
                 }
                 else
                 {
@@ -1331,7 +1332,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             {
                 if (expr->symbolEntry->isGlobal)
                 {
-                    fprintf(outFile, "\tsw %s, %s\n", regStr(dest), expr->ident);
+                    fprintf(outFile, "\tsw %s, %s, zero\n", regStr(dest), expr->ident);
                 }
                 else
                 {
@@ -1356,7 +1357,7 @@ void compileAssignExpr(AssignExpr *expr, Reg dest)
             {
                 if (expr->symbolEntry->isGlobal)
                 {
-                    fprintf(outFile, "\tsw %s, %s\n", regStr(dest), expr->ident);
+                    fprintf(outFile, "\tsw %s, %s, zero\n", regStr(dest), expr->ident);
                 }
                 else
                 {
@@ -1976,25 +1977,30 @@ void compileGlobal(Decl *decl)
     // TODO: Add const expr eval
     if (decl->declInit->initExpr == NULL)
     {
-        fprintf(outFile, ".section .bss\n");
+        fprintf(outFile, "\t.section .sbss\n");
     }
     else
     {
-        fprintf(outFile, ".section .data\n");
+        fprintf(outFile, "\t.section .sdata\n");
     }
+    fprintf(outFile, "\t.align 2\n\t.globl %s\n\t.type %s, @object\n\t.size %s, %lu\n", decl->symbolEntry->ident, decl->symbolEntry->ident, decl->symbolEntry->ident, decl->symbolEntry->storageSize);
     fprintf(outFile, "%s:\n", decl->symbolEntry->ident);
     if (isPtr(decl->symbolEntry->type.dataType))
     {
         if (decl->declInit->initExpr == NULL)
         {
-            fprintf(outFile, "\t.word\n");
+            fprintf(outFile, "\t.zero %lu\n", decl->symbolEntry->storageSize);
         }
         else
         {
-            if (decl->declInit->initExpr->type == CONSTANT_EXPR)
+            if (decl->declInit->initExpr->type == CONSTANT_EXPR && decl->declInit->initExpr->constant->type == INT_TYPE)
             {
                 fprintf(outFile, "\t.word %i\n", decl->declInit->initExpr->constant->int_const);
             }
+            // else if (decl->declInit->initExpr->type == CONSTANT_EXPR && decl->declInit->initExpr->constant->isString)
+            // {
+            //     fprintf(outFile, "\t.string \"%s\"\n", decl->declInit->initExpr->constant->string_const);
+            // }
             else
             {
                 fprintf(outFile, "\t.word 0\n");
@@ -2039,7 +2045,6 @@ void compileGlobal(Decl *decl)
     }
     else
     {
-
         if (decl->declInit->initExpr == NULL)
         {
             fprintf(outFile, "\t.word\n");
@@ -2056,5 +2061,5 @@ void compileGlobal(Decl *decl)
             }
         }
     }
-    fprintf(outFile, ".section .text\n");
+    fprintf(outFile, ".text\n");
 }

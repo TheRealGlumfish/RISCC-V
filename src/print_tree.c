@@ -231,7 +231,6 @@ void displayExpr(Expr *expr, int indent)
         break;
     case ASSIGN_EXPR:
         displayAssignExpr(expr->assignment);
-        // indented variable name
         
         if(expr->assignment->lvalue != NULL)
         {

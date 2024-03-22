@@ -106,5 +106,6 @@ void compileFuncArgs(DeclarationList declList);
 void compileCallArgs(FuncExpr *expr);
 
 void compileTranslationUnit(TranslationUnit *transUnit);
+void compileGlobal(Decl *decl);
 
 #endif

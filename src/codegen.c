@@ -950,6 +950,13 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         }
         break;
     }
+    case COMMA_OP:
+    {
+        Reg tmp = getTmpReg();
+        compileExpr(expr->op1, tmp);
+        compileExpr(expr->op2, dest);
+        break;
+    }
         // default:
         // {
         //     fprintf(stderr, "Operation not supported, exiting...");
@@ -1928,5 +1935,99 @@ void compileTranslationUnit(TranslationUnit *transUnit)
                 compileFunc(transUnit->externDecls[i]->funcDef);
             }
         }
+        else
+        {
+            compileGlobal(transUnit->externDecls[i]->decl);
+        }
     }
+}
+
+void compileGlobal(Decl *decl)
+{
+    if (decl->symbolEntry->entryType == ARRAY_ENTRY)
+        return;
+    // TODO: Add const expr eval
+    if (decl->declInit->initExpr == NULL)
+    {
+        fprintf(outFile, ".section .bss\n");
+    }
+    else
+    {
+        fprintf(outFile, ".section .data\n");
+    }
+    fprintf(outFile, "%s:\n", decl->symbolEntry->ident);
+    if (isPtr(decl->symbolEntry->type.dataType))
+    {
+        if (decl->declInit->initExpr == NULL)
+        {
+            fprintf(outFile, "\t.word\n");
+        }
+        else
+        {
+            if (decl->declInit->initExpr->type == CONSTANT_EXPR)
+            {
+                fprintf(outFile, "\t.word %i\n", decl->declInit->initExpr->constant->int_const);
+            }
+            else
+            {
+                fprintf(outFile, "\t.word 0\n");
+            }
+        }
+    }
+    else if (decl->symbolEntry->type.dataType == FLOAT_TYPE)
+    {
+        if (decl->declInit->initExpr == NULL)
+        {
+            fprintf(outFile, "\t.float\n");
+        }
+        else
+        {
+            if (decl->declInit->initExpr->type == CONSTANT_EXPR)
+            {
+                fprintf(outFile, "\t.float %f\n", decl->declInit->initExpr->constant->float_const);
+            }
+            else
+            {
+                fprintf(outFile, "\t.float 0.0\n");
+            }
+        }
+    }
+    else if (decl->symbolEntry->type.dataType == DOUBLE_TYPE)
+    {
+        if (decl->declInit->initExpr == NULL)
+        {
+            fprintf(outFile, "\t.double\n");
+        }
+        else
+        {
+            if (decl->declInit->initExpr->type == CONSTANT_EXPR)
+            {
+                fprintf(outFile, "\t.double %f\n", decl->declInit->initExpr->constant->float_const);
+            }
+            else
+            {
+                fprintf(outFile, "\t.double 0.0\n");
+            }
+        }
+    }
+    else
+    {
+
+        if (decl->declInit->initExpr == NULL)
+        {
+            fprintf(outFile, "\t.word\n");
+        }
+        else
+        {
+            if (decl->declInit->initExpr->type == CONSTANT_EXPR)
+            {
+                fprintf(outFile, "\t.word %i\n", decl->declInit->initExpr->constant->int_const);
+            }
+            else
+            {
+                fprintf(outFile, "\t.word 0\n");
+            }
+        }
+    }
+    fprintf(outFile, ".section .text\n");
 }

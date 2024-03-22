@@ -2104,8 +2104,8 @@ void compileGlobal(Decl *decl)
             else if (decl->declInit->initExpr->type == CONSTANT_EXPR && decl->declInit->initExpr->constant->isString)
             {
                 uint64_t labelId = getId(&LCLabelId);
-                fprintf(outFile, "\t.word .LC%lu:\n", labelId);
-                fprintf(outFile, ".\talign 2\n");
+                fprintf(outFile, "\t.word .LC%lu\n", labelId);
+                fprintf(outFile, "\t.align 2\n");
                 fprintf(outFile, ".LC%lu:\n", labelId);
                 fprintf(outFile, "\t.string \"%s\"\n", decl->declInit->initExpr->constant->string_const);
                 fprintf(outFile, ".text\n");

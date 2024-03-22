@@ -20,6 +20,13 @@ build/lexer.yy.c: src/lexer.flex build/parser.tab.h
 	@mkdir -p build
 	flex -o build/lexer.yy.c src/lexer.flex
 
+coverage:
+	@rm -rf coverage/
+	@mkdir -p coverage
+	lcov -c -d bin -o coverage/cov.info
+	genhtml coverage/cov.info -o coverage
+	@find . -name "*.gcda" -delete
+
 clean:
 	@rm -rf bin/
 	@rm -rf build/

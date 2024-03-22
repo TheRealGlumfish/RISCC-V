@@ -60,6 +60,7 @@ VariableExpr *variableExprCreate(char *ident)
         abort();
     }
     expr->ident = ident;
+    expr->symbolEntry = NULL;
     return expr;
 }
 

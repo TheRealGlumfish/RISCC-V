@@ -896,6 +896,10 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     {
         if (expr->op1->type == VARIABLE_EXPR)
         {
+            if(expr->op1->variable->symbolEntry == NULL)
+            {
+                abort();
+            }
             if (expr->op1->variable->symbolEntry->isGlobal)
             {
                 fprintf(outFile, "\tla %s, %s\n", regStr(dest), expr->op1->variable->ident);

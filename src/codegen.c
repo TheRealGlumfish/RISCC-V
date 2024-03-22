@@ -877,7 +877,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     {
         switch (expr->type)
         {
-        case INT_PTR_TYPE:
+        case INT_TYPE:
         {
             Reg lvalue = getTmpReg();
             compileExpr(expr->op1, lvalue);
@@ -885,7 +885,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
             freeReg(lvalue);
             break;
         }
-        case FLOAT_PTR_TYPE:
+        case FLOAT_TYPE:
         {
             Reg lvalue = getTmpReg();
             compileExpr(expr->op1, lvalue);
@@ -893,7 +893,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
             freeReg(lvalue);
             break;
         }
-        case DOUBLE_PTR_TYPE:
+        case DOUBLE_TYPE:
         {
             Reg lvalue = getTmpReg();
             compileExpr(expr->op1, lvalue);
@@ -1417,7 +1417,7 @@ void compileCompoundStmt(CompoundStmt *stmt)
             else if (returnType(stmt->declList.decls[i]->declInit->initExpr) == DOUBLE_TYPE)
             {
                 compileExpr(stmt->declList.decls[i]->declInit->initExpr, FA0);
-                fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(FA0), stmt->declList.decls[i]->symbolEntry->stackOffset);
+                fprintf(outFile, "\tfld %s, -%lu(fp)\n", regStr(FA0), stmt->declList.decls[i]->symbolEntry->stackOffset);
             }
             else
             {
@@ -1598,7 +1598,7 @@ void compileFunc(FuncDef *func)
                 else if (returnType(func->body->compoundStmt->declList.decls[i]->declInit->initExpr) == DOUBLE_TYPE)
                 {
                     compileExpr(func->body->compoundStmt->declList.decls[i]->declInit->initExpr, FA0);
-                    fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(FA0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
+                    fprintf(outFile, "\tfld %s, -%lu(fp)\n", regStr(FA0), func->body->compoundStmt->declList.decls[i]->symbolEntry->stackOffset);
                 }
                 else
                 {

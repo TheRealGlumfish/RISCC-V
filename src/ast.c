@@ -1616,7 +1616,7 @@ DataType addPtrToType(DataType dataType)
         case DOUBLE_TYPE:
             return DOUBLE_PTR_TYPE;
         default:
-            printf("Type does not have corresponding pointer type");
+            printf("Type does not have corresponding pointer type\n");
     }
 }
 
@@ -1635,7 +1635,7 @@ DataType removerPtrFromType(DataType dataType)
         case DOUBLE_PTR_TYPE:
             return DOUBLE_TYPE;
         default:
-            printf("Type is not apointer type");
+            printf("Type is not apointer type\n");
     }
 }
 

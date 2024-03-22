@@ -399,8 +399,11 @@ void scanAssignment(AssignExpr *assignExpr, SymbolTable *parentTable)
 {
     if (assignExpr->lvalue != NULL)
     {
-        assignExpr->symbolEntry = getSymbolEntry(parentTable, assignExpr->ident, VARIABLE_ENTRY);
         scanExpr(assignExpr->lvalue, parentTable);
+    }
+    else
+    {
+        assignExpr->symbolEntry = getSymbolEntry(parentTable, assignExpr->ident, VARIABLE_ENTRY);
     }
     scanExpr(assignExpr->op, parentTable);
 }

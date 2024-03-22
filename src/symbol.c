@@ -584,6 +584,10 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
         {
             expr->operation->type = INT_TYPE;
         }
+        else if(operator == TERN)
+        {
+            expr->operation->type = returnType(expr->operation->op2);
+        }
         else
         {
             DataType op1Type = returnType(expr->operation->op1);

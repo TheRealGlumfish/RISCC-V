@@ -1064,6 +1064,17 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
         compileExpr(expr->op2, dest);
         break;
     }
+    // case TERN:
+    // {
+    //     Reg condition = getTmpReg(); // always an int (bool)
+    //     compileExpr(expr->op1, condition);
+    //     // br if zero
+    //     // dest Reg = compileExpr(op2)
+    //     // jump END
+    //     // destReg = compileExpr(op3)
+    //     //END
+
+    // }
         // default:
         // {
         //     fprintf(stderr, "Operation not supported, exiting...");

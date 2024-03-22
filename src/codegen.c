@@ -555,7 +555,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     case EQ:
     {
         // if one of the ops is a float (cant use expr->type)
-        if(returnType(expr->op1) == FLOAT_TYPE)
+        if (returnType(expr->op1) == FLOAT_TYPE)
         {
             // TODO: Deal with signs
             Reg op1 = getTmpFltReg();
@@ -567,7 +567,8 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
             freeReg(op2);
             break;
         }
-        else{
+        else
+        {
             // TODO: Deal with signs
             Reg op1 = getTmpReg();
             Reg op2 = getTmpReg();
@@ -579,11 +580,10 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
             freeReg(op2);
             break;
         }
-       
     }
     case NE:
     {
-        if(returnType(expr->op1) == FLOAT_TYPE)
+        if (returnType(expr->op1) == FLOAT_TYPE)
         {
             // TODO: Deal with signs
             Reg op1 = getTmpFltReg();
@@ -612,7 +612,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     }
     case LT:
     {
-        if(returnType(expr->op1) == FLOAT_TYPE)
+        if (returnType(expr->op1) == FLOAT_TYPE)
         {
             // TODO: Deal with signs
             Reg op1 = getTmpFltReg();
@@ -635,11 +635,11 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
             freeReg(op1); // TODO: Test register eviction
             freeReg(op2);
             break;
-        } 
+        }
     }
     case GT:
     {
-        if(returnType(expr->op1) == FLOAT_TYPE)
+        if (returnType(expr->op1) == FLOAT_TYPE)
         {
             // TODO: Deal with signs
             Reg op1 = getTmpFltReg();
@@ -667,7 +667,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     }
     case LE:
     {
-        if(returnType(expr->op1) == FLOAT_TYPE)
+        if (returnType(expr->op1) == FLOAT_TYPE)
         {
             // TODO: Deal with signs
             Reg op1 = getTmpFltReg();
@@ -693,11 +693,10 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
             freeReg(op2);
             break;
         }
-        
     }
     case GE:
     {
-        if(returnType(expr->op1) == FLOAT_TYPE)
+        if (returnType(expr->op1) == FLOAT_TYPE)
         {
             // TODO: Deal with signs
             Reg op1 = getTmpFltReg();
@@ -722,7 +721,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
             freeReg(op1); // TODO: Test register eviction
             freeReg(op2);
             break;
-        }  
+        }
     }
     case OR:
     {
@@ -1106,7 +1105,6 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
         if (!expr->symbolEntry->isGlobal)
         {
             fprintf(outFile, "\tflw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
-            
         }
         else
         {
@@ -2092,10 +2090,15 @@ void compileGlobal(Decl *decl)
             {
                 fprintf(outFile, "\t.word %i\n", decl->declInit->initExpr->constant->int_const);
             }
-            // else if (decl->declInit->initExpr->type == CONSTANT_EXPR && decl->declInit->initExpr->constant->isString)
-            // {
-            //     fprintf(outFile, "\t.string \"%s\"\n", decl->declInit->initExpr->constant->string_const);
-            // }
+            else if (decl->declInit->initExpr->type == CONSTANT_EXPR && decl->declInit->initExpr->constant->isString)
+            {
+                uint64_t labelId = getId(&LCLabelId);
+                fprintf(outFile, "\t.word .LC%lu:\n", labelId);
+                fprintf(outFile, ".\talign 2\n");
+                fprintf(outFile, ".LC%lu:\n", labelId);
+                fprintf(outFile, "\t.string \"%s\"\n", decl->declInit->initExpr->constant->string_const);
+                fprintf(outFile, ".text\n");
+            }
             else
             {
                 fprintf(outFile, "\t.word 0\n");

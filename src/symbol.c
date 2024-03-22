@@ -556,8 +556,6 @@ void scanForStmt(ForStmt *forStmt, SymbolTable *parentTable)
     scanExpr(forStmt->modifier, parentTable);
 }
 
-
-
 // while statement second pass
 void scanWhileStmt(WhileStmt *whileStmt, SymbolTable *parentTable)
 {

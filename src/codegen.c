@@ -896,7 +896,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     {
         if (expr->op1->type == VARIABLE_EXPR)
         {
-            if(expr->op1->variable->symbolEntry == NULL)
+            if (expr->op1->variable->symbolEntry == NULL)
             {
                 abort();
             }
@@ -1044,13 +1044,27 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
     }
     default:
     {
-        if (!expr->symbolEntry->isGlobal)
+        if (expr->symbolEntry->entryType == ARRAY_ENTRY)
         {
-            fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            if (!expr->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\taddi %s, fp, %lu\n", regStr(dest), expr->symbolEntry->stackOffset);
+            }
+            else
+            {
+                fprintf(outFile, "\tla %s, %s\n", regStr(dest), expr->ident);
+            }
         }
         else
         {
-            fprintf(outFile, "\tlw %s, %s\n", regStr(dest), expr->ident);
+            if (!expr->symbolEntry->isGlobal)
+            {
+                fprintf(outFile, "\tlw %s, -%lu(fp)\n", regStr(dest), expr->symbolEntry->stackOffset);
+            }
+            else
+            {
+                fprintf(outFile, "\tlw %s, %s\n", regStr(dest), expr->ident);
+            }
         }
         break;
         // TOOD: Deal with more types

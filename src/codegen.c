@@ -12,10 +12,6 @@ FILE *outFile;
 size_t LCLabelId = 0;
 size_t ifLabelId = 0;
 bool regs[64] = {0};
-// TODO: For the love of god remove this horrible hack, I beggggggg Toby add these to the AST I begggggg pleassseeeee
-// TOBY I begggg you need to give me what I need
-// Please stop breaking the compiler we can fix this thing
-SymbolEntry *switchEntry = NULL;
 
 const char *regStr(Reg reg)
 {
@@ -1793,7 +1789,6 @@ void compileSwitchStmt(SwitchStmt *stmt)
     {
         fprintf(outFile, "\tj .SWITCH_END%s\n", stmt->symbolEntry->ident);
     }
-    switchEntry = stmt->symbolEntry;
     compileStmt(stmt->body);
     fprintf(outFile, ".SWITCH_END%s:\n", stmt->symbolEntry->ident);
 }
@@ -1803,12 +1798,12 @@ void compileLabelStmt(LabelStmt *stmt)
     // TODO: Add support for other types of labels
     if (stmt->ident == NULL && stmt->caseLabel == NULL)
     {
-        fprintf(outFile, ".SWITCH_DEFAULT%s:\n", switchEntry->ident);
+        fprintf(outFile, ".SWITCH_DEFAULT%s:\n", stmt->symbolEntry->ident);
         compileStmt(stmt->body);
     }
     else if (stmt->caseLabel != NULL)
     {
-        fprintf(outFile, ".SWITCH%s_CASE%i:\n", switchEntry->ident, evaluateIntConstExpr(stmt->caseLabel));
+        fprintf(outFile, ".SWITCH%s_CASE%i:\n", stmt->symbolEntry->ident, evaluateIntConstExpr(stmt->caseLabel));
         compileStmt(stmt->body);
         // TOOD: Add support for const expr
     }

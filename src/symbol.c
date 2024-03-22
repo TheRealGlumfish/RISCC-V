@@ -11,38 +11,30 @@ size_t switchCount = 0;
 size_t forCount = 0;
 
 // returns the value of integer expressions (only works for constant expressions)
-int evaluateConstExpr(Expr *expr)
+int evaluateIntConstExpr(Expr *expr)
 {
     switch (expr->type)
     {
-    case VARIABLE_EXPR:
-    {
-        // not in constant expr
-        break;
-    }
     case CONSTANT_EXPR:
     {
         switch(expr->constant->type)
         {
-            case INT_TYPE: // get working for other types
-                return expr->constant->int_const;
-            default:
-                printf("Non-int constant expressionn evaluation not implemented\n");
-                break;
+            // int + pointer doesnt work yet
+            return expr->constant->int_const;
         }
     }
     case OPERATION_EXPR:
     {
-        int op1 = evaluateConstExpr(expr->operation->op1);
+        int op1 = evaluateIntConstExpr(expr->operation->op1);
         int op2;
         int op3;
         if(expr->operation->op2 != NULL)
         {
-            op2 = evaluateConstExpr(expr->operation->op2);
+            op2 = evaluateIntConstExpr(expr->operation->op2);
         }
         if(expr->operation->op3 != NULL)
         {
-            op3 = evaluateConstExpr(expr->operation->op3);
+            op3 = evaluateIntConstExpr(expr->operation->op3);
         }
 
         switch(expr->operation->operator)
@@ -98,27 +90,82 @@ int evaluateConstExpr(Expr *expr)
             case SIZEOF_OP:
                 printf("SizeOf Constant Expression Evaluation Not Implemented\n");
                 break;
-            case ADDRESS:
-                // not in constant expr
-                break;
-            case DEREF:
-                // not in constant expr
-                break;
-            
         }
-    }
-    case ASSIGN_EXPR:
-    {
-        // cant be in constant expression
-        break;
-    }
-    case FUNC_EXPR:
-    {
-        // can't be in constant expression
-        break;
     }
     }
 }
+
+// returns the value of float expressions (only works for constant expressions)
+float evaluateFloatConstExpr(Expr *expr)
+{
+    switch (expr->type)
+    {
+    case CONSTANT_EXPR:
+    {
+        switch(expr->constant->type)
+        {
+            // float + pointers don't work yet
+            return expr->constant->float_const;
+        }
+    }
+    case OPERATION_EXPR:
+    {
+        float op1 = evaluateFloatConstExpr(expr->operation->op1);
+        float op2;
+        float op3;
+        if(expr->operation->op2 != NULL)
+        {
+            op2 = evaluateFloatConstExpr(expr->operation->op2);
+        }
+        if(expr->operation->op3 != NULL)
+        {
+            op3 = evaluateFloatConstExpr(expr->operation->op3);
+        }
+
+        switch(expr->operation->operator)
+        {
+            case ADD:
+                return op1 + op2;
+            case SUB:
+                return op1 - op2;
+            case MUL:
+                return op1 * op2;
+            case DIV:
+                return op1 / op2;
+            case AND:
+                return op1 && op2;
+            case OR:
+                return op1 || op2;
+            case NOT:
+                return !op1;
+            case EQ:
+                return op1 == op2;
+            case NE:
+                return op1 != op2;
+            case LT:
+                return op1 < op2;
+            case GT:
+                return op1 > op2;
+            case LE:
+                return op1 <= op2;
+            case GE:
+                return op1 >= op2;
+            case TERN: // easy
+                if(op1)
+                {
+                    return op2;
+                }
+                else{
+                    return op3;
+                }
+            case SIZEOF_OP:
+                printf("SizeOf Constant Expression Evaluation Not Implemented\n");
+                break;
+        }
+    }
+    }
+}
+
 
 // constructor for symbol entry
 SymbolEntry *symbolEntryCreate(char *ident, size_t storageSize, size_t typeSize, EntryType entryType)
@@ -465,7 +512,7 @@ void scanDecl(Decl *decl, SymbolTable *symbolTable)
 
     if (decl->declInit->declarator->isArray)
     {
-        int arraySize = evaluateConstExpr(decl->declInit->declarator->arraySize);
+        int arraySize = evaluateIntConstExpr(decl->declInit->declarator->arraySize);
         symbolEntry = symbolEntryCreate(ident, storageSize(type.dataType) * arraySize, typeSize(type.dataType), ARRAY_ENTRY);
         symbolEntry->type.dataType = addPtrToType(type.dataType); // arrays are pointers#
     }

@@ -1808,7 +1808,7 @@ void compileLabelStmt(LabelStmt *stmt)
     }
     else if (stmt->caseLabel != NULL)
     {
-        fprintf(outFile, ".SWITCH%s_CASE%i:\n", switchEntry->ident, evaluateConstExpr(stmt->caseLabel));
+        fprintf(outFile, ".SWITCH%s_CASE%i:\n", switchEntry->ident, evaluateIntConstExpr(stmt->caseLabel));
         compileStmt(stmt->body);
         // TOOD: Add support for const expr
     }
@@ -2160,14 +2160,7 @@ void compileGlobal(Decl *decl)
         }
         else
         {
-            if (decl->declInit->initExpr->type == CONSTANT_EXPR)
-            {
-                fprintf(outFile, "\t.word %i\n", decl->declInit->initExpr->constant->int_const);
-            }
-            else
-            {
-                fprintf(outFile, "\t.word 0\n");
-            }
+            fprintf(outFile, "\t.word %i\n", evaluateIntConstExpr(decl->declInit->initExpr));
         }
     }
     fprintf(outFile, ".text\n");

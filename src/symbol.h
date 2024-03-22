@@ -63,6 +63,6 @@ SymbolEntry *getSymbolEntry(SymbolTable *symbolTable, char *ident, EntryType Ent
 SymbolTable *populateSymbolTable(TranslationUnit *rootExpr);
 
 size_t typeSize(DataType type);
-int evaluateConstExpr(Expr *expr);
+int evaluateIntConstExpr(Expr *expr);
 
 #endif

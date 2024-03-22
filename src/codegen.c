@@ -1704,7 +1704,7 @@ void compileLabelStmt(LabelStmt *stmt)
     }
     else if (stmt->caseLabel != NULL)
     {
-        fprintf(outFile, ".SWITCH%s_CASE%i:\n", switchEntry->ident, stmt->caseLabel->constant->int_const);
+        fprintf(outFile, ".SWITCH%s_CASE%i:\n", switchEntry->ident, evaluateConstExpr(stmt->caseLabel));
         compileStmt(stmt->body);
         // TOOD: Add support for const expr
     }

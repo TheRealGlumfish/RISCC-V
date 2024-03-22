@@ -421,7 +421,14 @@ void scanAssignment(AssignExpr *assignExpr, SymbolTable *parentTable)
 // variable second pass
 void scanVariable(VariableExpr *variable, SymbolTable *parentTable)
 {
-    variable->symbolEntry = getSymbolEntry(parentTable, variable->ident, VARIABLE_ENTRY);
+    SymbolEntry *symbolEntry = getSymbolEntry(parentTable, variable->ident, VARIABLE_ENTRY);
+    
+    // overlapping namespace :/
+    if(symbolEntry == NULL)
+    {
+        symbolEntry = getSymbolEntry(parentTable, variable->ident, ARRAY_ENTRY);
+    }
+    variable->symbolEntry = symbolEntry;
 }
 
 // operation expression second pass

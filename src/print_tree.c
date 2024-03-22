@@ -231,11 +231,18 @@ void displayExpr(Expr *expr, int indent)
         break;
     case ASSIGN_EXPR:
         displayAssignExpr(expr->assignment);
-        displayExpr(expr->assignment->op, indent + 4);
-
         // indented variable name
-        printIndent(indent + 4);
-        printf("└── %s\n", expr->assignment->ident);
+        
+        if(expr->assignment->lvalue != NULL)
+        {
+            displayExpr(expr->assignment->lvalue, indent+4);
+        }
+        else
+        {
+            printIndent(indent + 4);
+            printf("└── %s\n", expr->assignment->ident);
+        }
+        displayExpr(expr->assignment->op, indent + 4);
 
         break;
     case FUNC_EXPR:

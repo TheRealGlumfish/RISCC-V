@@ -1613,7 +1613,7 @@ DataType addPtrToType(DataType dataType)
             return VOID_PTR_TYPE;
         case FLOAT_TYPE:
             return FLOAT_PTR_TYPE;
-        case DOUBLE_PTR_TYPE:
+        case DOUBLE_TYPE:
             return DOUBLE_PTR_TYPE;
         default:
             printf("Type does not have corresponding pointer type");

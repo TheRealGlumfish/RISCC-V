@@ -554,80 +554,175 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     }
     case EQ:
     {
-        // TODO: Deal with signs
-        Reg op1 = getTmpReg();
-        Reg op2 = getTmpReg();
-        compileExpr(expr->op1, op1);
-        compileExpr(expr->op2, op2);
-        fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-        fprintf(outFile, "\tseqz %s, %s\n", regStr(dest), regStr(dest));
-        freeReg(op1); // TODO: Test register eviction
-        freeReg(op2);
-        break;
+        // if one of the ops is a float (cant use expr->type)
+        if(returnType(expr->op1) == FLOAT_TYPE)
+        {
+            // TODO: Deal with signs
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tfeq.s %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }
+        else{
+            // TODO: Deal with signs
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            fprintf(outFile, "\tseqz %s, %s\n", regStr(dest), regStr(dest));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }
+       
     }
     case NE:
     {
-        // TODO: Deal with signs
-        Reg op1 = getTmpReg();
-        Reg op2 = getTmpReg();
-        compileExpr(expr->op1, op1);
-        compileExpr(expr->op2, op2);
-        fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-        fprintf(outFile, "\tsnez %s, %s\n", regStr(dest), regStr(dest));
-        freeReg(op1); // TODO: Test register eviction
-        freeReg(op2);
-        break;
+        if(returnType(expr->op1) == FLOAT_TYPE)
+        {
+            // TODO: Deal with signs
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tfeq.s %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            fprintf(outFile, "\txor %s, %s, %i\n", regStr(dest), regStr(dest), 1);
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }
+        else
+        {
+            // TODO: Deal with signs
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tsub %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            fprintf(outFile, "\tsnez %s, %s\n", regStr(dest), regStr(dest));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }
     }
     case LT:
     {
-        // TODO: Deal with signs
-        Reg op1 = getTmpReg();
-        Reg op2 = getTmpReg();
-        compileExpr(expr->op1, op1);
-        compileExpr(expr->op2, op2);
-        fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-        freeReg(op1); // TODO: Test register eviction
-        freeReg(op2);
-        break;
+        if(returnType(expr->op1) == FLOAT_TYPE)
+        {
+            // TODO: Deal with signs
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tflt.s %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }
+        else
+        {
+            // TODO: Deal with signs
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        } 
     }
     case GT:
     {
-        // TODO: Deal with signs
-        // TODO: Test the damn code
-        Reg op1 = getTmpReg();
-        Reg op2 = getTmpReg();
-        compileExpr(expr->op1, op1);
-        compileExpr(expr->op2, op2);
-        fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op2), regStr(op1));
-        freeReg(op1); // TODO: Test register eviction
-        freeReg(op2);
-        break;
+        if(returnType(expr->op1) == FLOAT_TYPE)
+        {
+            // TODO: Deal with signs
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tflt.s %s, %s, %s\n", regStr(dest), regStr(op2), regStr(op1));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }
+        else
+        {
+            // TODO: Deal with signs
+            // TODO: Test the damn code
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op2), regStr(op1));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }
     }
     case LE:
     {
-        // TODO: Deal with signs
-        Reg op1 = getTmpReg();
-        Reg op2 = getTmpReg();
-        compileExpr(expr->op1, op1);
-        compileExpr(expr->op2, op2);
-        fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op2), regStr(op1));
-        fprintf(outFile, "\txori %s, %s, 1\n", regStr(dest), regStr(dest));
-        freeReg(op1); // TODO: Test register eviction
-        freeReg(op2);
-        break;
+        if(returnType(expr->op1) == FLOAT_TYPE)
+        {
+            // TODO: Deal with signs
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tflt.s %s, %s, %s\n", regStr(dest), regStr(op2), regStr(op1));
+            fprintf(outFile, "\txori %s, %s, 1\n", regStr(dest), regStr(dest));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }
+        else
+        {
+            // TODO: Deal with signs
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op2), regStr(op1));
+            fprintf(outFile, "\txori %s, %s, 1\n", regStr(dest), regStr(dest));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }
+        
     }
     case GE:
     {
-        // TODO: Deal with signs
-        Reg op1 = getTmpReg();
-        Reg op2 = getTmpReg();
-        compileExpr(expr->op1, op1);
-        compileExpr(expr->op2, op2);
-        fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
-        fprintf(outFile, "\txori %s, %s, 1\n", regStr(dest), regStr(dest));
-        freeReg(op1); // TODO: Test register eviction
-        freeReg(op2);
-        break;
+        if(returnType(expr->op1) == FLOAT_TYPE)
+        {
+            // TODO: Deal with signs
+            Reg op1 = getTmpFltReg();
+            Reg op2 = getTmpFltReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tflt.s %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            fprintf(outFile, "\txori %s, %s, 1\n", regStr(dest), regStr(dest));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }
+        else
+        {
+            // TODO: Deal with signs
+            Reg op1 = getTmpReg();
+            Reg op2 = getTmpReg();
+            compileExpr(expr->op1, op1);
+            compileExpr(expr->op2, op2);
+            fprintf(outFile, "\tslt %s, %s, %s\n", regStr(dest), regStr(op1), regStr(op2));
+            fprintf(outFile, "\txori %s, %s, 1\n", regStr(dest), regStr(dest));
+            freeReg(op1); // TODO: Test register eviction
+            freeReg(op2);
+            break;
+        }  
     }
     case OR:
     {

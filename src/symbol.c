@@ -565,19 +565,24 @@ void scanExpr(Expr *expr, SymbolTable *parentTable)
         scanOperationExpr(expr->operation, parentTable);
 
         // this is botttom-up because of the recursive call previously
-        Operator *operator;
-        if (expr->operation->operator== SIZEOF_OP)
+        Operator operator = expr->operation->operator;
+        if (operator== SIZEOF_OP)
         {
             expr->operation->type = UNSIGNED_INT_TYPE;
         }
         //else if(expr->operation->ty)
-        else if (expr->operation->operator == ADDRESS)
+        else if (operator == ADDRESS)
         {
             expr->operation->type = addPtrToType(returnType(expr->operation->op1));
         }
-        else if(expr->operation->operator == DEREF)
+        else if(operator == DEREF)
         {
             expr->operation->type = removerPtrFromType(returnType(expr->operation->op1));
+        }
+        // all comparisons (even floats) return an int type
+        else if(operator == EQ || operator == NE || operator == LT || operator == GT || operator == LE || operator == GE)
+        {
+            expr->operation->type = INT_TYPE;
         }
         else
         {

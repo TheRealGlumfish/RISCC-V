@@ -242,7 +242,8 @@ void compileConstantExpr(ConstantExpr *expr, const Reg dest)
     if (expr->isString)
     {
         uint64_t labelId = getId(&LCLabelId);
-        fprintf(outFile, ".section .rodata\n");
+        fprintf(outFile, ".section .data\n");
+        fprintf(outFile, ".align 2\n");
         fprintf(outFile, ".LC%lu:\n", labelId);
         fprintf(outFile, "\t.string \"%s\"\n", expr->string_const);
         fprintf(outFile, ".text\n");
@@ -338,7 +339,7 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
                     Reg op2 = getTmpReg();
                     compileExpr(expr->op1, op1);
                     compileExpr(expr->op2, op2);
-                    fprintf(outFile, "\tli %s, %lu\n", regStr(dest), typeSize(expr->type));
+                    fprintf(outFile, "\tli %s, %lu\n", regStr(dest), typeSize(removerPtrFromType(expr->type)));
                     if (op1Ptr)
                     {
                         fprintf(outFile, "\tmul %s, %s, %s\n", regStr(op2), regStr(op2), regStr(dest));
@@ -915,6 +916,14 @@ void compileOperationExpr(OperationExpr *expr, const Reg dest)
     {
         switch (expr->type)
         {
+        case CHAR_TYPE:
+        {
+            Reg lvalue = getTmpReg();
+            compileExpr(expr->op1, lvalue);
+            fprintf(outFile, "\tlb %s, 0(%s)\n", regStr(dest), regStr(lvalue));
+            freeReg(lvalue);
+            break;
+        }
         case INT_TYPE:
         {
             Reg lvalue = getTmpReg();
@@ -1769,7 +1778,7 @@ void compileCallArgs(FuncExpr *expr)
         // char *ident = declList.decls[i]->symbolEntry->ident;
         // size_t stackOffset = declList.decls[i]->symbolEntry->stackOffset;
 
-        if (paramType == INT_TYPE || paramType == CHAR_TYPE || paramType == SHORT_TYPE)
+        if (paramType == INT_TYPE || paramType == CHAR_TYPE || paramType == SHORT_TYPE || isPtr(paramType) || paramType == UNSIGNED_INT_TYPE || paramType == UNSIGNED_SHORT_TYPE)
         {
             if (usedIntRegs != maxIntRegs)
             {

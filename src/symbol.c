@@ -806,7 +806,7 @@ size_t typeSize(DataType type)
 
     default:
     {
-        fprintf(stderr, "Type does not have a size, exiting...\n");
+        fprintf(stderr, "Type: %i does not have a size, exiting...\n", type);
         exit(EXIT_FAILURE);
     }
     }
@@ -852,7 +852,7 @@ size_t storageSize(DataType type)
 
     default:
     {
-        fprintf(stderr, "Type does not have a storage size, exiting...\n");
+        fprintf(stderr, "Type: %i does not have a storage size, exiting...\n", type);
         exit(EXIT_FAILURE);
     }
     }

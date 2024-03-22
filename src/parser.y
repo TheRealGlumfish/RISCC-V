@@ -14,6 +14,7 @@
     extern FILE *yyin;
     int yylex(void);
     void yyerror(const char *);
+    int yylex_destroy(void);
 }
 
 // Represents the value associated with any kind of AST node.
@@ -236,7 +237,7 @@ primary_expression
         }
         else
         {
-		    $$->constant = constantExprCreate(CHAR_TYPE, true);
+		    $$->constant = constantExprCreate(CHAR_PTR_TYPE, true);
             $$->constant->string_const = $1;
         }
         }
@@ -695,7 +696,6 @@ type_specifier
 	    }
 	| LONG {
 		$$ = typeSpecifierCreate(false);
-		$$->dataType = (false);
 		$$->dataType = LONG_TYPE;
 	    }
 	| SIGNED {

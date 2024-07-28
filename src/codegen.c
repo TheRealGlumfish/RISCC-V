@@ -1153,7 +1153,8 @@ void compileVariableExpr(VariableExpr *expr, const Reg dest)
         {
             if (!expr->symbolEntry->isGlobal)
             {
-                fprintf(outFile, "\taddi %s, fp, %lu\n", regStr(dest), expr->symbolEntry->stackOffset);
+		// TODO: Verify arrays are actually fixed
+                fprintf(outFile, "\taddi %s, fp, -%lu\n", regStr(dest), expr->symbolEntry->stackOffset);
             }
             else
             {
